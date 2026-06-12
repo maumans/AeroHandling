@@ -1,0 +1,307 @@
+# DEVBOOK — AeroHandling
+
+> Carnet de développement complet. À lire en début de nouvelle session pour reprendre le contexte sans perte.
+> Dernière mise à jour : 10/06/2026 (Dynamisation & paramétrisation — selects, couleurs centralisées, config).
+
+---
+
+## 1. Vue d'ensemble du projet
+
+**AeroHandling** est une application de gestion des demandes d'assistance en escale aéroportuaire (ground handling). Une compagnie aérienne soumet une demande d'assistance pour un vol ; le Handling l'évalue et l'approuve ; l'Aviation Civile délivre l'autorisation finale ; le coordinateur planifie les ressources (équipements, stockage).
+
+### Stack technique
+| Couche | Technologie |
+|--------|-------------|
+| Backend | Laravel 13, PHP 8.4 |
+| Frontend | Inertia.js v3 + React 19 |
+| UI | Tailwind CSS v4, shadcn/ui, lucide-react, framer-motion |
+| Auth | Laravel Fortify (kit de démarrage React) + spatie/laravel-permission |
+| Routing typé | Laravel Wayfinder |
+| Tests | PHPUnit v12 |
+| Lint PHP | Laravel Pint |
+| DB (dev) | MYSQL |
+
+### Conventions impératives
+- **Nommage 100% français** : modèles, tables, colonnes, contrôleurs, routes, pages, composants, variables (sauf éléments imposés par le framework : `User`, `users`, etc.).
+- **Couleurs** : Navy `#0B2545` / `#13315C` (primaire), Cyan `#1B98E0` (accent). Toutes les constantes couleur/label sont centralisées dans `resources/js/lib/couleurs.ts`.
+- **Police** : `Instrument Sans` (chargée via `@fonts`). NE PAS remettre `Inter` (non chargée → fallback).
+- **Ne JAMAIS casser** l'authentification Fortify/Breeze existante ni la table `users`.
+- **Références** : demandes `HR-YYYY-NNNN`, autorisations `AUT-YYYY-NNNN`. Préfixes configurables dans `config/aerohandling.php`.
+- Toujours `vendor/bin/pint --dirty --format agent` après modif PHP.
+- Toujours `npm run build` (ou `npx vite build`) pour valider le front.
+- **Ne jamais dupliquer** les constantes de statuts/couleurs dans les pages React — tout importer depuis `@/lib/couleurs`.
+
+---
+
+## 2. Commandes essentielles
+
+```bash
+# Tout lancer en dev (serveur + queue + vite)
+composer run dev
+
+# Séparément
+php artisan serve            # http://127.0.0.1:8000
+npm run dev                  # Vite HMR
+npm run build                # Build de production (valider le front)
+
+# Base de données
+php artisan migrate:fresh --seed   # reset + seed complet
+
+# Qualité
+vendor/bin/pint --dirty --format agent   # style PHP
+php artisan route:list --except-vendor   # vérifier les routes
+php artisan test --compact               # tests
+```
+
+> ⚠️ **Problème connu environnement** : les tests échouent actuellement avec `could not find driver` — utiliser MySQL pour les tests (extension PDO SQLite non activée dans le PHP CLI). À régler en activant `pdo_sqlite` dans `php.ini` ou en configurant MySQL comme driver de test.
+
+### Comptes de démonstration (password = `password`)
+| Email | Rôle |
+|-------|------|
+| `admin@aerohandling.test` | administrateur |
+| `handling@aerohandling.test` | handling |
+| `aviation@aerohandling.test` | aviation_civile |
+| `coordinateur@aerohandling.test` | coordinateur |
+| `operateur@ram.test` | compagnie |
+
+---
+
+## 3. Modèle de données
+
+### Enums (`app/Enums/`)
+| Enum | Valeurs | Méthodes |
+|------|---------|----------|
+| `StatutDemande` | brouillon, soumise, en_evaluation, approuvee_handling, en_attente_aviation_civile, autorisee, rejetee, complement_demande | `libelle()`, `couleur()` |
+| `NatureVol` | passager, freighter, charter, vol_supplementaire | `libelle()` |
+| `TypeMarchandise` | general, perissable, dangereux, pharmaceutique, courrier, animaux_vivants, excedent_bagages, matieres_premieres, valeurs_declarees | `libelle()` |
+| `TypeEquipement` | mdl, porte_palette, tracteur_manutention, gpu, tapis_bagages, escalier, pousseur | `libelle()` |
+| `StatutEquipement` | disponible, en_service, maintenance, hors_service | `libelle()` |
+| `RoleUtilisateur` | administrateur, handling, aviation_civile, coordinateur, compagnie | `libelle()` |
+| `CategorieAeronef` | (cf fichier) | `libelle()` |
+| `ActionValidation` | soumission, approbation_handling, rejet, complement_demande, autorisation_aviation_civile, annulation | `libelle()` |
+| `ZoneStockage` | import, export | `libelle()` |
+| `TypeAlerte` | (cf fichier) | `libelle()` |
+| `NiveauAlerte` | (cf fichier) | `libelle()` |
+
+### Tables / Modèles (`app/Models/`)
+- **`compagnies`** → `Compagnie` : nom, code_iata, code_icao, pays, contact_email, contact_telephone, logo, actif. Relations : `demandes()`, `utilisateurs()`. SoftDeletes.
+- **`aeronefs`** → `Aeronef` : code, modele, categorie (enum cast `CategorieAeronef`), capacite_passagers, capacite_cargo_tonnes. Relation : `demandes()`.
+- **`equipements`** → `Equipement` : code, nom, type (enum cast `TypeEquipement`), statut (enum cast `StatutEquipement`), capacite_max, notes. Relation : `affectations()`. SoftDeletes.
+- **`users`** (intacte Breeze) + colonne ajoutée `compagnie_id`. `User` utilise `HasRoles`. Relations : `compagnie()`, `demandes()`, `validations()`.
+- **`demandes`** → `Demande` : reference, compagnie_id, utilisateur_id, aeronef_id, numero_vol, nature_vol (enum), date_arrivee, date_depart, tonnage_prevu, volume_prevu, type_marchandise (enum `TypeMarchandise`), nombre_uld, exigences_particulieres, statut (enum), motif_rejet, reference_autorisation, date_soumission, date_decision_handling, date_autorisation. SoftDeletes. Relations : `compagnie()`, `utilisateur()`, `aeronef()`, `validations()`, `commentaires()`, `piecesJointes()`, `affectations()`, `equipements()` (belongsToMany pivot `demande_equipement` avec `type_equipement`, `quantite`).
+- **`demande_equipement`** (pivot).
+- **`validations`** → `Validation` : demande_id, utilisateur_id, action (enum `ActionValidation`), commentaire. Relations : `demande()`, `utilisateur()`.
+- **`commentaires`** → `Commentaire` : demande_id, utilisateur_id, contenu.
+- **`pieces_jointes`** → `PieceJointe` : demande_id, chemin, nom, type, taille.
+- **`affectations`** → `Affectation` : demande_id, equipement_id, utilisateur_affectation_id, date_debut, date_fin, notes.
+- **`capacites_stockage`** → `CapaciteStockage` : zone (enum), capacite_max_tonnes, occupation_actuelle_tonnes, seuil_alerte_pourcent.
+- **`alertes`** → `Alerte` : (cf fichier), relation `demande()`.
+- **`notifications`** : table standard Laravel (canal database).
+
+### Seeders (`database/seeders/`)
+`DatabaseSeeder` appelle : `RoleSeeder`, `CompagnieSeeder`, `AeronefSeeder`, `EquipementSeeder`, `UtilisateurSeeder`, `DemandeSeeder` (20 demandes réparties sur tous les statuts).
+
+---
+
+## 4. Backend — Workflow métier
+
+### Service `app/Services/GestionnaireDemande.php` (machine à états)
+Méthodes : `creer()`, `soumettre()`, `approuver()`, `rejeter()`, `demanderComplement()`, `autoriser()`.
+- Génère les références via `config('aerohandling.references.prefixe_demande', 'HR')` et `config('aerohandling.references.prefixe_autorisation', 'AUT')`.
+- Enregistre une `Validation` à chaque transition.
+- Déclenche les notifications (canal `database`) vers les bons rôles.
+
+### Transitions de statut
+```
+brouillon ──soumettre──► soumise ──approuver──► approuvee_handling ──autoriser──► autorisee
+                            │                          
+                            ├──rejeter──► rejetee       (autoriser = rôle aviation_civile)
+                            └──demanderComplement──► complement_demande ──(re-soumettre)──► soumise
+```
+
+### Policy `app/Policies/DemandePolicy.php`
+Méthodes : `voir`, `creer`, `modifier`, `soumettre`, `approuver`, `rejeter`, `demanderComplement`, `autoriser`, `supprimer`. Règles basées sur rôle + statut courant.
+
+### FormRequests (`app/Http/Requests/`)
+`CreerDemandeRequest` (type_marchandise validé via `Rule::enum(TypeMarchandise::class)`), `RejeterDemandeRequest` (motif obligatoire), `AutoriserDemandeRequest` (commentaire optionnel), `StoreAeronefRequest`, `UpdateAeronefRequest`, `StoreEquipementRequest`, `UpdateEquipementRequest`, `StoreCompagnieRequest`, `UpdateCompagnieRequest`, `StoreUtilisateurRequest`, `UpdateUtilisateurRequest`.
+
+### Notifications (`app/Notifications/`, canal database)
+`DemandeSoumiseNotification` (→ handling), `DemandeApprouveeNotification` (→ créateur + aviation_civile), `DemandeAutoriseeNotification` (→ créateur + coordinateurs), `DemandeRejeteeNotification` (→ créateur).
+
+### Configuration centralisée (`config/aerohandling.php`)
+```php
+'pagination' => ['demandes' => 15, 'equipements' => 20, 'utilisateurs' => 20, 'compagnies' => 20, 'notifications' => 20],
+'limites'    => ['dashboard_demandes_recentes' => 6, 'rapports_top_compagnies' => 8,
+                 'aviation_civile_recentes' => 10, 'planning_jours' => 7, 'dashboard_jours' => 7],
+'references' => ['prefixe_demande' => 'HR', 'prefixe_autorisation' => 'AUT'],
+```
+Toutes les valeurs `paginate()` et les limites d'affichage utilisent ce config. Ne jamais hardcoder ces chiffres.
+
+---
+
+## 5. Routes (`routes/web.php`) — état actuel
+
+Toutes sous middleware `['auth', 'verified']`. `dashboard` redirige vers `/tableau-de-bord`.
+
+| Méthode | URI | Nom | Contrôleur |
+|---------|-----|-----|-----------|
+| GET | /tableau-de-bord | tableau_de_bord.afficher | TableauDeBordController@afficher |
+| GET | /demandes | demandes.index | DemandeController@index |
+| GET | /demandes/creer | demandes.creer | DemandeController@creer |
+| POST | /demandes | demandes.enregistrer | DemandeController@enregistrer |
+| GET | /demandes/{demande} | demandes.afficher | DemandeController@afficher |
+| DELETE | /demandes/{demande} | demandes.supprimer | DemandeController@supprimer |
+| POST | /demandes/{demande}/soumettre | demandes.soumettre | DemandeController@soumettre |
+| POST | /demandes/{demande}/approuver | demandes.approuver | DemandeController@approuver |
+| POST | /demandes/{demande}/rejeter | demandes.rejeter | DemandeController@rejeter |
+| POST | /demandes/{demande}/demander-complement | demandes.demander_complement | DemandeController@demanderComplement |
+| POST | /demandes/{demande}/autoriser | demandes.autoriser | DemandeController@autoriser |
+| GET | /planning | planning.index | PlanningController@index |
+| GET | /capacites | capacites.index | CapaciteController@index |
+| GET | /equipements | equipements.index | EquipementController@index |
+| GET | /aviation-civile | aviation_civile.index | AviationCivileController@index |
+| GET | /rapports | rapports.index | RapportController@index |
+| GET | /notifications | notifications.index | NotificationController@index |
+| POST | /notifications/lire-toutes | notifications.lire_toutes | NotificationController@marquerToutesLues |
+| POST | /notifications/{id}/lire | notifications.lire | NotificationController@marquerLue |
+| GET | /administration/utilisateurs | administration.utilisateurs.index | AdministrationController@utilisateurs |
+| GET | /administration/utilisateurs/creer | administration.utilisateurs.creer | AdministrationController@creerUtilisateur |
+| POST | /administration/utilisateurs | administration.utilisateurs.enregistrer | AdministrationController@enregistrerUtilisateur |
+| GET | /administration/utilisateurs/{id}/editer | administration.utilisateurs.editer | AdministrationController@editerUtilisateur |
+| PUT | /administration/utilisateurs/{id} | administration.utilisateurs.mettre_a_jour | AdministrationController@mettreAJourUtilisateur |
+| GET | /administration/compagnies | administration.compagnies.index | AdministrationController@compagnies |
+| GET | /administration/compagnies/creer | administration.compagnies.creer | AdministrationController@creerCompagnie |
+| POST | /administration/compagnies | administration.compagnies.enregistrer | AdministrationController@enregistrerCompagnie |
+| GET | /administration/compagnies/{id}/editer | administration.compagnies.editer | AdministrationController@editerCompagnie |
+| PUT | /administration/compagnies/{id} | administration.compagnies.mettre_a_jour | AdministrationController@mettreAJourCompagnie |
+| GET | /administration/aeronefs | administration.aeronefs.index | AdministrationController@aeronefs |
+| GET | /administration/aeronefs/creer | administration.aeronefs.creer | AdministrationController@creerAeronef |
+| POST | /administration/aeronefs | administration.aeronefs.enregistrer | AdministrationController@enregistrerAeronef |
+| GET | /administration/aeronefs/{id}/editer | administration.aeronefs.editer | AdministrationController@editerAeronef |
+| PUT | /administration/aeronefs/{id} | administration.aeronefs.mettre_a_jour | AdministrationController@mettreAJourAeronef |
+| DELETE | /administration/aeronefs/{id} | administration.aeronefs.supprimer | AdministrationController@supprimerAeronef |
+| GET | /administration/equipements | administration.equipements.index | AdministrationController@equipementsAdmin |
+| GET | /administration/equipements/creer | administration.equipements.creer | AdministrationController@creerEquipement |
+| POST | /administration/equipements | administration.equipements.enregistrer | AdministrationController@enregistrerEquipement |
+| GET | /administration/equipements/{id}/editer | administration.equipements.editer | AdministrationController@editerEquipement |
+| PUT | /administration/equipements/{id} | administration.equipements.mettre_a_jour | AdministrationController@mettreAJourEquipement |
+
+---
+
+## 6. Frontend — Structure
+
+### Layout & navigation
+- `resources/js/components/app-sidebar.tsx` : navigation **role-based** en français (hook `useNavigationItems`). Items : Tableau de bord, Demandes, Planning, Capacités, Équipements, Aviation Civile, Rapports, Notifications, Administration. Visibilité filtrée par rôle.
+- `resources/js/components/app-sidebar-header.tsx` : breadcrumb à gauche + `ThemeToggle` à droite.
+- `resources/js/components/theme-toggle.tsx` : bascule Clair / Sombre / Système. Utilise un guard `mounted` (`useState(false)` + `useEffect`) pour éviter l'hydration mismatch SSR entre l'icône soleil (server) et lune (client).
+- `resources/js/components/app-logo.tsx` + `app-logo-icon.tsx` : branding AeroHandling (icône avion, navy).
+
+### Composants graphiques (SVG natif, AUCUNE dépendance)
+- `resources/js/components/charts/graphique-donut.tsx` : donut + légende.
+- `resources/js/components/charts/graphique-barres.tsx` : barres verticales.
+
+### Centralisation couleurs/labels (`resources/js/lib/couleurs.ts`)
+Fichier unique exportant **toutes** les mappings couleur et libellé. Ne jamais les dupliquer dans les pages.
+| Export | Usage |
+|--------|-------|
+| `STATUT_DEMANDE_LIBELLE` | Libellés texte statuts demandes |
+| `STATUT_DEMANDE_BADGE` | Classes Tailwind badges statuts |
+| `STATUT_DEMANDE_COULEUR_HEX` | Hex pour graphiques (tableau de bord) |
+| `STATUT_DEMANDE_PLANNING` | Classes Tailwind bandes planning |
+| `NATURE_VOL_LIBELLE` | Libellés natures de vol |
+| `NATURE_VOL_COULEURS_HEX` | Palette hex graphiques donuts |
+| `STATUT_EQUIPEMENT_LIBELLE` | Libellés statuts équipements |
+| `STATUT_EQUIPEMENT_BADGE` | Classes Tailwind badges équipements |
+| `ACTION_VALIDATION_LIBELLE` | Libellés actions workflow |
+| `ROLE_LIBELLE` | Libellés rôles utilisateurs |
+| `ROLE_BADGE` | Classes Tailwind badges rôles |
+| `COULEURS_MARQUE` | `{ navyPrimaire, navySecondaire, cyan }` hex |
+
+### Pages (`resources/js/pages/`)
+| Page | Statut | Contenu |
+|------|--------|---------|
+| `TableauDeBord/Index.tsx` | ✅ | KPI, actions requises (par rôle), barres 7 jours, donuts statut & nature, demandes récentes |
+| `Demandes/Index.tsx` | ✅ | Table filtrable (statut, nature, compagnie, recherche), pagination, badges |
+| `Demandes/Creer.tsx` | ✅ | Wizard 5 étapes, `type_marchandise` = Select alimenté par `TypeMarchandise::cases()` |
+| `Demandes/Afficher.tsx` | ✅ | Détail + chronologie + commentaires + boutons workflow conditionnels |
+| `Planning/Index.tsx` | ✅ | Calendrier hebdomadaire, navigation semaine |
+| `Capacites/Index.tsx` | ✅ | Jauges de stockage + état du parc équipements |
+| `Equipements/Index.tsx` | ✅ | Table filtrable (type, statut, recherche) |
+| `AviationCivile/Index.tsx` | ✅ | File d'attente à autoriser + autorisations récentes |
+| `Rapports/Index.tsx` | ✅ | Indicateurs, barres par compagnie, volumes, filtre période |
+| `Notifications/Index.tsx` | ✅ | Liste paginée groupée par date, badges type, marquer lu / tout marquer lu |
+| `Administration/Utilisateurs/Index.tsx` | ✅ | Table users + rôles + recherche + liens vers toutes sections admin |
+| `Administration/Utilisateurs/Creer.tsx` | ✅ | Formulaire création utilisateur |
+| `Administration/Utilisateurs/Editer.tsx` | ✅ | Formulaire édition utilisateur |
+| `Administration/Compagnies/Index.tsx` | ✅ | Table compagnies + compteurs |
+| `Administration/Compagnies/Creer.tsx` | ✅ | Formulaire création compagnie, `pays` = Select liste complète |
+| `Administration/Compagnies/Editer.tsx` | ✅ | Formulaire édition compagnie, `pays` = Select liste complète |
+| `Administration/Aeronefs/Index.tsx` | ✅ | Table aéronefs avec catégorie, capacités, compteur demandes |
+| `Administration/Aeronefs/Creer.tsx` | ✅ | Formulaire création aéronef, `categorie` = Select `CategorieAeronef` |
+| `Administration/Aeronefs/Editer.tsx` | ✅ | Formulaire édition aéronef, `categorie` = Select `CategorieAeronef` |
+| `Administration/Equipements/Index.tsx` | ✅ | Table équipements admin avec type, statut, capacité |
+| `Administration/Equipements/Creer.tsx` | ✅ | Formulaire création équipement, `type`+`statut` = Selects enum |
+| `Administration/Equipements/Editer.tsx` | ✅ | Formulaire édition équipement, `type`+`statut` = Selects enum |
+
+### Données partagées Inertia
+`app/Http/Middleware/HandleInertiaRequests.php` partage `auth.user` enrichi de `roles[]` et `permissions[]`, + `sidebarOpen`, + `notificationsNonLues` (count).
+Type côté front : `resources/js/types/auth.ts` (`User` avec `compagnie_id`, `roles`, `permissions`). Déclaration globale Inertia dans `resources/js/types/global.d.ts`.
+
+---
+
+## 7. État d'avancement par phase
+
+| Phase | Description | Statut |
+|-------|-------------|--------|
+| 1 | Fondations (enums, migrations, modèles, factories, seeders, perms, i18n) | ✅ Terminé |
+| 2 | Layout & navigation (sidebar role-based, thème, branding) | ✅ Terminé |
+| 3 | Module Demandes (CRUD, wizard, workflow, policy, notifications) | ✅ Terminé |
+| 4 | Tableau de bord enrichi (KPI, graphiques, actions requises) | ✅ Terminé |
+| 5 | Planning & Capacités (calendrier, jauges, équipements) | ✅ Terminé |
+| 6 | Aviation Civile (file d'attente, autorisations) | ✅ Terminé |
+| 7 | Rapports (indicateurs, graphiques, période) | ✅ Terminé |
+| 8 | Administration complète (CRUD users, compagnies, aéronefs, équipements) | ✅ Terminé |
+| 9 | Dynamisation (selects enums, couleurs centralisées, config paramétrable) | ✅ Terminé |
+| 10 | Qualité (tests, responsive, dark mode, optimisation) | ⏳ À faire |
+
+---
+
+## 8. Reste à faire / TODO prioritaire
+
+### Fonctionnalités non encore implémentées
+1. **Page admin Paramètres stockage** : UI pour éditer `capacite_max_tonnes` et `seuil_alerte_pourcent` par zone (les données sont en BD mais sans interface admin).
+2. **Demandes** : gestion réelle des pièces jointes (upload) et commentaires (POST au lieu de `prompt()`).
+3. **Re-soumission** depuis statut `complement_demande` (route/action à câbler côté front).
+4. **Planning** : affectation rapide d'équipements via Sheet, détection de conflits.
+5. **Rapports** : export PDF/Excel.
+6. **Recherche globale ⌘K** + sélecteur de langue dans la topbar.
+
+### Phase 10 — Qualité (à faire)
+- Tests PHPUnit : workflow `GestionnaireDemande`, `DemandePolicy`, transitions interdites.
+- Utiliser MySQL pour les tests (déjà configuré, pas besoin de pdo_sqlite).
+- Audit eager loading / index manquants.
+- Vérif dark mode + responsive sur toutes les pages.
+- Vérifier libellés sidebar sans extensions de traduction navigateur.
+
+---
+
+## 9. Pièges & notes techniques
+
+- **Laravel 13** : Le contrôleur de base (`Controller.php`) n'inclut PAS `AuthorizesRequests` par défaut → déjà ajouté dans `app/Http/Controllers/Controller.php`.
+- **Double layout Inertia** : Dans `app.tsx`, le `layout` Inertia NE DOIT PAS retourner `AppLayout` pour les pages générales. Chaque page wrapp déjà son contenu dans `<AppLayout>`.
+- **Enum casts Laravel** : Quand un modèle a `protected $casts = ['type' => TypeEquipement::class]`, accéder à `$model->type` retourne une **instance de l'enum**, pas une string. Pour passer la valeur brute au frontend, utiliser `$model->getRawOriginal('type')`. Pour le libellé, utiliser `$model->type->libelle()` (l'instance supporte ça directement). Ne jamais appeler `TypeEquipement::from($model->type)` sur un champ déjà casté.
+- **Hydration mismatch ThemeToggle** : Le serveur rend toujours Sun (thème par défaut), le client peut lire `dark` dans localStorage. Réglé via `useState(false)` + `useEffect(() => setMounted(true))` — l'icône réelle ne s'affiche qu'après mount client.
+- **Wayfinder** : la route `dashboard` a été remplacée par une redirection ; ne plus importer `dashboard` depuis `@/routes`. Utiliser des URLs statiques (`/tableau-de-bord`).
+- **Pint** obligatoire après toute modif PHP.
+- **Avertissements CSS** (`@source`, `@theme`, `@apply` "unknown at rule") = faux positifs IDE (Tailwind v4), ignorer.
+- **PowerShell** : `npm run build` peut afficher une `RemoteException` (stderr capturé) tout en réussissant — vérifier la présence de `✓ built in`.
+- **Policies auto-découvertes** (Laravel 12+) : `DemandePolicy` mappée automatiquement à `Demande`.
+
+---
+
+## 10. Prochaine action recommandée
+
+Options selon priorité :
+1. **Page admin Paramètres stockage** — UI pour éditer les seuils par zone (manque fonctionnel visible dans Capacités).
+2. **Commentaires réels** — remplacer le `prompt()` dans `Demandes/Afficher.tsx` par un vrai formulaire POST.
+3. **Phase 10 (qualité)** — tests PHPUnit + audit dark mode/responsive.
