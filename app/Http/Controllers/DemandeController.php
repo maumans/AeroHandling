@@ -188,4 +188,37 @@ class DemandeController extends Controller
 
         return redirect()->route('demandes.index')->with('success', 'Demande supprimée.');
     }
+
+    public function ajouterPieceJointe(Request $request, Demande $demande): RedirectResponse
+    {
+        $this->authorize('voir', $demande);
+
+        $request->validate([
+            'fichier' => ['required', 'file', 'max:10240'], // 10MB max
+        ]);
+
+        $file = $request->file('fichier');
+        $path = $file->store('pieces_jointes');
+
+        $demande->piecesJointes()->create([
+            'utilisateur_id' => $request->user()->id,
+            'nom_fichier' => $file->getClientOriginalName(),
+            'chemin' => $path,
+            'taille' => $file->getSize(),
+            'type_mime' => $file->getMimeType(),
+        ]);
+
+        return back()->with('success', 'Pièce jointe ajoutée avec succès.');
+    }
+
+    public function telechargerPieceJointe(Request $request, Demande $demande, \App\Models\PieceJointe $pieceJointe): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $this->authorize('voir', $demande);
+
+        if ($pieceJointe->demande_id !== $demande->id) {
+            abort(404);
+        }
+
+        return \Illuminate\Support\Facades\Storage::download($pieceJointe->chemin, $pieceJointe->nom_fichier);
+    }
 }

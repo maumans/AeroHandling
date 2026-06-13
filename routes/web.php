@@ -11,7 +11,7 @@ use App\Http\Controllers\RapportController;
 use App\Http\Controllers\TableauDeBordController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::redirect('/', '/login')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', '/tableau-de-bord');
@@ -38,12 +38,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/demandes/{demande}/affectations', [\App\Http\Controllers\AffectationController::class, 'store'])->name('demandes.affectations.store');
     Route::delete('/demandes/{demande}/affectations/{affectation}', [\App\Http\Controllers\AffectationController::class, 'destroy'])->name('demandes.affectations.destroy');
 
+    // Pièces jointes
+    Route::post('/demandes/{demande}/pieces-jointes', [DemandeController::class, 'ajouterPieceJointe'])->name('demandes.pieces_jointes.ajouter');
+    Route::get('/demandes/{demande}/pieces-jointes/{pieceJointe}', [DemandeController::class, 'telechargerPieceJointe'])->name('demandes.pieces_jointes.telecharger');
+
     // Planning, Capacités & Rapports (Handling & Coordinateur)
     Route::middleware(['role:handling|coordinateur|administrateur'])->group(function () {
         Route::get('/planning', [PlanningController::class, 'index'])->name('planning.index');
         Route::get('/capacites', [CapaciteController::class, 'index'])->name('capacites.index');
         Route::get('/equipements', [EquipementController::class, 'index'])->name('equipements.index');
         Route::get('/rapports', [RapportController::class, 'index'])->name('rapports.index');
+        Route::get('/rapports/export', [RapportController::class, 'export'])->name('rapports.export');
     });
 
     // Aviation Civile

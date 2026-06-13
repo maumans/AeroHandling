@@ -7,6 +7,8 @@ import {
     TrendingUp,
     XCircle,
     FilterX,
+    FileText,
+    FileSpreadsheet,
 } from 'lucide-react';
 import { GraphiqueBarres } from '@/components/charts/graphique-barres';
 import { GraphiqueDonut } from '@/components/charts/graphique-donut';
@@ -162,6 +164,30 @@ export default function RapportsIndex({ indicateurs, parCompagnie, parTonnage, d
                                 Réinitialiser
                             </Button>
                         )}
+                        <div className="flex gap-2 mb-[1px]">
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-9"
+                                asChild
+                            >
+                                <a href={`/rapports/export?format=pdf&debut=${periode.debut}&fin=${periode.fin}&compagnie_id=${periode.compagnie_id || ''}&statut=${periode.statut || ''}`} target="_blank" rel="noreferrer">
+                                    <FileText className="mr-2 size-4" />
+                                    PDF
+                                </a>
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-9"
+                                asChild
+                            >
+                                <a href={`/rapports/export?format=excel&debut=${periode.debut}&fin=${periode.fin}&compagnie_id=${periode.compagnie_id || ''}&statut=${periode.statut || ''}`}>
+                                    <FileSpreadsheet className="mr-2 size-4" />
+                                    Excel
+                                </a>
+                            </Button>
+                        </div>
                     </div>
                 </div>
 

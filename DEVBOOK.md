@@ -1,7 +1,7 @@
 # DEVBOOK — AeroHandling
 
 > Carnet de développement complet. À lire en début de nouvelle session pour reprendre le contexte sans perte.
-> Dernière mise à jour : 10/06/2026 (Dynamisation & paramétrisation — selects, couleurs centralisées, config).
+> Dernière mise à jour : 12/06/2026 (Notifications temps réel, affectations, rapports enrichis, paramètres admin, tests).
 
 ---
 
@@ -14,7 +14,8 @@
 |--------|-------------|
 | Backend | Laravel 13, PHP 8.4 |
 | Frontend | Inertia.js v3 + React 19 |
-| UI | Tailwind CSS v4, shadcn/ui, lucide-react, framer-motion |
+| UI | Tailwind CSS v4, shadcn/ui, lucide-react, framer-motion, sonner (toasts) |
+| Temps réel | Laravel Reverb (WebSocket), Laravel Echo (@laravel/echo-react) |
 | Auth | Laravel Fortify (kit de démarrage React) + spatie/laravel-permission |
 | Routing typé | Laravel Wayfinder |
 | Tests | PHPUnit v12 |
@@ -125,8 +126,17 @@ Méthodes : `voir`, `creer`, `modifier`, `soumettre`, `approuver`, `rejeter`, `d
 ### FormRequests (`app/Http/Requests/`)
 `CreerDemandeRequest` (type_marchandise validé via `Rule::enum(TypeMarchandise::class)`), `RejeterDemandeRequest` (motif obligatoire), `AutoriserDemandeRequest` (commentaire optionnel), `StoreAeronefRequest`, `UpdateAeronefRequest`, `StoreEquipementRequest`, `UpdateEquipementRequest`, `StoreCompagnieRequest`, `UpdateCompagnieRequest`, `StoreUtilisateurRequest`, `UpdateUtilisateurRequest`.
 
-### Notifications (`app/Notifications/`, canal database)
-`DemandeSoumiseNotification` (→ handling), `DemandeApprouveeNotification` (→ créateur + aviation_civile), `DemandeAutoriseeNotification` (→ créateur + coordinateurs), `DemandeRejeteeNotification` (→ créateur).
+### Notifications (`app/Notifications/`, canal database + broadcast)
+| Notification | Destinataires |
+|---|---|
+| `DemandeSoumiseNotification` | → handling |
+| `DemandeApprouveeNotification` | → créateur + aviation_civile |
+| `DemandeAutoriseeNotification` | → créateur + coordinateurs |
+| `DemandeRejeteeNotification` | → créateur |
+| `DemandeComplementRequisNotification` | → créateur |
+| `NouvelleAffectationNotification` | → agent affecté |
+
+Toutes les notifications utilisent le canal `database` + `broadcast` (Reverb). Le frontend les reçoit en temps réel via `@laravel/echo-react`.
 
 ### Configuration centralisée (`config/aerohandling.php`)
 ```php
@@ -142,7 +152,9 @@ Toutes les valeurs `paginate()` et les limites d'affichage utilisent ce config. 
 ## 5. Routes (`routes/web.php`) — état actuel
 
 Toutes sous middleware `['auth', 'verified']`. `dashboard` redirige vers `/tableau-de-bord`.
+Les groupes de routes utilisent le middleware `role:` de spatie/laravel-permission pour restreindre l'accès par rôle.
 
+### Routes publiques (tout utilisateur auth)
 | Méthode | URI | Nom | Contrôleur |
 |---------|-----|-----|-----------|
 | GET | /tableau-de-bord | tableau_de_bord.afficher | TableauDeBordController@afficher |
@@ -156,35 +168,54 @@ Toutes sous middleware `['auth', 'verified']`. `dashboard` redirige vers `/table
 | POST | /demandes/{demande}/rejeter | demandes.rejeter | DemandeController@rejeter |
 | POST | /demandes/{demande}/demander-complement | demandes.demander_complement | DemandeController@demanderComplement |
 | POST | /demandes/{demande}/autoriser | demandes.autoriser | DemandeController@autoriser |
-| GET | /planning | planning.index | PlanningController@index |
-| GET | /capacites | capacites.index | CapaciteController@index |
-| GET | /equipements | equipements.index | EquipementController@index |
-| GET | /aviation-civile | aviation_civile.index | AviationCivileController@index |
-| GET | /rapports | rapports.index | RapportController@index |
+| POST | /demandes/{demande}/commentaires | demandes.commentaires.ajouter | DemandeController@ajouterCommentaire |
+| POST | /demandes/{demande}/affectations | demandes.affectations.store | AffectationController@store |
+| DELETE | /demandes/{demande}/affectations/{affectation} | demandes.affectations.destroy | AffectationController@destroy |
 | GET | /notifications | notifications.index | NotificationController@index |
 | POST | /notifications/lire-toutes | notifications.lire_toutes | NotificationController@marquerToutesLues |
 | POST | /notifications/{id}/lire | notifications.lire | NotificationController@marquerLue |
+
+### Routes handling/coordinateur/administrateur (`role:handling|coordinateur|administrateur`)
+| Méthode | URI | Nom | Contrôleur |
+|---------|-----|-----|-----------|
+| GET | /planning | planning.index | PlanningController@index |
+| GET | /capacites | capacites.index | CapaciteController@index |
+| GET | /equipements | equipements.index | EquipementController@index |
+| GET | /rapports | rapports.index | RapportController@index |
+
+### Routes aviation civile (`role:aviation_civile|administrateur`)
+| Méthode | URI | Nom | Contrôleur |
+|---------|-----|-----|-----------|
+| GET | /aviation-civile | aviation_civile.index | AviationCivileController@index |
+
+### Routes administration (`role:administrateur`)
+| Méthode | URI | Nom | Contrôleur |
+|---------|-----|-----|-----------|
 | GET | /administration/utilisateurs | administration.utilisateurs.index | AdministrationController@utilisateurs |
 | GET | /administration/utilisateurs/creer | administration.utilisateurs.creer | AdministrationController@creerUtilisateur |
 | POST | /administration/utilisateurs | administration.utilisateurs.enregistrer | AdministrationController@enregistrerUtilisateur |
-| GET | /administration/utilisateurs/{id}/editer | administration.utilisateurs.editer | AdministrationController@editerUtilisateur |
-| PUT | /administration/utilisateurs/{id} | administration.utilisateurs.mettre_a_jour | AdministrationController@mettreAJourUtilisateur |
+| GET | /administration/utilisateurs/{utilisateur}/editer | administration.utilisateurs.editer | AdministrationController@editerUtilisateur |
+| PUT | /administration/utilisateurs/{utilisateur} | administration.utilisateurs.mettre_a_jour | AdministrationController@mettreAJourUtilisateur |
 | GET | /administration/compagnies | administration.compagnies.index | AdministrationController@compagnies |
 | GET | /administration/compagnies/creer | administration.compagnies.creer | AdministrationController@creerCompagnie |
 | POST | /administration/compagnies | administration.compagnies.enregistrer | AdministrationController@enregistrerCompagnie |
-| GET | /administration/compagnies/{id}/editer | administration.compagnies.editer | AdministrationController@editerCompagnie |
-| PUT | /administration/compagnies/{id} | administration.compagnies.mettre_a_jour | AdministrationController@mettreAJourCompagnie |
+| GET | /administration/compagnies/{compagnie}/editer | administration.compagnies.editer | AdministrationController@editerCompagnie |
+| PUT | /administration/compagnies/{compagnie} | administration.compagnies.mettre_a_jour | AdministrationController@mettreAJourCompagnie |
 | GET | /administration/aeronefs | administration.aeronefs.index | AdministrationController@aeronefs |
 | GET | /administration/aeronefs/creer | administration.aeronefs.creer | AdministrationController@creerAeronef |
 | POST | /administration/aeronefs | administration.aeronefs.enregistrer | AdministrationController@enregistrerAeronef |
-| GET | /administration/aeronefs/{id}/editer | administration.aeronefs.editer | AdministrationController@editerAeronef |
-| PUT | /administration/aeronefs/{id} | administration.aeronefs.mettre_a_jour | AdministrationController@mettreAJourAeronef |
-| DELETE | /administration/aeronefs/{id} | administration.aeronefs.supprimer | AdministrationController@supprimerAeronef |
+| GET | /administration/aeronefs/{aeronef}/editer | administration.aeronefs.editer | AdministrationController@editerAeronef |
+| PUT | /administration/aeronefs/{aeronef} | administration.aeronefs.mettre_a_jour | AdministrationController@mettreAJourAeronef |
+| DELETE | /administration/aeronefs/{aeronef} | administration.aeronefs.supprimer | AdministrationController@supprimerAeronef |
 | GET | /administration/equipements | administration.equipements.index | AdministrationController@equipementsAdmin |
 | GET | /administration/equipements/creer | administration.equipements.creer | AdministrationController@creerEquipement |
 | POST | /administration/equipements | administration.equipements.enregistrer | AdministrationController@enregistrerEquipement |
-| GET | /administration/equipements/{id}/editer | administration.equipements.editer | AdministrationController@editerEquipement |
-| PUT | /administration/equipements/{id} | administration.equipements.mettre_a_jour | AdministrationController@mettreAJourEquipement |
+| GET | /administration/equipements/{equipement}/editer | administration.equipements.editer | AdministrationController@editerEquipement |
+| PUT | /administration/equipements/{equipement} | administration.equipements.mettre_a_jour | AdministrationController@mettreAJourEquipement |
+| GET | /administration/parametres | administration.parametres.index | AdministrationController@parametres |
+| PUT | /administration/parametres | administration.parametres.mettre_a_jour | AdministrationController@mettreAJourParametres |
+
+> **Note** : les routes admin utilisent le route model binding (`{utilisateur}`, `{compagnie}`, `{aeronef}`, `{equipement}`) au lieu de `{id}`.
 
 ---
 
@@ -197,8 +228,17 @@ Toutes sous middleware `['auth', 'verified']`. `dashboard` redirige vers `/table
 - `resources/js/components/app-logo.tsx` + `app-logo-icon.tsx` : branding AeroHandling (icône avion, navy).
 
 ### Composants graphiques (SVG natif, AUCUNE dépendance)
-- `resources/js/components/charts/graphique-donut.tsx` : donut + légende.
+- `resources/js/components/charts/graphique-donut.tsx` : donut SVG + légende avec troncature des libellés longs.
 - `resources/js/components/charts/graphique-barres.tsx` : barres verticales.
+- `resources/js/components/charts/graphique-ligne.tsx` : courbe d'évolution temporelle SVG (points + lignes + grille).
+
+### Composants notifications
+- `resources/js/components/notifications-dropdown.tsx` : dropdown cloche dans le header avec badge compteur, 5 notifications récentes, marquer lu/tout lu, lien vers la demande, temps relatif.
+- `resources/js/components/realtime-notifications.tsx` : composant invisible, écoute le canal broadcast privé via `@laravel/echo-react` (`useEchoNotification`), affiche un toast Sonner à chaque notification reçue en temps réel, puis recharge les props Inertia (`notificationsNonLues`, `recentNotifications`).
+
+### Composants affectations
+- `resources/js/components/FormulaireAffectation.tsx` : formulaire d'affectation d'un équipement ou agent à une demande.
+- `resources/js/components/ModalAffectation.tsx` : modale wrapper pour le formulaire d'affectation.
 
 ### Centralisation couleurs/labels (`resources/js/lib/couleurs.ts`)
 Fichier unique exportant **toutes** les mappings couleur et libellé. Ne jamais les dupliquer dans les pages.
@@ -228,7 +268,7 @@ Fichier unique exportant **toutes** les mappings couleur et libellé. Ne jamais 
 | `Capacites/Index.tsx` | ✅ | Jauges de stockage + état du parc équipements |
 | `Equipements/Index.tsx` | ✅ | Table filtrable (type, statut, recherche) |
 | `AviationCivile/Index.tsx` | ✅ | File d'attente à autoriser + autorisations récentes |
-| `Rapports/Index.tsx` | ✅ | Indicateurs, barres par compagnie, volumes, filtre période |
+| `Rapports/Index.tsx` | ✅ | KPI enrichis (total, autorisées, rejetées, taux approbation, délai moyen), filtres avancés (dates, compagnie, statut), donut répartition par statut, courbe évolution temporelle, barres par compagnie, volumes |
 | `Notifications/Index.tsx` | ✅ | Liste paginée groupée par date, badges type, marquer lu / tout marquer lu |
 | `Administration/Utilisateurs/Index.tsx` | ✅ | Table users + rôles + recherche + liens vers toutes sections admin |
 | `Administration/Utilisateurs/Creer.tsx` | ✅ | Formulaire création utilisateur |
@@ -242,9 +282,10 @@ Fichier unique exportant **toutes** les mappings couleur et libellé. Ne jamais 
 | `Administration/Equipements/Index.tsx` | ✅ | Table équipements admin avec type, statut, capacité |
 | `Administration/Equipements/Creer.tsx` | ✅ | Formulaire création équipement, `type`+`statut` = Selects enum |
 | `Administration/Equipements/Editer.tsx` | ✅ | Formulaire édition équipement, `type`+`statut` = Selects enum |
+| `Administration/Parametres.tsx` | ✅ | Paramètres généraux (préfixes, pagination) + capacités stockage par zone (seuils, capacité max) |
 
 ### Données partagées Inertia
-`app/Http/Middleware/HandleInertiaRequests.php` partage `auth.user` enrichi de `roles[]` et `permissions[]`, + `sidebarOpen`, + `notificationsNonLues` (count).
+`app/Http/Middleware/HandleInertiaRequests.php` partage `auth.user` enrichi de `roles[]` et `permissions[]`, + `sidebarOpen`, + `notificationsNonLues` (count), + `recentNotifications` (5 dernières notifications avec data).
 Type côté front : `resources/js/types/auth.ts` (`User` avec `compagnie_id`, `roles`, `permissions`). Déclaration globale Inertia dans `resources/js/types/global.d.ts`.
 
 ---
@@ -262,26 +303,38 @@ Type côté front : `resources/js/types/auth.ts` (`User` avec `compagnie_id`, `r
 | 7 | Rapports (indicateurs, graphiques, période) | ✅ Terminé |
 | 8 | Administration complète (CRUD users, compagnies, aéronefs, équipements) | ✅ Terminé |
 | 9 | Dynamisation (selects enums, couleurs centralisées, config paramétrable) | ✅ Terminé |
-| 10 | Qualité (tests, responsive, dark mode, optimisation) | ⏳ À faire |
+| 10 | Notifications temps réel (Reverb, Echo, dropdown, toasts) | ✅ Terminé |
+| 11 | Affectations (équipements/agents sur demandes, controller, modal) | ✅ Terminé |
+| 12 | Rapports enrichis (filtres compagnie/statut, donut, courbe, KPI avancés) | ✅ Terminé |
+| 13 | Administration Paramètres (stockage, préfixes, pagination) | ✅ Terminé |
+| 14 | Commentaires réels (formulaire POST, plus de prompt()) | ✅ Terminé |
+| 15 | Tests PHPUnit (GestionnaireDemande, DemandePolicy) | ✅ Partiel |
+| 16 | Qualité (responsive, dark mode, optimisation) | ⏳ À faire |
 
 ---
 
 ## 8. Reste à faire / TODO prioritaire
 
 ### Fonctionnalités non encore implémentées
-1. **Page admin Paramètres stockage** : UI pour éditer `capacite_max_tonnes` et `seuil_alerte_pourcent` par zone (les données sont en BD mais sans interface admin).
-2. **Demandes** : gestion réelle des pièces jointes (upload) et commentaires (POST au lieu de `prompt()`).
-3. **Re-soumission** depuis statut `complement_demande` (route/action à câbler côté front).
-4. **Planning** : affectation rapide d'équipements via Sheet, détection de conflits.
-5. **Rapports** : export PDF/Excel.
-6. **Recherche globale ⌘K** + sélecteur de langue dans la topbar.
+1. **Demandes** : gestion réelle des pièces jointes (upload avec stockage).
+2. **Re-soumission** depuis statut `complement_demande` (route/action à câbler côté front).
+3. **Planning** : détection de conflits d'affectation (chevauchement de dates pour un même équipement).
+4. **Rapports** : export PDF/Excel.
+5. **Recherche globale ⌘K** + sélecteur de langue dans la topbar.
 
-### Phase 10 — Qualité (à faire)
-- Tests PHPUnit : workflow `GestionnaireDemande`, `DemandePolicy`, transitions interdites.
+### Phase 16 — Qualité (à faire)
+- Compléter les tests PHPUnit : transitions interdites, edge cases, tests contrôleurs.
 - Utiliser MySQL pour les tests (déjà configuré, pas besoin de pdo_sqlite).
 - Audit eager loading / index manquants.
 - Vérif dark mode + responsive sur toutes les pages.
 - Vérifier libellés sidebar sans extensions de traduction navigateur.
+
+### Tests existants (`tests/Feature/`)
+| Fichier | Couverture |
+|---------|------------|
+| `GestionnaireDemandeTest.php` | Workflow machine à états : créer, soumettre, approuver, rejeter, autoriser |
+| `DemandePolicyTest.php` | Autorisations par rôle et statut |
+| `DashboardTest.php` | Accès tableau de bord |
 
 ---
 
@@ -289,19 +342,22 @@ Type côté front : `resources/js/types/auth.ts` (`User` avec `compagnie_id`, `r
 
 - **Laravel 13** : Le contrôleur de base (`Controller.php`) n'inclut PAS `AuthorizesRequests` par défaut → déjà ajouté dans `app/Http/Controllers/Controller.php`.
 - **Double layout Inertia** : Dans `app.tsx`, le `layout` Inertia NE DOIT PAS retourner `AppLayout` pour les pages générales. Chaque page wrapp déjà son contenu dans `<AppLayout>`.
-- **Enum casts Laravel** : Quand un modèle a `protected $casts = ['type' => TypeEquipement::class]`, accéder à `$model->type` retourne une **instance de l'enum**, pas une string. Pour passer la valeur brute au frontend, utiliser `$model->getRawOriginal('type')`. Pour le libellé, utiliser `$model->type->libelle()` (l'instance supporte ça directement). Ne jamais appeler `TypeEquipement::from($model->type)` sur un champ déjà casté.
+- **Enum casts Laravel** : Quand un modèle a `protected $casts = ['type' => TypeEquipement::class]`, accéder à `$model->type` retourne une **instance de l'enum**, pas une string. Pour passer la valeur brute au frontend, utiliser `$model->getRawOriginal('type')`. Pour le libellé, utiliser `$model->type->libelle()` (l'instance supporte ça directement). Ne jamais appeler `TypeEquipement::from($model->type)` sur un champ déjà casté. **Important pour les groupBy SQL** : `selectRaw('statut, count(*) as total')->groupBy('statut')` retourne des instances enum castées — vérifier avec `instanceof` avant d'appeler `tryFrom()`.
 - **Hydration mismatch ThemeToggle** : Le serveur rend toujours Sun (thème par défaut), le client peut lire `dark` dans localStorage. Réglé via `useState(false)` + `useEffect(() => setMounted(true))` — l'icône réelle ne s'affiche qu'après mount client.
 - **Wayfinder** : la route `dashboard` a été remplacée par une redirection ; ne plus importer `dashboard` depuis `@/routes`. Utiliser des URLs statiques (`/tableau-de-bord`).
 - **Pint** obligatoire après toute modif PHP.
 - **Avertissements CSS** (`@source`, `@theme`, `@apply` "unknown at rule") = faux positifs IDE (Tailwind v4), ignorer.
 - **PowerShell** : `npm run build` peut afficher une `RemoteException` (stderr capturé) tout en réussissant — vérifier la présence de `✓ built in`.
 - **Policies auto-découvertes** (Laravel 12+) : `DemandePolicy` mappée automatiquement à `Demande`.
+- **SVG Donut dasharray** : Utiliser `${longueur} ${circonference}` (gap = cercle entier) au lieu de `${longueur} ${circonference - longueur}` pour éviter la répétition du motif SVG qui cause un débordement visuel.
+- **Middleware rôle spatie** : Le middleware `role` doit être enregistré via `$middleware->alias()` dans `bootstrap/app.php` (pas en tant que classe directe). Sinon erreur `Target class [role] does not exist`.
 
 ---
 
 ## 10. Prochaine action recommandée
 
 Options selon priorité :
-1. **Page admin Paramètres stockage** — UI pour éditer les seuils par zone (manque fonctionnel visible dans Capacités).
-2. **Commentaires réels** — remplacer le `prompt()` dans `Demandes/Afficher.tsx` par un vrai formulaire POST.
-3. **Phase 10 (qualité)** — tests PHPUnit + audit dark mode/responsive.
+1. **Pièces jointes** — Upload réel de fichiers sur les demandes (stockage S3/local, preview, download).
+2. **Re-soumission** — Câbler le bouton re-soumettre depuis le statut `complement_demande` côté front.
+3. **Export rapports** — PDF/Excel pour les indicateurs et graphiques.
+4. **Phase 16 (qualité)** — compléter les tests PHPUnit + audit dark mode/responsive.

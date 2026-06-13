@@ -1,5 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { CheckCircle2, XCircle, MessageSquarePlus, ShieldCheck, Send, CalendarPlus } from 'lucide-react';
+import { CheckCircle2, XCircle, MessageSquarePlus, ShieldCheck, Send, CalendarPlus, Paperclip, Download } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import ModalAffectation from '@/components/ModalAffectation';
 import { FormEventHandler, useState } from 'react';
@@ -58,6 +58,14 @@ interface Demande {
     validations: Validation[];
     commentaires: Commentaire[];
     affectations: Affectation[];
+    pieces_jointes: PieceJointe[];
+}
+
+interface PieceJointe {
+    id: number;
+    nom_fichier: string;
+    taille: number;
+    created_at: string;
 }
 
 interface Equipement {
@@ -141,6 +149,16 @@ export default function DemandesAfficher({
             onSuccess: () => resetComment(),
         });
     };
+
+    const { data: pjData, setData: setPjData, post: postPj, processing: processingPj, reset: resetPj, errors: pjErrors } = useForm({ fichier: null as File | null });
+
+    const submitPj: FormEventHandler = (e) => {
+        e.preventDefault();
+        postPj(`/demandes/${demande.id}/pieces-jointes`, {
+            preserveScroll: true,
+            onSuccess: () => resetPj(),
+        });
+    };
     return (
         <AppLayout breadcrumbs={[
             { title: 'Demandes', href: '/demandes' },
@@ -166,7 +184,16 @@ export default function DemandesAfficher({
 
                     {/* Actions workflow */}
                     <div className="flex flex-wrap gap-2">
-                        {peutSoumettre && (
+                        {peutSoumettre && demande.statut === 'complement_demande' && (
+                            <Button
+                                size="sm"
+                                onClick={() => router.post(`/demandes/${demande.id}/soumettre`)}
+                            >
+                                <Send className="mr-1 size-4" />
+                                Re-soumettre
+                            </Button>
+                        )}
+                        {peutSoumettre && demande.statut === 'brouillon' && (
                             <Button
                                 size="sm"
                                 onClick={() => router.post(`/demandes/${demande.id}/soumettre`)}
@@ -444,6 +471,62 @@ export default function DemandesAfficher({
                                         <Send className="mr-2 size-4" />
                                         Envoyer
                                     </Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
+
+                    {/* Pièces jointes */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Pièces jointes</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {demande.pieces_jointes?.length > 0 ? (
+                                <div className="space-y-3">
+                                    {demande.pieces_jointes.map((pj) => (
+                                        <div key={pj.id} className="flex flex-wrap items-center justify-between gap-4 rounded-lg border p-3">
+                                            <div className="flex items-center gap-3">
+                                                <Paperclip className="size-5 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{pj.nom_fichier}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {(pj.taille / 1024).toFixed(0)} Ko • {formatDate(pj.created_at)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button variant="ghost" size="sm" asChild>
+                                                <a href={`/demandes/${demande.id}/pieces-jointes/${pj.id}`} target="_blank" rel="noreferrer">
+                                                    <Download className="mr-2 size-4" />
+                                                    Télécharger
+                                                </a>
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">Aucune pièce jointe.</p>
+                            )}
+
+                            <Separator />
+                            
+                            <form onSubmit={submitPj} className="space-y-3">
+                                <div>
+                                    <Label htmlFor="fichier">Ajouter un fichier</Label>
+                                    <div className="mt-1 flex items-center gap-3">
+                                        <input
+                                            type="file"
+                                            id="fichier"
+                                            className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
+                                            onChange={(e) => setPjData('fichier', e.target.files ? e.target.files[0] : null)}
+                                            required
+                                        />
+                                        <Button type="submit" size="sm" disabled={processingPj || !pjData.fichier}>
+                                            <Send className="mr-2 size-4" />
+                                            Envoyer
+                                        </Button>
+                                    </div>
+                                    {pjErrors.fichier && <p className="mt-1 text-sm text-destructive">{pjErrors.fichier}</p>}
                                 </div>
                             </form>
                         </CardContent>

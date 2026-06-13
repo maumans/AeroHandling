@@ -20,6 +20,12 @@ class GestionnaireDemandeTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'handling', 'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'compagnie', 'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'aviation_civile', 'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'coordinateur', 'guard_name' => 'web']);
+        
         $this->gestionnaire = app(GestionnaireDemande::class);
     }
 
@@ -35,7 +41,7 @@ class GestionnaireDemandeTest extends TestCase
         $this->assertEquals(StatutDemande::Soumise->value, $demande->fresh()->getRawOriginal('statut'));
         $this->assertDatabaseHas('validations', [
             'demande_id' => $demande->id,
-            'action' => ActionValidation::soumission->value,
+            'action' => ActionValidation::Soumission->value,
             'utilisateur_id' => $user->id,
         ]);
     }
@@ -44,7 +50,7 @@ class GestionnaireDemandeTest extends TestCase
     {
         $user = User::factory()->create();
         $demande = Demande::factory()->create([
-            'statut' => StatutDemande::soumise->value,
+            'statut' => StatutDemande::Soumise->value,
         ]);
 
         $this->gestionnaire->approuver($demande, $user, 'Approuvé par handling');
@@ -52,7 +58,7 @@ class GestionnaireDemandeTest extends TestCase
         $this->assertEquals(StatutDemande::ApprouveeHandling->value, $demande->fresh()->getRawOriginal('statut'));
         $this->assertDatabaseHas('validations', [
             'demande_id' => $demande->id,
-            'action' => ActionValidation::approbation_handling->value,
+            'action' => ActionValidation::ApprobationHandling->value,
             'utilisateur_id' => $user->id,
             'commentaire' => 'Approuvé par handling',
         ]);
@@ -62,7 +68,7 @@ class GestionnaireDemandeTest extends TestCase
     {
         $user = User::factory()->create();
         $demande = Demande::factory()->create([
-            'statut' => StatutDemande::soumise->value,
+            'statut' => StatutDemande::Soumise->value,
         ]);
 
         $this->gestionnaire->rejeter($demande, $user, 'Manque de capacité');
@@ -75,7 +81,7 @@ class GestionnaireDemandeTest extends TestCase
     {
         $user = User::factory()->create();
         $demande = Demande::factory()->create([
-            'statut' => StatutDemande::soumise->value,
+            'statut' => StatutDemande::Soumise->value,
         ]);
 
         $this->gestionnaire->demanderComplement($demande, $user, 'Précisez le volume');

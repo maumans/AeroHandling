@@ -131,6 +131,70 @@ class RapportController extends Controller
         ]);
     }
 
+    public function export(Request $request)
+    {
+        $debut = $request->date('debut')
+            ? Carbon::parse($request->date('debut'))->startOfDay()
+            : Carbon::now()->startOfMonth();
+
+        $fin = $request->date('fin')
+            ? Carbon::parse($request->date('fin'))->endOfDay()
+            : Carbon::now()->endOfDay();
+
+        $compagnieId = $request->input('compagnie_id');
+        $statut = $request->input('statut');
+
+        if ($request->input('format') === 'pdf') {
+            $query = Demande::query()->whereBetween('created_at', [$debut, $fin]);
+            
+            if ($compagnieId) {
+                $query->where('compagnie_id', $compagnieId);
+            }
+            
+            if ($statut) {
+                $query->where('statut', $statut);
+            }
+
+            $periode = fn () => clone $query;
+
+            $total = $periode()->count();
+            $autorisees = $periode()->where('statut', StatutDemande::Autorisee)->count();
+            $rejetees = $periode()->where('statut', StatutDemande::Rejetee)->count();
+            $traitees = $autorisees + $rejetees;
+
+            $indicateurs = [
+                'total' => $total,
+                'autorisees' => $autorisees,
+                'rejetees' => $rejetees,
+                'taux_approbation' => $traitees > 0 ? round(($autorisees / $traitees) * 100, 1) : 0,
+                'delai_moyen_heures' => $this->delaiMoyenTraitement($periode()),
+            ];
+
+            $parCompagnie = Compagnie::withCount(['demandes' => fn ($q) => $q->mergeConstraintsFrom($periode())])
+                ->orderByDesc('demandes_count')
+                ->limit(config('aerohandling.limites.rapports_top_compagnies', 8))
+                ->get()
+                ->map(fn (Compagnie $c) => [
+                    'nom' => $c->nom,
+                    'total' => $c->demandes_count,
+                ])
+                ->filter(fn ($c) => $c['total'] > 0)
+                ->values();
+
+            $parTonnage = [
+                'tonnage_total' => round((float) $periode()->sum('tonnage_prevu'), 2),
+                'volume_total' => round((float) $periode()->sum('volume_prevu'), 2),
+                'uld_total' => (int) $periode()->sum('nombre_uld'),
+            ];
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.rapport', compact('debut', 'fin', 'indicateurs', 'parCompagnie', 'parTonnage'));
+            return $pdf->download('rapport_aerohandling_' . now()->format('Ymd') . '.pdf');
+        }
+
+        return (new \App\Exports\RapportExport($debut, $fin, $compagnieId, $statut))
+            ->download('rapport_aerohandling_' . now()->format('Ymd') . '.xlsx');
+    }
+
     private function delaiMoyenTraitement($query): float
     {
         $demandes = (clone $query)

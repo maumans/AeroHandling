@@ -63,4 +63,30 @@ class DemandePolicyTest extends TestCase
         $this->assertFalse($handling->can('autoriser', $demande));
         $this->assertTrue($aviation->can('autoriser', $demande));
     }
+
+    public function test_compagnie_peut_modifier_brouillon()
+    {
+        $compagnie = User::factory()->create();
+        $compagnie->assignRole('compagnie');
+
+        $demande = Demande::factory()->create([
+            'utilisateur_id' => $compagnie->id,
+            'statut' => StatutDemande::Brouillon->value,
+        ]);
+
+        $this->assertTrue($compagnie->can('modifier', $demande));
+    }
+
+    public function test_compagnie_ne_peut_pas_modifier_soumise()
+    {
+        $compagnie = User::factory()->create();
+        $compagnie->assignRole('compagnie');
+
+        $demande = Demande::factory()->create([
+            'utilisateur_id' => $compagnie->id,
+            'statut' => StatutDemande::Soumise->value,
+        ]);
+
+        $this->assertFalse($compagnie->can('modifier', $demande));
+    }
 }
