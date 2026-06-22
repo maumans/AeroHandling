@@ -16,7 +16,7 @@ class DemandePolicyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Ensure roles exist
         Role::firstOrCreate(['name' => 'compagnie', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'handling', 'guard_name' => 'web']);
@@ -48,8 +48,9 @@ class DemandePolicyTest extends TestCase
         $this->assertTrue($handling->can('approuver', $demande));
     }
 
-    public function test_seule_aviation_civile_peut_autoriser_demande_approuvee()
+    public function test_handling_peut_autoriser_demande_approuvee_pas_aviation_civile()
     {
+        // L'Aviation Civile ne se connecte pas : c'est le Handling qui saisit le code.
         $handling = User::factory()->create();
         $handling->assignRole('handling');
 
@@ -60,8 +61,8 @@ class DemandePolicyTest extends TestCase
             'statut' => StatutDemande::ApprouveeHandling->value,
         ]);
 
-        $this->assertFalse($handling->can('autoriser', $demande));
-        $this->assertTrue($aviation->can('autoriser', $demande));
+        $this->assertTrue($handling->can('autoriser', $demande));
+        $this->assertFalse($aviation->can('autoriser', $demande));
     }
 
     public function test_compagnie_peut_modifier_brouillon()

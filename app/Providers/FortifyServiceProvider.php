@@ -63,10 +63,9 @@ class FortifyServiceProvider extends ServiceProvider
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::registerView(fn () => Inertia::render('auth/register', [
-            'passwordRules' => Password::defaults()->toPasswordRulesString(),
-        ]));
-
+        // Pas de vue d'inscription : la fonctionnalité d'inscription publique
+        // est désactivée (cf. config/fortify.php). Les comptes sont créés par
+        // un administrateur via le module Administration.
     }
 
     /**

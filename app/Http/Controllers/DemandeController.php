@@ -2,21 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\NatureVol;
 use App\Enums\TypeEquipement;
 use App\Enums\TypeMarchandise;
 use App\Http\Requests\AutoriserDemandeRequest;
 use App\Http\Requests\CreerDemandeRequest;
 use App\Http\Requests\RejeterDemandeRequest;
-use App\Models\Aeronef;
 use App\Models\Compagnie;
 use App\Models\Demande;
 use App\Models\Equipement;
+use App\Models\PieceJointe;
 use App\Models\User;
 use App\Services\GestionnaireDemande;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DemandeController extends Controller
 {
@@ -75,16 +78,15 @@ class DemandeController extends Controller
     {
         $this->authorize('creer', Demande::class);
 
-        $compagnies = Compagnie::where('actif', true)->orderBy('nom')->get(['id', 'nom', 'code_iata']);
-        $aeronefs = Aeronef::orderBy('code')->get(['id', 'code', 'modele', 'categorie']);
+        $naturesVol = collect(NatureVol::cases())
+            ->map(fn ($n) => ['value' => $n->value, 'libelle' => $n->libelle()]);
         $typesMarchandise = collect(TypeMarchandise::cases())
             ->map(fn ($t) => ['value' => $t->value, 'libelle' => $t->libelle()]);
         $typesEquipement = collect(TypeEquipement::cases())
             ->map(fn ($t) => ['value' => $t->value, 'libelle' => $t->libelle()]);
 
         return Inertia::render('Demandes/Creer', [
-            'compagnies' => $compagnies,
-            'aeronefs' => $aeronefs,
+            'naturesVol' => $naturesVol,
             'typesMarchandise' => $typesMarchandise,
             'typesEquipement' => $typesEquipement,
         ]);
@@ -92,10 +94,23 @@ class DemandeController extends Controller
 
     public function enregistrer(CreerDemandeRequest $request): RedirectResponse
     {
-        $demande = $this->gestionnaire->creer($request->validated(), $request->user());
+        $donnees = $request->validated();
+
+        if ($request->hasFile('manifeste_passager')) {
+            $donnees['manifeste_passager'] = $request->file('manifeste_passager')->store('manifestes');
+        }
+
+        $demande = $this->gestionnaire->creer($donnees, $request->user());
+
+        if ($request->validated('action') === 'soumettre') {
+            $this->gestionnaire->soumettre($demande, $request->user());
+
+            return redirect()->route('demandes.afficher', $demande)
+                ->with('success', 'Demande soumise avec succès.');
+        }
 
         return redirect()->route('demandes.afficher', $demande)
-            ->with('success', 'Demande créée avec succès.');
+            ->with('success', 'Demande enregistrée comme brouillon.');
     }
 
     public function afficher(Request $request, Demande $demande): Response
@@ -159,9 +174,14 @@ class DemandeController extends Controller
 
     public function autoriser(AutoriserDemandeRequest $request, Demande $demande): RedirectResponse
     {
-        $this->gestionnaire->autoriser($demande, $request->user(), $request->validated('commentaire'));
+        $this->gestionnaire->autoriser(
+            $demande,
+            $request->user(),
+            $request->validated('code_autorisation'),
+            $request->validated('commentaire'),
+        );
 
-        return back()->with('success', 'Demande autorisée.');
+        return back()->with('success', 'Demande autorisée avec le code Aviation Civile.');
     }
 
     public function ajouterCommentaire(Request $request, Demande $demande): RedirectResponse
@@ -211,7 +231,7 @@ class DemandeController extends Controller
         return back()->with('success', 'Pièce jointe ajoutée avec succès.');
     }
 
-    public function telechargerPieceJointe(Request $request, Demande $demande, \App\Models\PieceJointe $pieceJointe): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function telechargerPieceJointe(Request $request, Demande $demande, PieceJointe $pieceJointe): StreamedResponse
     {
         $this->authorize('voir', $demande);
 
@@ -219,6 +239,19 @@ class DemandeController extends Controller
             abort(404);
         }
 
-        return \Illuminate\Support\Facades\Storage::download($pieceJointe->chemin, $pieceJointe->nom_fichier);
+        return Storage::download($pieceJointe->chemin, $pieceJointe->nom_fichier);
+    }
+
+    public function telechargerManifeste(Request $request, Demande $demande): StreamedResponse
+    {
+        $this->authorize('voir', $demande);
+
+        if (! $demande->manifeste_passager || ! Storage::exists($demande->manifeste_passager)) {
+            abort(404);
+        }
+
+        $nom = 'manifeste-'.$demande->reference.'.'.pathinfo($demande->manifeste_passager, PATHINFO_EXTENSION);
+
+        return Storage::download($demande->manifeste_passager, $nom);
     }
 }

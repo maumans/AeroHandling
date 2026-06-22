@@ -23,6 +23,7 @@ interface Demande {
     statut: string;
     date_arrivee: string;
     date_depart: string;
+    compagnie_libelle?: string | null;
     compagnie?: { nom: string };
     aeronef?: { code: string; modele: string };
     utilisateur?: { name: string };
@@ -176,7 +177,7 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
-                                                {demande.compagnie?.nom}
+                                                {demande.compagnie_libelle ?? demande.compagnie?.nom ?? '—'}
                                             </td>
                                             <td className="px-4 py-3">
                                                 {NATURE_VOL_LIBELLE[demande.nature_vol] ?? demande.nature_vol}

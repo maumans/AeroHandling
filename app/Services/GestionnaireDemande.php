@@ -22,10 +22,10 @@ class GestionnaireDemande
         $donnees['reference'] = $this->genererReference();
         $donnees['statut'] = StatutDemande::Brouillon;
 
-        return DB::transaction(function () use ($donnees, $utilisateur) {
+        return DB::transaction(function () use ($donnees) {
             $demande = Demande::create($donnees);
 
-            if (!empty($donnees['equipements_demandes'])) {
+            if (! empty($donnees['equipements_demandes'])) {
                 $equipementsAInserer = collect($donnees['equipements_demandes'])->map(function ($eq) use ($demande) {
                     return [
                         'demande_id' => $demande->id,
@@ -119,12 +119,12 @@ class GestionnaireDemande
         });
     }
 
-    public function autoriser(Demande $demande, User $utilisateur, ?string $commentaire = null): Demande
+    public function autoriser(Demande $demande, User $utilisateur, string $codeAutorisation, ?string $commentaire = null): Demande
     {
-        return DB::transaction(function () use ($demande, $utilisateur, $commentaire) {
+        return DB::transaction(function () use ($demande, $utilisateur, $codeAutorisation, $commentaire) {
             $demande->update([
                 'statut' => StatutDemande::Autorisee,
-                'reference_autorisation' => $this->genererReferenceAutorisation(),
+                'reference_autorisation' => $codeAutorisation,
                 'date_autorisation' => now(),
             ]);
 
@@ -163,19 +163,6 @@ class GestionnaireDemande
         $derniere = Demande::where('reference', 'like', "{$prefixe}-{$annee}-%")
             ->orderByDesc('reference')
             ->value('reference');
-
-        $numero = $derniere ? (int) substr($derniere, -4) + 1 : 1;
-
-        return sprintf('%s-%s-%04d', $prefixe, $annee, $numero);
-    }
-
-    private function genererReferenceAutorisation(): string
-    {
-        $annee = date('Y');
-        $prefixe = config('aerohandling.references.prefixe_autorisation', 'AUT');
-        $derniere = Demande::where('reference_autorisation', 'like', "{$prefixe}-{$annee}-%")
-            ->orderByDesc('reference_autorisation')
-            ->value('reference_autorisation');
 
         $numero = $derniere ? (int) substr($derniere, -4) + 1 : 1;
 

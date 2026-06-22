@@ -58,10 +58,11 @@ export const NATURE_VOL_LIBELLE: Record<string, string> = {
     freighter: 'Freighter',
     charter: 'Charter',
     vol_supplementaire: 'Vol supplémentaire',
+    vol_evacuation_medicale: 'Vol évacuation médicale',
 };
 
 /** Palette hex pour les graphiques (ordre des cases de l'enum) */
-export const NATURE_VOL_COULEURS_HEX = ['#0B2545', '#1B98E0', '#13C296', '#F59E0B'];
+export const NATURE_VOL_COULEURS_HEX = ['#0B2545', '#1B98E0', '#13C296', '#F59E0B', '#EF4444'];
 
 // ---------------------------------------------------------------------------
 // StatutEquipement

@@ -15,7 +15,16 @@ class AutoriserDemandeRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'code_autorisation' => ['required', 'string', 'max:100'],
             'commentaire' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return [
+            'code_autorisation.required' => "Le code d'autorisation fourni par l'Aviation Civile est obligatoire.",
         ];
     }
 }

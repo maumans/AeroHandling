@@ -4,11 +4,11 @@ namespace Tests\Feature;
 
 use App\Enums\ActionValidation;
 use App\Enums\StatutDemande;
-use App\Models\Compagnie;
 use App\Models\Demande;
 use App\Models\User;
 use App\Services\GestionnaireDemande;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class GestionnaireDemandeTest extends TestCase
@@ -20,12 +20,12 @@ class GestionnaireDemandeTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'handling', 'guard_name' => 'web']);
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'compagnie', 'guard_name' => 'web']);
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'aviation_civile', 'guard_name' => 'web']);
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'coordinateur', 'guard_name' => 'web']);
-        
+
+        Role::firstOrCreate(['name' => 'handling', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'compagnie', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'aviation_civile', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'coordinateur', 'guard_name' => 'web']);
+
         $this->gestionnaire = app(GestionnaireDemande::class);
     }
 
@@ -96,9 +96,9 @@ class GestionnaireDemandeTest extends TestCase
             'statut' => StatutDemande::ApprouveeHandling->value,
         ]);
 
-        $this->gestionnaire->autoriser($demande, $user, 'OK');
+        $this->gestionnaire->autoriser($demande, $user, 'AC-2026-0457');
 
         $this->assertEquals(StatutDemande::Autorisee->value, $demande->fresh()->getRawOriginal('statut'));
-        $this->assertNotNull($demande->fresh()->reference_autorisation);
+        $this->assertEquals('AC-2026-0457', $demande->fresh()->reference_autorisation);
     }
 }

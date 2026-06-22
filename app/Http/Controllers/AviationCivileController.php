@@ -49,8 +49,8 @@ class AviationCivileController extends Controller
             'tonnage_prevu' => $demande->tonnage_prevu,
             'reference_autorisation' => $demande->reference_autorisation,
             'date_autorisation' => $demande->date_autorisation?->toIso8601String(),
-            'compagnie' => $demande->compagnie?->nom,
-            'aeronef' => $demande->aeronef?->code,
+            'compagnie' => $demande->compagnie_libelle ?? $demande->compagnie?->nom,
+            'aeronef' => $demande->type_aeronef ?? $demande->aeronef?->code,
         ];
     }
 }

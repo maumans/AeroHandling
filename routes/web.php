@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdministrationController;
+use App\Http\Controllers\AffectationController;
 use App\Http\Controllers\AviationCivileController;
 use App\Http\Controllers\CapaciteController;
 use App\Http\Controllers\DemandeController;
@@ -35,12 +36,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/demandes/{demande}/commentaires', [DemandeController::class, 'ajouterCommentaire'])->name('demandes.commentaires.ajouter');
 
     // Affectations
-    Route::post('/demandes/{demande}/affectations', [\App\Http\Controllers\AffectationController::class, 'store'])->name('demandes.affectations.store');
-    Route::delete('/demandes/{demande}/affectations/{affectation}', [\App\Http\Controllers\AffectationController::class, 'destroy'])->name('demandes.affectations.destroy');
+    Route::post('/demandes/{demande}/affectations', [AffectationController::class, 'store'])->name('demandes.affectations.store');
+    Route::delete('/demandes/{demande}/affectations/{affectation}', [AffectationController::class, 'destroy'])->name('demandes.affectations.destroy');
 
     // Pièces jointes
     Route::post('/demandes/{demande}/pieces-jointes', [DemandeController::class, 'ajouterPieceJointe'])->name('demandes.pieces_jointes.ajouter');
     Route::get('/demandes/{demande}/pieces-jointes/{pieceJointe}', [DemandeController::class, 'telechargerPieceJointe'])->name('demandes.pieces_jointes.telecharger');
+
+    // Manifeste passager
+    Route::get('/demandes/{demande}/manifeste', [DemandeController::class, 'telechargerManifeste'])->name('demandes.manifeste.telecharger');
 
     // Planning, Capacités & Rapports (Handling & Coordinateur)
     Route::middleware(['role:handling|coordinateur|administrateur'])->group(function () {
@@ -51,8 +55,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/rapports/export', [RapportController::class, 'export'])->name('rapports.export');
     });
 
-    // Aviation Civile
-    Route::middleware(['role:aviation_civile|administrateur'])->group(function () {
+    // Aviation Civile (l'AC ne se connecte pas : géré par le Handling + Admin)
+    Route::middleware(['role:handling|administrateur'])->group(function () {
         Route::get('/aviation-civile', [AviationCivileController::class, 'index'])->name('aviation_civile.index');
     });
 

@@ -92,7 +92,9 @@ class DemandePolicy
 
     public function autoriser(User $user, Demande $demande): bool
     {
-        if (! $user->hasRole('aviation_civile')) {
+        // L'Aviation Civile ne se connecte pas : le Handling (ou l'admin)
+        // saisit le code d'autorisation fourni par l'AC.
+        if (! $user->hasRole(['handling', 'administrateur'])) {
             return false;
         }
 

@@ -3,37 +3,25 @@
 namespace Tests\Feature\Auth;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Fortify\Features;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
+    public function test_registration_routes_are_disabled()
     {
-        parent::setUp();
-
-        $this->skipUnlessFortifyHas(Features::registration());
+        // L'inscription publique est désactivée : les comptes sont créés
+        // uniquement par un administrateur (cf. config/fortify.php).
+        $this->assertFalse(Route::has('register'));
+        $this->assertFalse(Route::has('register.store'));
     }
 
-    public function test_registration_screen_can_be_rendered()
+    public function test_registration_screen_returns_not_found()
     {
-        $response = $this->get(route('register'));
+        $response = $this->get('/register');
 
-        $response->assertOk();
-    }
-
-    public function test_new_users_can_register()
-    {
-        $response = $this->post(route('register.store'), [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
-
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('demandes.index', absolute: false));
+        $response->assertNotFound();
     }
 }

@@ -143,7 +143,8 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // L'inscription publique est désactivée : seuls les administrateurs
+        // créent les comptes utilisateurs depuis le module Administration.
         Features::resetPasswords(),
     ],
 

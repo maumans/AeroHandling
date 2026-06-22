@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,6 +43,12 @@ interface Demande {
     numero_vol: string;
     nature_vol: string;
     statut: string;
+    compagnie_libelle: string | null;
+    type_aeronef: string | null;
+    numero_landing_permit: string | null;
+    demandeur: string | null;
+    contact_demandeur: string | null;
+    manifeste_passager: string | null;
     date_arrivee: string;
     date_depart: string;
     tonnage_prevu: string | null;
@@ -157,6 +164,26 @@ export default function DemandesAfficher({
         postPj(`/demandes/${demande.id}/pieces-jointes`, {
             preserveScroll: true,
             onSuccess: () => resetPj(),
+        });
+    };
+
+    const [autoriserOpen, setAutoriserOpen] = useState(false);
+    const {
+        data: autoriserData,
+        setData: setAutoriserData,
+        post: postAutoriser,
+        processing: processingAutoriser,
+        reset: resetAutoriser,
+        errors: autoriserErrors,
+    } = useForm({ code_autorisation: '', commentaire: '' });
+
+    const submitAutoriser: FormEventHandler = (e) => {
+        e.preventDefault();
+        postAutoriser(`/demandes/${demande.id}/autoriser`, {
+            onSuccess: () => {
+                setAutoriserOpen(false);
+                resetAutoriser();
+            },
         });
     };
     return (
@@ -282,14 +309,54 @@ export default function DemandesAfficher({
                             </Dialog>
                         )}
                         {peutAutoriser && (
-                            <Button
-                                size="sm"
-                                className="bg-[#1B98E0] hover:bg-[#1580c0]"
-                                onClick={() => router.post(`/demandes/${demande.id}/autoriser`)}
-                            >
-                                <ShieldCheck className="mr-1 size-4" />
-                                Émettre l&apos;autorisation
-                            </Button>
+                            <Dialog open={autoriserOpen} onOpenChange={setAutoriserOpen}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm" className="bg-[#1B98E0] hover:bg-[#1580c0]">
+                                        <ShieldCheck className="mr-1 size-4" />
+                                        Saisir le code d&apos;autorisation
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <form onSubmit={submitAutoriser}>
+                                        <DialogHeader>
+                                            <DialogTitle>Autorisation Aviation Civile</DialogTitle>
+                                            <DialogDescription>
+                                                Saisissez le code d&apos;autorisation fourni par l&apos;Aviation Civile. Ce code est obligatoire et conservé à titre informatif.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="code_autorisation">Code d&apos;autorisation</Label>
+                                                <Input
+                                                    id="code_autorisation"
+                                                    value={autoriserData.code_autorisation}
+                                                    onChange={(e) => setAutoriserData('code_autorisation', e.target.value)}
+                                                    placeholder="Ex: AC-2026-0457"
+                                                    required
+                                                />
+                                                {autoriserErrors.code_autorisation && (
+                                                    <p className="text-sm text-destructive">{autoriserErrors.code_autorisation}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="commentaire_autorisation">Commentaire (optionnel)</Label>
+                                                <Textarea
+                                                    id="commentaire_autorisation"
+                                                    value={autoriserData.commentaire}
+                                                    onChange={(e) => setAutoriserData('commentaire', e.target.value)}
+                                                    placeholder="Remarque éventuelle..."
+                                                />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button type="button" variant="outline" onClick={() => setAutoriserOpen(false)}>Annuler</Button>
+                                            <Button type="submit" className="bg-[#1B98E0] hover:bg-[#1580c0]" disabled={processingAutoriser}>
+                                                Valider l&apos;autorisation
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
                         )}
                     </div>
 
@@ -300,17 +367,32 @@ export default function DemandesAfficher({
                         <CardContent>
                             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Compagnie</dt>
+                                    <dt className="text-sm text-muted-foreground">Compagnie / Opérateur</dt>
                                     <dd className="font-medium">
-                                        {demande.compagnie?.code_iata && `${demande.compagnie.code_iata} — `}
-                                        {demande.compagnie?.nom}
+                                        {demande.compagnie_libelle
+                                            ?? (demande.compagnie
+                                                ? `${demande.compagnie.code_iata ? demande.compagnie.code_iata + ' — ' : ''}${demande.compagnie.nom}`
+                                                : '—')}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Aéronef</dt>
+                                    <dt className="text-sm text-muted-foreground">Type d&apos;aéronef</dt>
                                     <dd className="font-medium">
-                                        {demande.aeronef ? `${demande.aeronef.code} (${demande.aeronef.modele})` : '—'}
+                                        {demande.type_aeronef
+                                            ?? (demande.aeronef ? `${demande.aeronef.code} (${demande.aeronef.modele})` : '—')}
                                     </dd>
+                                </div>
+                                <div>
+                                    <dt className="text-sm text-muted-foreground">N° de landing permit</dt>
+                                    <dd className="font-medium">{demande.numero_landing_permit ?? '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-sm text-muted-foreground">Demandeur</dt>
+                                    <dd className="font-medium">{demande.demandeur ?? '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-sm text-muted-foreground">Contact demandeur</dt>
+                                    <dd className="font-medium">{demande.contact_demandeur ?? '—'}</dd>
                                 </div>
                                 <div>
                                     <dt className="text-sm text-muted-foreground">Arrivée</dt>
@@ -362,8 +444,25 @@ export default function DemandesAfficher({
                                 <>
                                     <Separator className="my-4" />
                                     <div className="rounded-md bg-emerald-50 p-3 dark:bg-emerald-900/20">
-                                        <dt className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Référence d&apos;autorisation</dt>
+                                        <dt className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Code d&apos;autorisation (Aviation Civile)</dt>
                                         <dd className="mt-1 font-mono text-sm text-emerald-700 dark:text-emerald-300">{demande.reference_autorisation}</dd>
+                                    </div>
+                                </>
+                            )}
+
+                            {demande.manifeste_passager && (
+                                <>
+                                    <Separator className="my-4" />
+                                    <div>
+                                        <dt className="text-sm text-muted-foreground">Manifeste passager</dt>
+                                        <dd className="mt-1">
+                                            <Button variant="outline" size="sm" asChild>
+                                                <a href={`/demandes/${demande.id}/manifeste`} target="_blank" rel="noreferrer">
+                                                    <Download className="mr-2 size-4" />
+                                                    Télécharger le manifeste
+                                                </a>
+                                            </Button>
+                                        </dd>
                                     </div>
                                 </>
                             )}

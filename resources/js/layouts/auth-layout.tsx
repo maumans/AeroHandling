@@ -11,97 +11,103 @@ export default function AuthLayout({
     description?: string;
     children: React.ReactNode;
 }) {
-    return (
-        <div className="flex min-h-screen bg-background relative overflow-hidden">
-            {/* Left Side: Gorgeous Image & Overlay */}
-            <div className="hidden lg:flex lg:w-1/2 relative bg-[#0B2545] overflow-hidden">
-                <img
-                    src="/images/login-bg.png"
-                    alt="AeroHandling Background"
-                    className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-overlay transition-transform duration-1000 hover:scale-105"
-                />
-                
-                {/* Decorative gradients */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B2545] via-transparent to-[#1B98E0]/30 mix-blend-multiply"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/90 dark:to-background"></div>
+    const annee = new Date().getFullYear();
 
-                <div className="relative z-10 flex flex-col justify-between p-12 w-full h-full text-white">
-                    <Link href={home()} className="flex items-center gap-3 font-bold text-2xl tracking-tight hover:opacity-90 transition-opacity">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md shadow-lg border border-white/20">
-                            <AppLogoIcon className="size-8 text-white" />
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+            <div className="relative grid w-full max-w-5xl overflow-hidden rounded-2xl border border-border/60 bg-background shadow-xl lg:grid-cols-2">
+                {/* Côté formulaire (clair) */}
+                <div className="flex flex-col px-6 py-8 sm:px-10">
+                    <Link
+                        href={home()}
+                        className="flex items-center gap-2 self-start font-bold tracking-tight text-foreground transition-opacity hover:opacity-80"
+                    >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0B2545] text-white shadow-sm">
+                            <AppLogoIcon className="size-6 text-white" />
                         </div>
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">
-                            AeroHandling
-                        </span>
+                        <span className="text-lg">AeroHandling</span>
                     </Link>
 
-                    <div className="max-w-lg space-y-6 pb-12">
-                        <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight tracking-tighter">
-                            Gérez vos opérations aéroportuaires <br/>
-                            <span className="text-[#1B98E0]">avec précision.</span>
-                        </h1>
-                        <p className="text-lg text-blue-100/80 leading-relaxed font-medium">
-                            Une plateforme de nouvelle génération conçue pour l'excellence du handling, la planification des vols et le traitement des capacités.
-                        </p>
-                        
-                        <div className="flex items-center gap-4 pt-4">
-                            <div className="flex -space-x-4">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B2545] bg-blue-500 shadow-sm text-white">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.2-1.1.6L3 8l6 5-3.5 3.5L3 16l-1 2 4.1.9L7 23l2-1-1.5-2.5L11 16l5 6 1.8-.7c.4-.2.7-.6.6-1.1z"/></svg>
-                                </div>
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B2545] bg-emerald-500 shadow-sm text-white">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-                                </div>
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B2545] bg-amber-500 shadow-sm text-white">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 22 1-7 3-3-1-7 7 1 3-3 7 1-3 3 1 7-3 3-1 7-7-1z"/></svg>
-                                </div>
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B2545] bg-rose-500 shadow-sm text-white">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
-                                </div>
-                            </div>
-                            <span className="text-sm font-semibold text-white/90">Rejoignez plus de 200 compagnies aériennes.</span>
+                    <div className="my-auto w-full max-w-sm space-y-5 py-6">
+                        <div className="space-y-1">
+                            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                                {title || 'Connexion'}
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                {description || 'Veuillez vous authentifier pour continuer.'}
+                            </p>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            {/* Right Side: Auth Form */}
-            <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-12 xl:px-24">
-                <div className="mx-auto flex w-full max-w-sm flex-col gap-8 relative z-10">
-                    
-                    {/* Mobile Logo */}
-                    <div className="flex flex-col items-start gap-2 lg:hidden">
-                        <Link href={home()} className="flex items-center gap-2 font-bold text-xl tracking-tight">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0B2545] text-white">
-                                <AppLogoIcon className="size-6 fill-current" />
-                            </div>
-                            AeroHandling
-                        </Link>
-                    </div>
-
-                    {/* Header */}
-                    <div className="flex flex-col gap-2">
-                        <h2 className="text-3xl font-bold tracking-tight text-foreground">
-                            {title || 'Bienvenue'}
-                        </h2>
-                        <p className="text-base text-muted-foreground">
-                            {description || 'Veuillez vous authentifier pour continuer.'}
-                        </p>
-                    </div>
-
-                    {/* Form Content */}
-                    <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border/50 p-6 shadow-sm">
                         {children}
                     </div>
 
-                    {/* Footer */}
-                    <p className="text-center text-sm text-muted-foreground mt-4">
-                        AeroHandling Secure Portal &copy; {new Date().getFullYear()}
+                    <p className="text-xs text-muted-foreground">
+                        Portail sécurisé AeroHandling &copy; {annee}
                     </p>
                 </div>
-                
-                {/* Subtle right-side background pattern / glow for dark mode */}
-                <div className="absolute top-0 right-0 -z-10 h-full w-full bg-[radial-gradient(ellipse_80%_80%_at_100%_-20%,rgba(27,152,224,0.1),rgba(255,255,255,0))]"></div>
+
+                {/* Côté marque (sombre) */}
+                <div className="relative hidden overflow-hidden bg-[#0B1120] p-8 text-white lg:flex lg:flex-col lg:justify-between">
+                    {/* Stries lumineuses diagonales */}
+                    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                        <div className="absolute -right-10 -top-10 h-[150%] w-28 rotate-[24deg] bg-gradient-to-b from-white/20 via-white/5 to-transparent blur-2xl" />
+                        <div className="absolute right-16 -top-10 h-[150%] w-10 rotate-[24deg] bg-gradient-to-b from-[#1B98E0]/40 via-[#1B98E0]/10 to-transparent blur-xl" />
+                        <div className="absolute right-32 -top-10 h-[150%] w-3 rotate-[24deg] bg-gradient-to-b from-white/30 to-transparent blur-md" />
+                    </div>
+
+                    {/* Logo filigrane */}
+                    <AppLogoIcon className="pointer-events-none absolute -left-8 top-4 size-72 text-white/[0.04]" />
+
+                    {/* Libellé marque */}
+                    <div className="relative z-10 flex items-center gap-2 text-sm font-semibold tracking-wide text-white/80">
+                        <AppLogoIcon className="size-5 text-white" />
+                        AeroHandling
+                    </div>
+
+                    {/* Accroche */}
+                    <div className="relative z-10 max-w-md space-y-4">
+                        <h2 className="text-2xl font-bold leading-tight xl:text-3xl">
+                            Bienvenue sur AeroHandling
+                        </h2>
+                        <p className="text-sm leading-relaxed text-white/70">
+                            La plateforme qui orchestre vos opérations d'assistance en escale :
+                            demandes, planification des ressources, capacités et autorisations.
+                        </p>
+
+                        {/* Carte vitrée flottante */}
+                        <div className="mt-4 rounded-2xl bg-white/[0.06] p-5 ring-1 ring-white/10 backdrop-blur-sm">
+                            <h3 className="text-base font-semibold leading-snug">
+                                Prêt à coordonner votre prochaine escale ?
+                            </h3>
+                            <p className="mt-1.5 text-sm leading-relaxed text-white/70">
+                                Connectez-vous pour accéder à vos demandes, au planning et aux
+                                indicateurs en temps réel.
+                            </p>
+                            <div className="mt-4 flex items-center gap-3">
+                                <div className="flex -space-x-3">
+                                    {[
+                                        { initials: 'HD', color: 'bg-[#1B98E0]' },
+                                        { initials: 'CO', color: 'bg-emerald-500' },
+                                        { initials: 'AC', color: 'bg-amber-500' },
+                                    ].map((avatar) => (
+                                        <div
+                                            key={avatar.initials}
+                                            className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#0B1120] text-xs font-semibold text-white ${avatar.color}`}
+                                        >
+                                            {avatar.initials}
+                                        </div>
+                                    ))}
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#0B1120] bg-white/10 text-xs font-semibold text-white">
+                                        +9
+                                    </div>
+                                </div>
+                                <span className="text-xs text-white/70">
+                                    Handling, Coordination & Aviation Civile
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

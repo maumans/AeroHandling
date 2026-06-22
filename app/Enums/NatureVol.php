@@ -8,6 +8,7 @@ enum NatureVol: string
     case Freighter = 'freighter';
     case Charter = 'charter';
     case VolSupplementaire = 'vol_supplementaire';
+    case VolEvacuationMedicale = 'vol_evacuation_medicale';
 
     public function libelle(): string
     {
@@ -16,6 +17,12 @@ enum NatureVol: string
             self::Freighter => 'Freighter',
             self::Charter => 'Charter',
             self::VolSupplementaire => 'Vol supplémentaire',
+            self::VolEvacuationMedicale => 'Vol évacuation médicale',
         };
+    }
+
+    public function estCargo(): bool
+    {
+        return $this === self::Freighter;
     }
 }

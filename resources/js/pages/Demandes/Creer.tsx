@@ -6,80 +6,67 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
+import { Send } from 'lucide-react';
 
-interface Compagnie {
-    id: number;
-    nom: string;
-    code_iata: string | null;
-}
-
-interface Aeronef {
-    id: number;
-    code: string;
-    modele: string;
-    categorie: string;
-}
-
-interface TypeMarchandise {
-    value: string;
-    libelle: string;
-}
-
-interface TypeEquipement {
+interface Option {
     value: string;
     libelle: string;
 }
 
 interface Props {
-    compagnies: Compagnie[];
-    aeronefs: Aeronef[];
-    typesMarchandise: TypeMarchandise[];
-    typesEquipement: TypeEquipement[];
+    naturesVol: Option[];
+    typesMarchandise: Option[];
+    typesEquipement: Option[];
 }
 
 const etapes = [
     'Informations vol',
+    'Demandeur',
     'Planning',
-    'Cargo',
+    'Type de vol',
     'Équipements',
     'Récapitulatif',
 ];
 
-export default function DemandesCreer({ compagnies, aeronefs, typesMarchandise, typesEquipement }: Props) {
+export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquipement }: Props) {
     const [etapeActuelle, setEtapeActuelle] = useState(0);
 
-    const { data, setData, post, processing, errors } = useForm({
-        compagnie_id: '',
-        aeronef_id: '',
+    const { data, setData, post, processing, errors, transform } = useForm({
+        compagnie_libelle: '',
+        type_aeronef: '',
         numero_vol: '',
+        numero_landing_permit: '',
         nature_vol: '',
+        demandeur: '',
+        contact_demandeur: '',
         date_arrivee: '',
         date_depart: '',
         tonnage_prevu: '',
         volume_prevu: '',
         type_marchandise: '',
         nombre_uld: '',
+        manifeste_passager: null as File | null,
         exigences_particulieres: '',
         equipements_demandes: [] as { type: string; quantite: number }[],
     });
 
+    const estCargo = data.nature_vol === 'freighter';
+
     const handleEquipementChange = (type: string, quantite: string) => {
         const qte = parseInt(quantite) || 0;
         const current = [...data.equipements_demandes];
-        const index = current.findIndex(eq => eq.type === type);
-        
+        const index = current.findIndex((eq) => eq.type === type);
+
         if (qte > 0) {
             if (index >= 0) {
                 current[index].quantite = qte;
             } else {
                 current.push({ type, quantite: qte });
             }
-        } else {
-            if (index >= 0) {
-                current.splice(index, 1);
-            }
+        } else if (index >= 0) {
+            current.splice(index, 1);
         }
-        
+
         setData('equipements_demandes', current);
     };
 
@@ -95,9 +82,9 @@ export default function DemandesCreer({ compagnies, aeronefs, typesMarchandise, 
         }
     }
 
-    function soumettre(e: React.FormEvent) {
-        e.preventDefault();
-        post('/demandes');
+    function enregistrer(action: 'brouillon' | 'soumettre') {
+        transform((donnees) => ({ ...donnees, action }));
+        post('/demandes', { forceFormData: true });
     }
 
     return (
@@ -137,7 +124,7 @@ export default function DemandesCreer({ compagnies, aeronefs, typesMarchandise, 
                     ))}
                 </div>
 
-                <form onSubmit={soumettre}>
+                <form onSubmit={(e) => e.preventDefault()}>
                     <Card>
                         <CardHeader>
                             <CardTitle>{etapes[etapeActuelle]}</CardTitle>
@@ -147,17 +134,14 @@ export default function DemandesCreer({ compagnies, aeronefs, typesMarchandise, 
                             {etapeActuelle === 0 && (
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor="compagnie_id">Compagnie</Label>
-                                        <Combobox
-                                            value={data.compagnie_id}
-                                            onChange={(v) => setData('compagnie_id', v)}
-                                            placeholder="Sélectionner une compagnie"
-                                            options={compagnies.map((c) => ({
-                                                label: `${c.code_iata ? c.code_iata + ' - ' : ''}${c.nom}`,
-                                                value: String(c.id),
-                                            }))}
+                                        <Label htmlFor="compagnie_libelle">Compagnie / Opérateur</Label>
+                                        <Input
+                                            id="compagnie_libelle"
+                                            value={data.compagnie_libelle}
+                                            onChange={(e) => setData('compagnie_libelle', e.target.value)}
+                                            placeholder="Ex: Royal Air Maroc"
                                         />
-                                        {errors.compagnie_id && <p className="text-sm text-destructive">{errors.compagnie_id}</p>}
+                                        {errors.compagnie_libelle && <p className="text-sm text-destructive">{errors.compagnie_libelle}</p>}
                                     </div>
 
                                     <div className="space-y-2">
@@ -177,34 +161,64 @@ export default function DemandesCreer({ compagnies, aeronefs, typesMarchandise, 
                                             value={data.nature_vol}
                                             onChange={(v) => setData('nature_vol', v)}
                                             placeholder="Sélectionner la nature"
-                                            options={[
-                                                { label: "Passager", value: "passager" },
-                                                { label: "Freighter", value: "freighter" },
-                                                { label: "Charter", value: "charter" },
-                                                { label: "Vol supplémentaire", value: "vol_supplementaire" },
-                                            ]}
+                                            options={naturesVol.map((n) => ({ label: n.libelle, value: n.value }))}
                                         />
                                         {errors.nature_vol && <p className="text-sm text-destructive">{errors.nature_vol}</p>}
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="aeronef_id">Aéronef</Label>
-                                        <Combobox
-                                            value={data.aeronef_id}
-                                            onChange={(v) => setData('aeronef_id', v)}
-                                            placeholder="Sélectionner un aéronef"
-                                            options={aeronefs.map((a) => ({
-                                                label: `${a.code} - ${a.modele}`,
-                                                value: String(a.id),
-                                            }))}
+                                        <Label htmlFor="type_aeronef">Type d&apos;aéronef</Label>
+                                        <Input
+                                            id="type_aeronef"
+                                            value={data.type_aeronef}
+                                            onChange={(e) => setData('type_aeronef', e.target.value)}
+                                            placeholder="Ex: Boeing 737-800"
                                         />
-                                        {errors.aeronef_id && <p className="text-sm text-destructive">{errors.aeronef_id}</p>}
+                                        {errors.type_aeronef && <p className="text-sm text-destructive">{errors.type_aeronef}</p>}
+                                    </div>
+
+                                    <div className="space-y-2 md:col-span-2">
+                                        <Label htmlFor="numero_landing_permit">N° de landing permit</Label>
+                                        <Input
+                                            id="numero_landing_permit"
+                                            value={data.numero_landing_permit}
+                                            onChange={(e) => setData('numero_landing_permit', e.target.value)}
+                                            placeholder="Optionnel — Ex: LP-1234/26"
+                                        />
+                                        {errors.numero_landing_permit && <p className="text-sm text-destructive">{errors.numero_landing_permit}</p>}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Étape 2: Planning */}
+                            {/* Étape 2: Demandeur */}
                             {etapeActuelle === 1 && (
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="demandeur">Demandeur</Label>
+                                        <Input
+                                            id="demandeur"
+                                            value={data.demandeur}
+                                            onChange={(e) => setData('demandeur', e.target.value)}
+                                            placeholder="Nom du demandeur"
+                                        />
+                                        {errors.demandeur && <p className="text-sm text-destructive">{errors.demandeur}</p>}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="contact_demandeur">Contact du demandeur</Label>
+                                        <Input
+                                            id="contact_demandeur"
+                                            value={data.contact_demandeur}
+                                            onChange={(e) => setData('contact_demandeur', e.target.value)}
+                                            placeholder="Téléphone ou email"
+                                        />
+                                        {errors.contact_demandeur && <p className="text-sm text-destructive">{errors.contact_demandeur}</p>}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Étape 3: Planning */}
+                            {etapeActuelle === 2 && (
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
                                         <Label htmlFor="date_arrivee">Date et heure d&apos;arrivée</Label>
@@ -230,62 +244,83 @@ export default function DemandesCreer({ compagnies, aeronefs, typesMarchandise, 
                                 </div>
                             )}
 
-                            {/* Étape 3: Cargo */}
-                            {etapeActuelle === 2 && (
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="tonnage_prevu">Tonnage prévu (tonnes)</Label>
-                                        <Input
-                                            id="tonnage_prevu"
-                                            type="number"
-                                            step="0.01"
-                                            value={data.tonnage_prevu}
-                                            onChange={(e) => setData('tonnage_prevu', e.target.value)}
-                                            placeholder="Ex: 25.5"
-                                        />
-                                    </div>
+                            {/* Étape 4: Type de vol */}
+                            {etapeActuelle === 3 && (
+                                <div className="space-y-4">
+                                    {estCargo ? (
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="tonnage_prevu">Tonnage prévu (tonnes)</Label>
+                                                <Input
+                                                    id="tonnage_prevu"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={data.tonnage_prevu}
+                                                    onChange={(e) => setData('tonnage_prevu', e.target.value)}
+                                                    placeholder="Ex: 25.5"
+                                                />
+                                            </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="volume_prevu">Volume prévu (m³)</Label>
-                                        <Input
-                                            id="volume_prevu"
-                                            type="number"
-                                            step="0.01"
-                                            value={data.volume_prevu}
-                                            onChange={(e) => setData('volume_prevu', e.target.value)}
-                                            placeholder="Ex: 120"
-                                        />
-                                    </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="volume_prevu">Volume prévu (m³)</Label>
+                                                <Input
+                                                    id="volume_prevu"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={data.volume_prevu}
+                                                    onChange={(e) => setData('volume_prevu', e.target.value)}
+                                                    placeholder="Ex: 120"
+                                                />
+                                            </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="type_marchandise">Type de marchandise</Label>
-                                        <Combobox
-                                            value={data.type_marchandise}
-                                            onChange={(v) => setData('type_marchandise', v)}
-                                            placeholder="Sélectionner un type"
-                                            options={typesMarchandise.map((t) => ({
-                                                label: t.libelle,
-                                                value: t.value,
-                                            }))}
-                                        />
-                                        {errors.type_marchandise && <p className="text-sm text-destructive">{errors.type_marchandise}</p>}
-                                    </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="type_marchandise">Type de marchandise</Label>
+                                                <Combobox
+                                                    value={data.type_marchandise}
+                                                    onChange={(v) => setData('type_marchandise', v)}
+                                                    placeholder="Sélectionner un type"
+                                                    options={typesMarchandise.map((t) => ({ label: t.libelle, value: t.value }))}
+                                                />
+                                                {errors.type_marchandise && <p className="text-sm text-destructive">{errors.type_marchandise}</p>}
+                                            </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="nombre_uld">Nombre d&apos;ULD</Label>
-                                        <Input
-                                            id="nombre_uld"
-                                            type="number"
-                                            value={data.nombre_uld}
-                                            onChange={(e) => setData('nombre_uld', e.target.value)}
-                                            placeholder="Ex: 12"
-                                        />
-                                    </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="nombre_uld">Nombre d&apos;ULD</Label>
+                                                <Input
+                                                    id="nombre_uld"
+                                                    type="number"
+                                                    value={data.nombre_uld}
+                                                    onChange={(e) => setData('nombre_uld', e.target.value)}
+                                                    placeholder="Ex: 12"
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <p className="text-sm text-muted-foreground">
+                                                Pour un vol passagers ou autre, joignez le manifeste passager (PDF, image ou tableur).
+                                            </p>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="manifeste_passager">Manifeste passager</Label>
+                                                <input
+                                                    type="file"
+                                                    id="manifeste_passager"
+                                                    accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.csv"
+                                                    className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
+                                                    onChange={(e) => setData('manifeste_passager', e.target.files ? e.target.files[0] : null)}
+                                                />
+                                                {data.manifeste_passager && (
+                                                    <p className="text-xs text-muted-foreground">Fichier sélectionné : {data.manifeste_passager.name}</p>
+                                                )}
+                                                {errors.manifeste_passager && <p className="text-sm text-destructive">{errors.manifeste_passager}</p>}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
-                            {/* Étape 4: Équipements */}
-                            {etapeActuelle === 3 && (
+                            {/* Étape 5: Équipements */}
+                            {etapeActuelle === 4 && (
                                 <div className="space-y-6">
                                     <p className="text-muted-foreground">
                                         Sélectionnez les équipements nécessaires pour cette opération en indiquant la quantité.
@@ -325,33 +360,52 @@ export default function DemandesCreer({ compagnies, aeronefs, typesMarchandise, 
                                 </div>
                             )}
 
-                            {/* Étape 5: Récapitulatif */}
-                            {etapeActuelle === 4 && (
+                            {/* Étape 6: Récapitulatif */}
+                            {etapeActuelle === 5 && (
                                 <div className="space-y-4">
                                     <div className="rounded-lg border p-4 space-y-2">
                                         <h3 className="font-medium">Résumé de la demande</h3>
                                         <dl className="grid grid-cols-2 gap-2 text-sm">
+                                            <dt className="text-muted-foreground">Compagnie / Opérateur :</dt>
+                                            <dd>{data.compagnie_libelle || '—'}</dd>
                                             <dt className="text-muted-foreground">Vol :</dt>
                                             <dd>{data.numero_vol || '—'}</dd>
+                                            <dt className="text-muted-foreground">Type d&apos;aéronef :</dt>
+                                            <dd>{data.type_aeronef || '—'}</dd>
                                             <dt className="text-muted-foreground">Nature :</dt>
-                                            <dd>{data.nature_vol || '—'}</dd>
+                                            <dd>{naturesVol.find((n) => n.value === data.nature_vol)?.libelle || '—'}</dd>
+                                            <dt className="text-muted-foreground">Landing permit :</dt>
+                                            <dd>{data.numero_landing_permit || '—'}</dd>
+                                            <dt className="text-muted-foreground">Demandeur :</dt>
+                                            <dd>{data.demandeur || '—'}</dd>
+                                            <dt className="text-muted-foreground">Contact :</dt>
+                                            <dd>{data.contact_demandeur || '—'}</dd>
                                             <dt className="text-muted-foreground">Arrivée :</dt>
                                             <dd>{data.date_arrivee || '—'}</dd>
                                             <dt className="text-muted-foreground">Départ :</dt>
                                             <dd>{data.date_depart || '—'}</dd>
-                                            <dt className="text-muted-foreground">Marchandise :</dt>
-                                            <dd>{typesMarchandise.find(t => t.value === data.type_marchandise)?.libelle || '—'}</dd>
-                                            <dt className="text-muted-foreground">Tonnage :</dt>
-                                            <dd>{data.tonnage_prevu ? `${data.tonnage_prevu} t` : '—'}</dd>
+                                            {estCargo ? (
+                                                <>
+                                                    <dt className="text-muted-foreground">Marchandise :</dt>
+                                                    <dd>{typesMarchandise.find((t) => t.value === data.type_marchandise)?.libelle || '—'}</dd>
+                                                    <dt className="text-muted-foreground">Tonnage :</dt>
+                                                    <dd>{data.tonnage_prevu ? `${data.tonnage_prevu} t` : '—'}</dd>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <dt className="text-muted-foreground">Manifeste :</dt>
+                                                    <dd>{data.manifeste_passager?.name || '—'}</dd>
+                                                </>
+                                            )}
                                         </dl>
                                     </div>
-                                    
+
                                     {data.equipements_demandes.length > 0 && (
                                         <div className="rounded-lg border p-4 space-y-2">
                                             <h3 className="font-medium">Équipements demandés</h3>
                                             <ul className="list-inside list-disc text-sm text-muted-foreground">
-                                                {data.equipements_demandes.map(eq => {
-                                                    const libelle = typesEquipement.find(t => t.value === eq.type)?.libelle || eq.type;
+                                                {data.equipements_demandes.map((eq) => {
+                                                    const libelle = typesEquipement.find((t) => t.value === eq.type)?.libelle || eq.type;
                                                     return <li key={eq.type}>{libelle} : {eq.quantite}</li>;
                                                 })}
                                             </ul>
@@ -378,9 +432,25 @@ export default function DemandesCreer({ compagnies, aeronefs, typesMarchandise, 
                                 Suivant
                             </Button>
                         ) : (
-                            <Button type="submit" disabled={processing}>
-                                Enregistrer la demande
-                            </Button>
+                            <div className="flex flex-wrap gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => enregistrer('brouillon')}
+                                    disabled={processing}
+                                >
+                                    Enregistrer comme brouillon
+                                </Button>
+                                <Button
+                                    type="button"
+                                    className="bg-[#0B2545] hover:bg-[#13315C]"
+                                    onClick={() => enregistrer('soumettre')}
+                                    disabled={processing}
+                                >
+                                    <Send className="mr-1 size-4" />
+                                    Soumettre la demande
+                                </Button>
+                            </div>
                         )}
                     </div>
                 </form>

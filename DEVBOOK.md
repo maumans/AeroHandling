@@ -1,7 +1,7 @@
 # DEVBOOK — AeroHandling
 
 > Carnet de développement complet. À lire en début de nouvelle session pour reprendre le contexte sans perte.
-> Dernière mise à jour : 12/06/2026 (Notifications temps réel, affectations, rapports enrichis, paramètres admin, tests).
+> Dernière mise à jour : 22/06/2026 (retour client : formulaire demande en texte libre + manifeste passager + code d'autorisation Aviation Civile saisi par le Handling).
 
 ---
 
@@ -73,7 +73,7 @@ php artisan test --compact               # tests
 | Enum | Valeurs | Méthodes |
 |------|---------|----------|
 | `StatutDemande` | brouillon, soumise, en_evaluation, approuvee_handling, en_attente_aviation_civile, autorisee, rejetee, complement_demande | `libelle()`, `couleur()` |
-| `NatureVol` | passager, freighter, charter, vol_supplementaire | `libelle()` |
+| `NatureVol` | passager, freighter, charter, vol_supplementaire, vol_evacuation_medicale | `libelle()`, `estCargo()` |
 | `TypeMarchandise` | general, perissable, dangereux, pharmaceutique, courrier, animaux_vivants, excedent_bagages, matieres_premieres, valeurs_declarees | `libelle()` |
 | `TypeEquipement` | mdl, porte_palette, tracteur_manutention, gpu, tapis_bagages, escalier, pousseur | `libelle()` |
 | `StatutEquipement` | disponible, en_service, maintenance, hors_service | `libelle()` |
@@ -89,7 +89,9 @@ php artisan test --compact               # tests
 - **`aeronefs`** → `Aeronef` : code, modele, categorie (enum cast `CategorieAeronef`), capacite_passagers, capacite_cargo_tonnes. Relation : `demandes()`.
 - **`equipements`** → `Equipement` : code, nom, type (enum cast `TypeEquipement`), statut (enum cast `StatutEquipement`), capacite_max, notes. Relation : `affectations()`. SoftDeletes.
 - **`users`** (intacte Breeze) + colonne ajoutée `compagnie_id`. `User` utilise `HasRoles`. Relations : `compagnie()`, `demandes()`, `validations()`.
-- **`demandes`** → `Demande` : reference, compagnie_id, utilisateur_id, aeronef_id, numero_vol, nature_vol (enum), date_arrivee, date_depart, tonnage_prevu, volume_prevu, type_marchandise (enum `TypeMarchandise`), nombre_uld, exigences_particulieres, statut (enum), motif_rejet, reference_autorisation, date_soumission, date_decision_handling, date_autorisation. SoftDeletes. Relations : `compagnie()`, `utilisateur()`, `aeronef()`, `validations()`, `commentaires()`, `piecesJointes()`, `affectations()`, `equipements()` (belongsToMany pivot `demande_equipement` avec `type_equipement`, `quantite`).
+- **`demandes`** → `Demande` : reference, **compagnie_id (nullable)**, **compagnie_libelle (texte libre)**, utilisateur_id, aeronef_id (nullable, legacy), **type_aeronef (texte libre)**, numero_vol, **numero_landing_permit**, nature_vol (enum), date_arrivee, date_depart, tonnage_prevu, volume_prevu, type_marchandise (enum `TypeMarchandise`), nombre_uld, **manifeste_passager (chemin fichier)**, exigences_particulieres, **demandeur**, **contact_demandeur**, statut (enum), motif_rejet, **reference_autorisation (= code AC saisi manuellement)**, date_soumission, date_decision_handling, date_autorisation. SoftDeletes. Relations : `compagnie()`, `utilisateur()`, `aeronef()`, `validations()`, `commentaires()`, `piecesJointes()`, `affectations()`, `equipements()` (belongsToMany pivot `demande_equipement` avec `type_equipement`, `quantite`).
+
+> **Note (22/06)** : la compagnie et le type d'aéronef sont désormais des **textes libres** (`compagnie_libelle`, `type_aeronef`). Les FK `compagnie_id`/`aeronef_id` restent nullable en base pour la rétrocompat des données seedées ; l'affichage privilégie le texte libre avec repli sur la relation. Les nouveaux champs DB sont nullable ; les obligations (compagnie, type aéronef, demandeur, contact) sont imposées par `CreerDemandeRequest`.
 - **`demande_equipement`** (pivot).
 - **`validations`** → `Validation` : demande_id, utilisateur_id, action (enum `ActionValidation`), commentaire. Relations : `demande()`, `utilisateur()`.
 - **`commentaires`** → `Commentaire` : demande_id, utilisateur_id, contenu.
@@ -114,11 +116,13 @@ Méthodes : `creer()`, `soumettre()`, `approuver()`, `rejeter()`, `demanderCompl
 
 ### Transitions de statut
 ```
-brouillon ──soumettre──► soumise ──approuver──► approuvee_handling ──autoriser──► autorisee
+brouillon ──soumettre──► soumise ──approuver──► approuvee_handling ──autoriser(code AC)──► autorisee
                             │                          
-                            ├──rejeter──► rejetee       (autoriser = rôle aviation_civile)
+                            ├──rejeter──► rejetee
                             └──demanderComplement──► complement_demande ──(re-soumettre)──► soumise
 ```
+
+> **Autorisation Aviation Civile (changé le 22/06)** : l'AC **ne se connecte pas**. C'est le **Handling** (ou l'admin) qui saisit le **code d'autorisation fourni par l'AC**. Ce code est **obligatoire**, purement **informatif** (aucune vérification), et stocké dans `reference_autorisation`. La génération automatique `AUT-YYYY-NNNN` a été **supprimée**. `GestionnaireDemande::autoriser()` prend désormais `$codeAutorisation` en paramètre obligatoire.
 
 ### Policy `app/Policies/DemandePolicy.php`
 Méthodes : `voir`, `creer`, `modifier`, `soumettre`, `approuver`, `rejeter`, `demanderComplement`, `autoriser`, `supprimer`. Règles basées sur rôle + statut courant.
@@ -186,7 +190,8 @@ Les groupes de routes utilisent le middleware `role:` de spatie/laravel-permissi
 ### Routes aviation civile (`role:aviation_civile|administrateur`)
 | Méthode | URI | Nom | Contrôleur |
 |---------|-----|-----|-----------|
-| GET | /aviation-civile | aviation_civile.index | AviationCivileController@index |
+| GET | /demandes/{demande}/manifeste | demandes.manifeste.telecharger | DemandeController@telechargerManifeste |
+| GET | /aviation-civile | aviation_civile.index | AviationCivileController@index (middleware `role:handling\|administrateur`) |
 
 ### Routes administration (`role:administrateur`)
 | Méthode | URI | Nom | Contrôleur |
@@ -262,12 +267,12 @@ Fichier unique exportant **toutes** les mappings couleur et libellé. Ne jamais 
 |------|--------|---------|
 | `TableauDeBord/Index.tsx` | ✅ | KPI, actions requises (par rôle), barres 7 jours, donuts statut & nature, demandes récentes |
 | `Demandes/Index.tsx` | ✅ | Table filtrable (statut, nature, compagnie, recherche), pagination, badges |
-| `Demandes/Creer.tsx` | ✅ | Wizard 5 étapes, `type_marchandise` = Select alimenté par `TypeMarchandise::cases()` |
-| `Demandes/Afficher.tsx` | ✅ | Détail + chronologie + commentaires + boutons workflow conditionnels |
+| `Demandes/Creer.tsx` | ✅ | Wizard **6 étapes** : Informations vol (compagnie/opérateur + type d'aéronef + N° landing permit en **texte libre**, nature avec **vol évacuation médicale**), Demandeur (+ contact), Planning, **Type de vol** (cargo `freighter` → tonnage/volume/marchandise/ULD ; sinon → **upload manifeste passager**), Équipements, Récapitulatif. Double bouton **brouillon / soumettre** (soumission directe via `form.transform`, `forceFormData` pour l'upload) |
+| `Demandes/Afficher.tsx` | ✅ | Détail (compagnie/opérateur, type d'aéronef, N° landing permit, demandeur/contact en texte libre, téléchargement manifeste) + chronologie + commentaires + boutons workflow conditionnels. L'autorisation ouvre un **dialog de saisie du code AC obligatoire** |
 | `Planning/Index.tsx` | ✅ | Calendrier hebdomadaire, navigation semaine |
 | `Capacites/Index.tsx` | ✅ | Jauges de stockage + état du parc équipements |
 | `Equipements/Index.tsx` | ✅ | Table filtrable (type, statut, recherche) |
-| `AviationCivile/Index.tsx` | ✅ | File d'attente à autoriser + autorisations récentes |
+| `AviationCivile/Index.tsx` | ✅ | File d'attente + autorisations récentes. Bouton « Autoriser » ouvre un **dialog de saisie du code AC obligatoire** (composant `BoutonAutoriser`). Accessible Handling + Admin |
 | `Rapports/Index.tsx` | ✅ | KPI enrichis (total, autorisées, rejetées, taux approbation, délai moyen), filtres avancés (dates, compagnie, statut), donut répartition par statut, courbe évolution temporelle, barres par compagnie, volumes |
 | `Notifications/Index.tsx` | ✅ | Liste paginée groupée par date, badges type, marquer lu / tout marquer lu |
 | `Administration/Utilisateurs/Index.tsx` | ✅ | Table users + rôles + recherche + liens vers toutes sections admin |
@@ -354,10 +359,24 @@ Type côté front : `resources/js/types/auth.ts` (`User` avec `compagnie_id`, `r
 
 ---
 
-## 10. Prochaine action recommandée
+## 10. Retour client du 22/06/2026 (implémenté)
+
+Modifications demandées par le client et livrées :
+- **Compagnie / Opérateur** : champ texte libre (`compagnie_libelle`) au lieu d'une liste déroulante.
+- **Type d'aéronef** : champ texte libre (`type_aeronef`) au lieu de la sélection d'un aéronef.
+- **N° de landing permit** : nouveau champ (`numero_landing_permit`).
+- **Demandeur + contact** : nouveaux champs obligatoires (`demandeur`, `contact_demandeur`), étape dédiée du wizard.
+- **Nature du vol** : ajout de **« Vol évacuation médicale »** (`NatureVol::VolEvacuationMedicale`).
+- **Étape « Cargo » → « Type de vol »** : si `freighter` → infos cargo ; sinon → **upload du manifeste passager** (téléchargeable via `GET /demandes/{demande}/manifeste`).
+- **Soumission directe** : double bouton « Enregistrer comme brouillon » / « Soumettre la demande » à la création.
+- **Aviation Civile** : l'AC ne se connecte pas. La validation est remplacée par la **saisie d'un code AC obligatoire** (stocké dans `reference_autorisation`, informatif, sans vérification). Saisie par le **Handling/Admin** (dialog sur `Afficher.tsx` et `AviationCivile/Index.tsx`). Page Aviation Civile désormais accessible Handling + Admin.
+- **Authentification** : inscription publique **désactivée** (`config/fortify.php` : `Features::registration()` retirée ; `Fortify::registerView` supprimée ; `resources/js/pages/auth/register.tsx` supprimé ; liens « S'inscrire »/« Register » retirés de `login.tsx` et `welcome.tsx`). Les comptes sont créés par l'admin via le module Administration. Pages d'auth **redessinées** (`layouts/auth-layout.tsx`) : panneau formulaire clair à gauche + carte sombre brandée à droite (stries lumineuses, carte vitrée, avatars), sans connexions externes. `RegistrationTest` adapté pour vérifier que les routes `register`/`register.store` sont absentes.
+
+Tests mis à jour : `DemandePolicyTest::test_handling_peut_autoriser_demande_approuvee_pas_aviation_civile`, `GestionnaireDemandeTest::test_autoriser_demande` (vérifie le code stocké). `php artisan test` (DemandePolicy + GestionnaireDemande) : **10 passed**. `npm run build` : OK.
+
+## 11. Prochaine action recommandée
 
 Options selon priorité :
-1. **Pièces jointes** — Upload réel de fichiers sur les demandes (stockage S3/local, preview, download).
-2. **Re-soumission** — Câbler le bouton re-soumettre depuis le statut `complement_demande` côté front.
-3. **Export rapports** — PDF/Excel pour les indicateurs et graphiques.
-4. **Phase 16 (qualité)** — compléter les tests PHPUnit + audit dark mode/responsive.
+1. **Re-soumission** — Câbler le bouton re-soumettre depuis le statut `complement_demande` côté front.
+2. **Export rapports** — PDF/Excel pour les indicateurs et graphiques.
+3. **Qualité** — compléter les tests PHPUnit (couvrir le flux création→soumission avec manifeste) + audit dark mode/responsive.

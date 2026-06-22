@@ -1,9 +1,14 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { ShieldCheck } from 'lucide-react';
+import { FormEventHandler, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface DemandeAC {
     id: number;
@@ -35,11 +40,71 @@ function formatDate(dateStr: string): string {
     }).format(new Date(dateStr));
 }
 
-export default function AviationCivileIndex({ aTraiter, autorisees, totalATraiter }: Props) {
-    function autoriser(id: number) {
-        router.post(`/demandes/${id}/autoriser`);
-    }
+function BoutonAutoriser({ demandeId }: { demandeId: number }) {
+    const [open, setOpen] = useState(false);
+    const { data, setData, post, processing, reset, errors } = useForm({ code_autorisation: '', commentaire: '' });
 
+    const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+        post(`/demandes/${demandeId}/autoriser`, {
+            onSuccess: () => {
+                setOpen(false);
+                reset();
+            },
+        });
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button className="shrink-0 bg-[#1B98E0] hover:bg-[#1580c0]">
+                    <ShieldCheck className="mr-1 size-4" />
+                    Autoriser
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <form onSubmit={submit}>
+                    <DialogHeader>
+                        <DialogTitle>Autorisation Aviation Civile</DialogTitle>
+                        <DialogDescription>
+                            Saisissez le code d&apos;autorisation fourni par l&apos;Aviation Civile. Obligatoire et conservé à titre informatif.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor={`code_${demandeId}`}>Code d&apos;autorisation</Label>
+                            <Input
+                                id={`code_${demandeId}`}
+                                value={data.code_autorisation}
+                                onChange={(e) => setData('code_autorisation', e.target.value)}
+                                placeholder="Ex: AC-2026-0457"
+                                required
+                            />
+                            {errors.code_autorisation && <p className="text-sm text-destructive">{errors.code_autorisation}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor={`comment_${demandeId}`}>Commentaire (optionnel)</Label>
+                            <Textarea
+                                id={`comment_${demandeId}`}
+                                value={data.commentaire}
+                                onChange={(e) => setData('commentaire', e.target.value)}
+                                placeholder="Remarque éventuelle..."
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+                        <Button type="submit" className="bg-[#1B98E0] hover:bg-[#1580c0]" disabled={processing}>
+                            Valider l&apos;autorisation
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export default function AviationCivileIndex({ aTraiter, autorisees, totalATraiter }: Props) {
     return (
         <AppLayout breadcrumbs={[{ title: 'Aviation Civile', href: '/aviation-civile' }]}>
             <Head title="Aviation Civile" />
@@ -82,13 +147,7 @@ export default function AviationCivileIndex({ aTraiter, autorisees, totalATraite
                                         {demande.tonnage_prevu && <span>• {demande.tonnage_prevu} t</span>}
                                     </div>
                                 </div>
-                                <Button
-                                    className="shrink-0 bg-[#1B98E0] hover:bg-[#1580c0]"
-                                    onClick={() => autoriser(demande.id)}
-                                >
-                                    <ShieldCheck className="mr-1 size-4" />
-                                    Autoriser
-                                </Button>
+                                <BoutonAutoriser demandeId={demande.id} />
                             </div>
                         ))}
                         {aTraiter.length === 0 && (
