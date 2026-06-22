@@ -40,7 +40,7 @@ type Props = {
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Tableau de bord',
         href: '/tableau-de-bord',
         icon: LayoutGrid,
     },
@@ -48,7 +48,7 @@ const mainNavItems: NavItem[] = [
 
 const rightNavItems: NavItem[] = [
     {
-        title: 'Repository',
+        title: 'Dépôt',
         href: 'https://github.com/laravel/react-starter-kit',
         icon: Folder,
     },

@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { STATUT_DEMANDE_COULEUR_HEX, NATURE_VOL_COULEURS_HEX } from '@/lib/couleurs';
 import {
     ArrowRight,
@@ -7,11 +7,17 @@ import {
     ClipboardList,
     Clock,
     ShieldCheck,
+    FilterX,
 } from 'lucide-react';
 import { GraphiqueBarres } from '@/components/charts/graphique-barres';
 import { GraphiqueDonut } from '@/components/charts/graphique-donut';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import AppLayout from '@/layouts/app-layout';
 
 interface Statistiques {
@@ -57,6 +63,16 @@ interface Props {
     demandesRecentes: DemandeRecente[];
     actionsRequises: { a_evaluer?: number; a_autoriser?: number };
     roles: string[];
+    filtresOptions: {
+        compagnies: { id: number; nom: string }[];
+        statuts: { value: string; label: string }[];
+    };
+    periode: {
+        debut: string;
+        fin: string;
+        compagnie_id?: string;
+        statut?: string;
+    };
 }
 
 
@@ -76,7 +92,16 @@ export default function TableauDeBordIndex({
     demandesParJour,
     demandesRecentes,
     actionsRequises,
+    filtresOptions,
+    periode,
 }: Props) {
+    function changerPeriode(key: keyof Props['periode'], value: string) {
+        router.get('/tableau-de-bord', { ...periode, [key]: value }, { preserveState: true, replace: true });
+    }
+
+    function reinitialiserFiltres() {
+        router.get('/tableau-de-bord', {}, { preserveState: true, replace: true });
+    }
     const segmentsStatuts = repartitionStatuts.map((s) => ({
         libelle: s.libelle,
         total: s.total,
@@ -129,6 +154,77 @@ export default function TableauDeBordIndex({
             <Head title="Tableau de bord" />
 
             <div className="flex flex-col gap-6 p-4 md:p-6">
+                {/* En-tête avec filtres */}
+                <div className="flex flex-col gap-4 border-b pb-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold">Tableau de bord</h1>
+                        <p className="text-sm text-muted-foreground">Vue d'ensemble de l'activité sur la période sélectionnée.</p>
+                    </div>
+                    <div className="flex flex-wrap items-end gap-3">
+                        <div className="space-y-1">
+                            <Label htmlFor="debut" className="text-xs">Du</Label>
+                            <DatePicker
+                                value={periode.debut}
+                                onChange={(val) => changerPeriode('debut', val)}
+                                className="w-[140px]"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="fin" className="text-xs">Au</Label>
+                            <DatePicker
+                                value={periode.fin}
+                                onChange={(val) => changerPeriode('fin', val)}
+                                className="w-[140px]"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs">Compagnie</Label>
+                            <Select 
+                                value={periode.compagnie_id?.toString() || "all"} 
+                                onValueChange={(val) => changerPeriode('compagnie_id', val === "all" ? '' : val)}
+                            >
+                                <SelectTrigger className="w-[160px] h-9">
+                                    <SelectValue placeholder="Toutes" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Toutes</SelectItem>
+                                    {filtresOptions.compagnies.map(c => (
+                                        <SelectItem key={c.id} value={c.id.toString()}>{c.nom}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs">Statut</Label>
+                            <Select 
+                                value={periode.statut || "all"} 
+                                onValueChange={(val) => changerPeriode('statut', val === "all" ? '' : val)}
+                            >
+                                <SelectTrigger className="w-[160px] h-9">
+                                    <SelectValue placeholder="Tous" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Tous</SelectItem>
+                                    {filtresOptions.statuts.map(s => (
+                                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {(periode.compagnie_id || periode.statut || periode.debut || periode.fin) && (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-9 mb-[1px] text-muted-foreground hover:text-destructive"
+                                onClick={reinitialiserFiltres}
+                            >
+                                <FilterX className="mr-2 size-4" />
+                                Réinitialiser
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
                 {/* Actions requises */}
                 {aDesActions && (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -198,7 +294,7 @@ export default function TableauDeBordIndex({
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                     <Card className="lg:col-span-3">
                         <CardHeader>
-                            <CardTitle>Demandes des 7 derniers jours</CardTitle>
+                            <CardTitle>Demandes sur la période</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <GraphiqueBarres

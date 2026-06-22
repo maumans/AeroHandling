@@ -4,6 +4,17 @@ import AppLayout from '@/layouts/app-layout';
 import AdminTabs from '@/components/admin-tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Aeronef {
     id: number;
@@ -28,10 +39,7 @@ interface Props {
 }
 
 export default function AdministrationAeronefsIndex({ aeronefs }: Props) {
-    function supprimer(id: number, code: string) {
-        if (!confirm(`Supprimer l'aéronef ${code} ?`)) return;
-        router.delete(`/administration/aeronefs/${id}`);
-    }
+    // La suppression est gérée directement dans le composant AlertDialog
 
     return (
         <AppLayout breadcrumbs={[
@@ -89,14 +97,35 @@ export default function AdministrationAeronefsIndex({ aeronefs }: Props) {
                                                         </Link>
                                                     </Button>
                                                     {a.demandes_count === 0 && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="text-destructive hover:text-destructive"
-                                                            onClick={() => supprimer(a.id, a.code)}
-                                                        >
-                                                            <Trash2 className="size-4" />
-                                                        </Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="text-destructive hover:text-destructive"
+                                                                    title="Supprimer"
+                                                                >
+                                                                    <Trash2 className="size-4" />
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Supprimer l'aéronef</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        Voulez-vous vraiment supprimer l'aéronef <strong>{a.code}</strong> ? Cette action est irréversible.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                                    <AlertDialogAction 
+                                                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                        onClick={() => router.delete(`/administration/aeronefs/${a.id}`)}
+                                                                    >
+                                                                        Supprimer
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
                                                     )}
                                                 </div>
                                             </td>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\NatureVol;
 use App\Enums\StatutDemande;
+use App\Models\Compagnie;
 use App\Models\Demande;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -17,8 +18,30 @@ class TableauDeBordController extends Controller
         $user = $request->user();
         $roles = $user->getRoleNames()->toArray();
 
-        $baseQuery = fn () => Demande::query()
-            ->when($user->hasRole('compagnie'), fn ($q) => $q->where('utilisateur_id', $user->id));
+        $debut = $request->date('debut')
+            ? Carbon::parse($request->date('debut'))->startOfDay()
+            : Carbon::now()->subDays(6)->startOfDay();
+
+        $fin = $request->date('fin')
+            ? Carbon::parse($request->date('fin'))->endOfDay()
+            : Carbon::now()->endOfDay();
+
+        $compagnieId = $request->input('compagnie_id');
+        $statut = $request->input('statut');
+
+        $query = Demande::query()
+            ->when($user->hasRole('compagnie'), fn ($q) => $q->where('utilisateur_id', $user->id))
+            ->whereBetween('created_at', [$debut, $fin]);
+
+        if ($compagnieId) {
+            $query->where('compagnie_id', $compagnieId);
+        }
+
+        if ($statut) {
+            $query->where('statut', $statut);
+        }
+
+        $baseQuery = fn () => clone $query;
 
         $statistiques = [
             'total_demandes' => $baseQuery()->count(),
@@ -27,10 +50,10 @@ class TableauDeBordController extends Controller
             'demandes_autorisees' => $baseQuery()->where('statut', StatutDemande::Autorisee)->count(),
         ];
 
-        $repartitionStatuts = collect(StatutDemande::cases())->map(fn (StatutDemande $statut) => [
-            'statut' => $statut->value,
-            'libelle' => $statut->libelle(),
-            'total' => $baseQuery()->where('statut', $statut)->count(),
+        $repartitionStatuts = collect(StatutDemande::cases())->map(fn (StatutDemande $s) => [
+            'statut' => $s->value,
+            'libelle' => $s->libelle(),
+            'total' => $baseQuery()->where('statut', $s)->count(),
         ])->values();
 
         $repartitionNatures = collect(NatureVol::cases())->map(fn (NatureVol $nature) => [
@@ -39,8 +62,10 @@ class TableauDeBordController extends Controller
             'total' => $baseQuery()->where('nature_vol', $nature)->count(),
         ])->values();
 
-        $demandesParJour = collect(range(6, 0))->map(function (int $offset) use ($baseQuery) {
-            $jour = Carbon::today()->subDays($offset);
+        // Calculate days between debut and fin (up to 30 to avoid huge arrays, or just return all)
+        $diffInDays = $debut->diffInDays($fin);
+        $demandesParJour = collect(range($diffInDays, 0))->map(function (int $offset) use ($fin, $baseQuery) {
+            $jour = (clone $fin)->subDays($offset);
 
             return [
                 'date' => $jour->translatedFormat('D'),
@@ -57,6 +82,12 @@ class TableauDeBordController extends Controller
 
         $actionsRequises = $this->actionsRequises($roles);
 
+        $compagniesList = Compagnie::orderBy('nom')->get(['id', 'nom']);
+        $statutsList = collect(StatutDemande::cases())->map(fn ($s) => [
+            'value' => $s->value,
+            'label' => $s->libelle(),
+        ]);
+
         return Inertia::render('TableauDeBord/Index', [
             'statistiques' => $statistiques,
             'repartitionStatuts' => $repartitionStatuts,
@@ -65,6 +96,16 @@ class TableauDeBordController extends Controller
             'demandesRecentes' => $demandesRecentes,
             'actionsRequises' => $actionsRequises,
             'roles' => $roles,
+            'filtresOptions' => [
+                'compagnies' => $compagniesList,
+                'statuts' => $statutsList,
+            ],
+            'periode' => [
+                'debut' => $debut->format('Y-m-d'),
+                'fin' => $fin->format('Y-m-d'),
+                'compagnie_id' => $compagnieId,
+                'statut' => $statut,
+            ],
         ]);
     }
 

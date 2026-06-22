@@ -1,6 +1,5 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -18,15 +17,15 @@ export default function Profile() {
 
     return (
         <>
-            <Head title="Profile settings" />
+            <Head title="Paramètres du profil" />
 
-            <h1 className="sr-only">Profile settings</h1>
+            <h1 className="sr-only">Paramètres du profil</h1>
 
             <div className="space-y-6">
                 <Heading
                     variant="small"
-                    title="Profile"
-                    description="Update your name and email address"
+                    title="Profil"
+                    description="Mettez à jour votre nom et votre adresse e-mail"
                 />
 
                 <Form
@@ -39,7 +38,7 @@ export default function Profile() {
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                                <Label htmlFor="name">Nom</Label>
 
                                 <Input
                                     id="name"
@@ -48,7 +47,7 @@ export default function Profile() {
                                     name="name"
                                     required
                                     autoComplete="name"
-                                    placeholder="Full name"
+                                    placeholder="Nom complet"
                                 />
 
                                 <InputError
@@ -58,7 +57,7 @@ export default function Profile() {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="email">Adresse e-mail</Label>
 
                                 <Input
                                     id="email"
@@ -68,7 +67,7 @@ export default function Profile() {
                                     name="email"
                                     required
                                     autoComplete="username"
-                                    placeholder="Email address"
+                                    placeholder="Adresse e-mail"
                                 />
 
                                 <InputError
@@ -82,15 +81,13 @@ export default function Profile() {
                                     disabled={processing}
                                     data-test="update-profile-button"
                                 >
-                                    Save
+                                    Enregistrer
                                 </Button>
                             </div>
                         </>
                     )}
                 </Form>
             </div>
-
-            <DeleteUser />
         </>
     );
 }
@@ -98,7 +95,7 @@ export default function Profile() {
 Profile.layout = {
     breadcrumbs: [
         {
-            title: 'Profile settings',
+            title: 'Paramètres du profil',
             href: edit(),
         },
     ],

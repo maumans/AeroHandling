@@ -25,7 +25,7 @@ class AffectationController extends Controller
         // Vérifier qu'au moins l'un des deux (équipement ou agent) est sélectionné
         if (empty($validated['equipement_id']) && empty($validated['utilisateur_affectation_id'])) {
             return back()->withErrors([
-                'affectation' => 'Vous devez sélectionner un équipement ou un agent.'
+                'affectation' => 'Vous devez sélectionner un équipement ou un agent.',
             ]);
         }
 

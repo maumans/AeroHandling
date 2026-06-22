@@ -1,73 +1,63 @@
 import { Head, router } from '@inertiajs/react';
 import {
-    Boxes,
-    CheckCircle2,
-    Clock,
-    Package,
-    TrendingUp,
-    XCircle,
-    FilterX,
     FileText,
     FileSpreadsheet,
+    FilterX,
+    ClipboardList,
+    TrendingUp,
+    CheckCircle2,
+    Clock,
+    XCircle,
 } from 'lucide-react';
-import { GraphiqueBarres } from '@/components/charts/graphique-barres';
-import { GraphiqueDonut } from '@/components/charts/graphique-donut';
-import { GraphiqueLigne } from '@/components/charts/graphique-ligne';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { DatePicker } from '@/components/ui/date-picker';
 import AppLayout from '@/layouts/app-layout';
 
-interface Indicateurs {
-    total: number;
-    autorisees: number;
-    rejetees: number;
-    taux_approbation: number;
-    delai_moyen_heures: number;
-}
-
-interface CompagnieStat {
-    nom: string;
-    total: number;
-}
-
-interface SegmentDonut {
-    libelle: string;
-    total: number;
-    couleur: string;
-}
-
-interface LigneDonnee {
-    date: string;
-    total: number;
-}
-
-interface FiltresOptions {
-    compagnies: { id: number; nom: string }[];
-    statuts: { value: string; label: string }[];
-}
-
-interface Periode {
-    debut: string;
-    fin: string;
-    compagnie_id?: string;
-    statut?: string;
-}
-
 interface Props {
-    indicateurs: Indicateurs;
-    parCompagnie: CompagnieStat[];
-    parTonnage: { tonnage_total: number; volume_total: number; uld_total: number };
-    demandesParStatut: SegmentDonut[];
-    evolutionTemporelle: LigneDonnee[];
-    filtresOptions: FiltresOptions;
-    periode: Periode;
+    indicateurs: {
+        total: number;
+        autorisees: number;
+        rejetees: number;
+        taux_approbation: number;
+        delai_moyen_heures: number;
+    };
+    parCompagnie: { nom: string; total: number }[];
+    parTonnage: {
+        tonnage_total: number;
+        volume_total: number;
+        uld_total: number;
+    };
+    registre: {
+        data: any[];
+        links: any[];
+    };
+    filtresOptions: {
+        compagnies: { id: number; nom: string }[];
+        statuts: { value: string; label: string }[];
+    };
+    periode: {
+        debut: string;
+        fin: string;
+        compagnie_id?: string;
+        statut?: string;
+    };
 }
 
-export default function RapportsIndex({ indicateurs, parCompagnie, parTonnage, demandesParStatut, evolutionTemporelle, filtresOptions, periode }: Props) {
-    function changerPeriode(key: keyof Periode, value: string) {
+export default function RapportsIndex({
+    indicateurs,
+    parCompagnie,
+    parTonnage,
+    registre,
+    filtresOptions,
+    periode,
+}: Props) {
+    function changerPeriode(key: keyof Props['periode'], value: string) {
         router.get('/rapports', { ...periode, [key]: value }, { preserveState: true, replace: true });
     }
 
@@ -75,48 +65,71 @@ export default function RapportsIndex({ indicateurs, parCompagnie, parTonnage, d
         router.get('/rapports', {}, { preserveState: true, replace: true });
     }
 
-    const kpis = [
-        { titre: 'Total demandes', valeur: indicateurs.total, icone: TrendingUp, couleur: 'text-[#0B2545]', bg: 'bg-[#0B2545]/10' },
-        { titre: 'Autorisées', valeur: indicateurs.autorisees, icone: CheckCircle2, couleur: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
-        { titre: 'Rejetées', valeur: indicateurs.rejetees, icone: XCircle, couleur: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20' },
-        { titre: "Taux d'approbation", valeur: `${indicateurs.taux_approbation}%`, icone: CheckCircle2, couleur: 'text-[#1B98E0]', bg: 'bg-[#1B98E0]/10' },
-        { titre: 'Délai moyen', valeur: `${indicateurs.delai_moyen_heures} h`, icone: Clock, couleur: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-    ];
+    function exporter(format: 'pdf' | 'excel') {
+        const url = new URL(window.location.origin + '/rapports/export');
+        if (periode.debut) url.searchParams.append('debut', periode.debut);
+        if (periode.fin) url.searchParams.append('fin', periode.fin);
+        if (periode.compagnie_id) url.searchParams.append('compagnie_id', periode.compagnie_id);
+        if (periode.statut) url.searchParams.append('statut', periode.statut);
+        url.searchParams.append('format', format);
 
-    const volumes = [
-        { titre: 'Tonnage total', valeur: `${parTonnage.tonnage_total} t`, icone: Package },
-        { titre: 'Volume total', valeur: `${parTonnage.volume_total} m³`, icone: Boxes },
-        { titre: 'ULD total', valeur: parTonnage.uld_total, icone: Boxes },
-    ];
+        window.location.href = url.toString();
+    }
+
+    const couleurStatut = (statut: string) => {
+        switch(statut) {
+            case 'brouillon': return 'bg-slate-100 text-slate-800';
+            case 'soumise': return 'bg-blue-100 text-blue-800';
+            case 'en_evaluation': return 'bg-amber-100 text-amber-800';
+            case 'approuvee_handling': return 'bg-emerald-100 text-emerald-800';
+            case 'en_attente_aviation_civile': return 'bg-violet-100 text-violet-800';
+            case 'autorisee': return 'bg-green-100 text-green-800';
+            case 'rejetee': return 'bg-red-100 text-red-800';
+            case 'complement_demande': return 'bg-orange-100 text-orange-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Rapports', href: '/rapports' }]}>
-            <Head title="Rapports" />
+        <AppLayout>
+            <Head title="Centre de Rapports" />
+
             <div className="flex flex-col gap-6 p-4 md:p-6">
-                <div className="flex flex-col gap-4 border-b pb-4 md:flex-row md:items-end md:justify-between">
+                {/* En-tête avec boutons d'export */}
+                <div className="flex flex-col gap-4 border-b pb-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold">Rapports &amp; Statistiques</h1>
-                        <p className="text-sm text-muted-foreground">Consultez les indicateurs clés et l'évolution des opérations.</p>
+                        <h1 className="text-2xl font-bold">Centre de Rapports</h1>
+                        <p className="text-sm text-muted-foreground">Consultez et générez les documents officiels.</p>
                     </div>
-                    <div className="flex flex-wrap items-end gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Button onClick={() => exporter('pdf')} variant="outline" className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800">
+                            <FileText className="mr-2 size-4" />
+                            Générer PDF
+                        </Button>
+                        <Button onClick={() => exporter('excel')} variant="outline" className="border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
+                            <FileSpreadsheet className="mr-2 size-4" />
+                            Générer Excel
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Filtres */}
+                <Card className="bg-muted/30">
+                    <CardContent className="p-4 flex flex-wrap items-end gap-4">
                         <div className="space-y-1">
                             <Label htmlFor="debut" className="text-xs">Du</Label>
-                            <Input
-                                id="debut"
-                                type="date"
+                            <DatePicker
                                 value={periode.debut}
-                                onChange={(e) => changerPeriode('debut', e.target.value)}
-                                className="w-[140px] h-9"
+                                onChange={(val) => changerPeriode('debut', val)}
+                                className="w-[140px]"
                             />
                         </div>
                         <div className="space-y-1">
                             <Label htmlFor="fin" className="text-xs">Au</Label>
-                            <Input
-                                id="fin"
-                                type="date"
+                            <DatePicker
                                 value={periode.fin}
-                                onChange={(e) => changerPeriode('fin', e.target.value)}
-                                className="w-[140px] h-9"
+                                onChange={(val) => changerPeriode('fin', val)}
+                                className="w-[140px]"
                             />
                         </div>
                         <div className="space-y-1">
@@ -125,7 +138,7 @@ export default function RapportsIndex({ indicateurs, parCompagnie, parTonnage, d
                                 value={periode.compagnie_id?.toString() || "all"} 
                                 onValueChange={(val) => changerPeriode('compagnie_id', val === "all" ? '' : val)}
                             >
-                                <SelectTrigger className="w-[180px] h-9">
+                                <SelectTrigger className="w-[180px] h-9 bg-background">
                                     <SelectValue placeholder="Toutes" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -142,7 +155,7 @@ export default function RapportsIndex({ indicateurs, parCompagnie, parTonnage, d
                                 value={periode.statut || "all"} 
                                 onValueChange={(val) => changerPeriode('statut', val === "all" ? '' : val)}
                             >
-                                <SelectTrigger className="w-[180px] h-9">
+                                <SelectTrigger className="w-[180px] h-9 bg-background">
                                     <SelectValue placeholder="Tous" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -164,122 +177,177 @@ export default function RapportsIndex({ indicateurs, parCompagnie, parTonnage, d
                                 Réinitialiser
                             </Button>
                         )}
-                        <div className="flex gap-2 mb-[1px]">
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-9"
-                                asChild
-                            >
-                                <a href={`/rapports/export?format=pdf&debut=${periode.debut}&fin=${periode.fin}&compagnie_id=${periode.compagnie_id || ''}&statut=${periode.statut || ''}`} target="_blank" rel="noreferrer">
-                                    <FileText className="mr-2 size-4" />
-                                    PDF
-                                </a>
-                            </Button>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-9"
-                                asChild
-                            >
-                                <a href={`/rapports/export?format=excel&debut=${periode.debut}&fin=${periode.fin}&compagnie_id=${periode.compagnie_id || ''}&statut=${periode.statut || ''}`}>
-                                    <FileSpreadsheet className="mr-2 size-4" />
-                                    Excel
-                                </a>
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
 
-                {/* Indicateurs */}
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-                    {kpis.map((kpi) => (
-                        <Card key={kpi.titre}>
-                            <CardContent className="flex flex-col gap-2 p-4">
-                                <div className={`flex size-10 items-center justify-center rounded-lg ${kpi.bg}`}>
-                                    <kpi.icone className={`size-5 ${kpi.couleur}`} />
-                                </div>
-                                <div>
-                                    <p className="truncate text-xs text-muted-foreground">{kpi.titre}</p>
-                                    <p className="text-xl font-bold tabular-nums">{kpi.valeur}</p>
+                {/* Rubriques (Onglets) */}
+                <Tabs defaultValue="registre" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted">
+                        <TabsTrigger value="registre">Registre des opérations</TabsTrigger>
+                        <TabsTrigger value="tonnage">Facturation & Volumes</TabsTrigger>
+                        <TabsTrigger value="performances">Performances & Délais</TabsTrigger>
+                    </TabsList>
+                    
+                    {/* RUBRIQUE: REGISTRE */}
+                    <TabsContent value="registre" className="space-y-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Registre des demandes</CardTitle>
+                                <CardDescription>Liste tabulaire des demandes pour la période sélectionnée.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="rounded-md border overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-muted text-muted-foreground uppercase text-xs">
+                                            <tr>
+                                                <th className="px-4 py-3 font-medium">Référence</th>
+                                                <th className="px-4 py-3 font-medium">Date du vol</th>
+                                                <th className="px-4 py-3 font-medium">Compagnie</th>
+                                                <th className="px-4 py-3 font-medium">Aéronef</th>
+                                                <th className="px-4 py-3 font-medium">Statut</th>
+                                                <th className="px-4 py-3 font-medium text-right">Tonnage</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {registre.data.length > 0 ? (
+                                                registre.data.map((demande) => (
+                                                    <tr key={demande.id} className="hover:bg-muted/50">
+                                                        <td className="px-4 py-3 font-medium">{demande.reference}</td>
+                                                        <td className="px-4 py-3">{new Date(demande.date_heure_vol).toLocaleDateString()}</td>
+                                                        <td className="px-4 py-3">{demande.compagnie?.nom || '-'}</td>
+                                                        <td className="px-4 py-3">{demande.aeronef?.immatriculation || demande.aeronef_type || '-'}</td>
+                                                        <td className="px-4 py-3">
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${couleurStatut(demande.statut)}`}>
+                                                                {filtresOptions.statuts.find(s => s.value === demande.statut)?.label || demande.statut}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">{demande.tonnage_prevu || 0} T</td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                                                        Aucune donnée trouvée pour cette période.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </CardContent>
                         </Card>
-                    ))}
-                </div>
+                    </TabsContent>
 
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-                    {/* Évolution temporelle */}
-                    <Card className="lg:col-span-3">
-                        <CardHeader>
-                            <CardTitle>Évolution des demandes</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {evolutionTemporelle.length > 0 ? (
-                                <GraphiqueLigne donnees={evolutionTemporelle} couleur="#1B98E0" />
-                            ) : (
-                                <p className="py-8 text-center text-sm text-muted-foreground">Aucune donnée sur cette période.</p>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Répartition par statut */}
-                    <Card className="lg:col-span-2">
-                        <CardHeader>
-                            <CardTitle>Répartition par statut</CardTitle>
-                        </CardHeader>
-                        <CardContent className="py-4">
-                            {demandesParStatut.length > 0 ? (
-                                <GraphiqueDonut segments={demandesParStatut} taille={140} epaisseur={20} />
-                            ) : (
-                                <p className="py-8 text-center text-sm text-muted-foreground">Aucune donnée.</p>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Par compagnie */}
-                    <Card className="lg:col-span-3">
-                        <CardHeader>
-                            <CardTitle>Demandes par compagnie</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {parCompagnie.length > 0 ? (
-                                <GraphiqueBarres
-                                    donnees={parCompagnie.map((c) => ({
-                                        label: c.nom.length > 8 ? `${c.nom.slice(0, 8)}…` : c.nom,
-                                        total: c.total,
-                                    }))}
-                                    couleur="#0B2545"
-                                />
-                            ) : (
-                                <p className="py-8 text-center text-sm text-muted-foreground">
-                                    Aucune donnée sur cette période.
-                                </p>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Volumes */}
-                    <Card className="lg:col-span-2">
-                        <CardHeader>
-                            <CardTitle>Volumes traités</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            {volumes.map((v) => (
-                                <div
-                                    key={v.titre}
-                                    className="flex items-center justify-between rounded-lg border p-3"
-                                >
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <v.icone className="size-4" />
-                                        {v.titre}
-                                    </div>
-                                    <span className="font-bold tabular-nums">{v.valeur}</span>
+                    {/* RUBRIQUE: TONNAGE & VOLUMES */}
+                    <TabsContent value="tonnage" className="space-y-6">
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Tonnage Total</CardTitle>
+                                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{parTonnage.tonnage_total} T</div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Volume Total</CardTitle>
+                                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{parTonnage.volume_total} m³</div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Total ULD</CardTitle>
+                                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{parTonnage.uld_total}</div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Répartition par compagnie</CardTitle>
+                                <CardDescription>Volumes traités selon le nombre de demandes.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="rounded-md border overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-muted text-muted-foreground uppercase text-xs">
+                                            <tr>
+                                                <th className="px-4 py-3 font-medium">Compagnie aérienne</th>
+                                                <th className="px-4 py-3 font-medium text-right">Nombre de demandes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {parCompagnie.length > 0 ? (
+                                                parCompagnie.map((compagnie, index) => (
+                                                    <tr key={index} className="hover:bg-muted/50">
+                                                        <td className="px-4 py-3 font-medium">{compagnie.nom}</td>
+                                                        <td className="px-4 py-3 text-right">{compagnie.total}</td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={2} className="px-4 py-8 text-center text-muted-foreground">
+                                                        Aucune donnée trouvée.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            ))}
-                        </CardContent>
-                    </Card>
-                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* RUBRIQUE: PERFORMANCES */}
+                    <TabsContent value="performances" className="space-y-6">
+                        <div className="grid gap-4 md:grid-cols-4">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Demandes totales</CardTitle>
+                                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{indicateurs.total}</div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Autorisées</CardTitle>
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-emerald-600">{indicateurs.autorisees}</div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Taux d'approbation</CardTitle>
+                                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{indicateurs.taux_approbation}%</div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Délai moyen</CardTitle>
+                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{indicateurs.delai_moyen_heures}h</div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </TabsContent>
+
+                </Tabs>
             </div>
         </AppLayout>
     );

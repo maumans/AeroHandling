@@ -2,12 +2,12 @@
 
 namespace App\Exports;
 
-use App\Models\Demande;
-use App\Enums\StatutDemande;
 use App\Enums\NatureVol;
+use App\Enums\StatutDemande;
+use App\Models\Demande;
 use Illuminate\Support\Carbon;
-use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
@@ -59,12 +59,12 @@ class RapportExport implements FromQuery, WithHeadings, WithMapping
 
     public function map($demande): array
     {
-        $nature = $demande->nature_vol instanceof NatureVol 
-            ? $demande->nature_vol->libelle() 
+        $nature = $demande->nature_vol instanceof NatureVol
+            ? $demande->nature_vol->libelle()
             : (is_string($demande->nature_vol) ? NatureVol::tryFrom($demande->nature_vol)?->libelle() ?? $demande->nature_vol : '');
-            
-        $statut = $demande->statut instanceof StatutDemande 
-            ? $demande->statut->libelle() 
+
+        $statut = $demande->statut instanceof StatutDemande
+            ? $demande->statut->libelle()
             : (is_string($demande->statut) ? StatutDemande::tryFrom($demande->statut)?->libelle() ?? $demande->statut : '');
 
         return [

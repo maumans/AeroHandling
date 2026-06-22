@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Enums\StatutDemande;
+use App\Exports\RapportExport;
 use App\Models\Compagnie;
 use App\Models\Demande;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -26,11 +28,11 @@ class RapportController extends Controller
         $statut = $request->input('statut');
 
         $query = Demande::query()->whereBetween('created_at', [$debut, $fin]);
-        
+
         if ($compagnieId) {
             $query->where('compagnie_id', $compagnieId);
         }
-        
+
         if ($statut) {
             $query->where('statut', $statut);
         }
@@ -67,44 +69,11 @@ class RapportController extends Controller
             'uld_total' => (int) $periode()->sum('nombre_uld'),
         ];
 
-        $chartColors = [
-            StatutDemande::Brouillon->value => '#94a3b8', // slate-400
-            StatutDemande::Soumise->value => '#60a5fa', // blue-400
-            StatutDemande::EnEvaluation->value => '#f59e0b', // amber-500
-            StatutDemande::ApprouveeHandling->value => '#34d399', // emerald-400
-            StatutDemande::EnAttenteAviationCivile->value => '#8b5cf6', // violet-500
-            StatutDemande::Autorisee->value => '#10b981', // emerald-500
-            StatutDemande::Rejetee->value => '#ef4444', // red-500
-            StatutDemande::ComplementDemande->value => '#f97316', // orange-500
-        ];
-
-        $demandesParStatut = $periode()
-            ->selectRaw('statut, count(*) as total')
-            ->groupBy('statut')
-            ->get()
-            ->map(function ($item) use ($chartColors) {
-                $enumStatut = $item->statut instanceof StatutDemande 
-                    ? $item->statut 
-                    : StatutDemande::tryFrom($item->statut);
-                    
-                $statutValue = $enumStatut ? $enumStatut->value : (is_scalar($item->statut) ? (string) $item->statut : '');
-                    
-                return [
-                    'libelle' => $enumStatut ? $enumStatut->libelle() : ($statutValue ?: 'Inconnu'),
-                    'total' => $item->total,
-                    'couleur' => $chartColors[$statutValue] ?? '#cbd5e1',
-                ];
-            });
-
-        $evolutionTemporelle = $periode()
-            ->selectRaw('DATE(created_at) as date, count(*) as total')
-            ->groupByRaw('DATE(created_at)')
-            ->orderBy('date')
-            ->get()
-            ->map(fn ($item) => [
-                'date' => Carbon::parse($item->date)->format('d/m'),
-                'total' => $item->total,
-            ]);
+        $registre = $periode()
+            ->with(['compagnie', 'aeronef'])
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
 
         $compagniesList = Compagnie::orderBy('nom')->get(['id', 'nom']);
         $statutsList = collect(StatutDemande::cases())->map(fn ($s) => [
@@ -116,8 +85,7 @@ class RapportController extends Controller
             'indicateurs' => $indicateurs,
             'parCompagnie' => $parCompagnie,
             'parTonnage' => $parTonnage,
-            'demandesParStatut' => $demandesParStatut,
-            'evolutionTemporelle' => $evolutionTemporelle,
+            'registre' => $registre,
             'filtresOptions' => [
                 'compagnies' => $compagniesList,
                 'statuts' => $statutsList,
@@ -146,11 +114,11 @@ class RapportController extends Controller
 
         if ($request->input('format') === 'pdf') {
             $query = Demande::query()->whereBetween('created_at', [$debut, $fin]);
-            
+
             if ($compagnieId) {
                 $query->where('compagnie_id', $compagnieId);
             }
-            
+
             if ($statut) {
                 $query->where('statut', $statut);
             }
@@ -187,12 +155,13 @@ class RapportController extends Controller
                 'uld_total' => (int) $periode()->sum('nombre_uld'),
             ];
 
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.rapport', compact('debut', 'fin', 'indicateurs', 'parCompagnie', 'parTonnage'));
-            return $pdf->download('rapport_aerohandling_' . now()->format('Ymd') . '.pdf');
+            $pdf = Pdf::loadView('exports.rapport', compact('debut', 'fin', 'indicateurs', 'parCompagnie', 'parTonnage'));
+
+            return $pdf->download('rapport_aerohandling_'.now()->format('Ymd').'.pdf');
         }
 
-        return (new \App\Exports\RapportExport($debut, $fin, $compagnieId, $statut))
-            ->download('rapport_aerohandling_' . now()->format('Ymd') . '.xlsx');
+        return (new RapportExport($debut, $fin, $compagnieId, $statut))
+            ->download('rapport_aerohandling_'.now()->format('Ymd').'.xlsx');
     }
 
     private function delaiMoyenTraitement($query): float

@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Building2, Pencil, Plane, Plus, Search, Wrench } from 'lucide-react';
+import { Ban, CheckCircle, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import AdminTabs from '@/components/admin-tabs';
@@ -8,6 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ROLE_BADGE, ROLE_LIBELLE } from '@/lib/couleurs';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Utilisateur {
     id: number;
@@ -15,6 +26,7 @@ interface Utilisateur {
     email: string;
     compagnie: string | null;
     roles: string[];
+    actif: boolean;
     created_at: string | null;
 }
 
@@ -87,6 +99,7 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, filtres 
                                         <th className="px-4 py-3 text-left font-medium">Email</th>
                                         <th className="px-4 py-3 text-left font-medium">Compagnie</th>
                                         <th className="px-4 py-3 text-left font-medium">Rôles</th>
+                                        <th className="px-4 py-3 text-left font-medium">Statut</th>
                                         <th className="px-4 py-3 text-right font-medium">Actions</th>
                                     </tr>
                                 </thead>
@@ -112,12 +125,77 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, filtres 
                                                     )}
                                                 </div>
                                             </td>
+                                            <td className="px-4 py-3">
+                                                <Badge variant={u.actif ? 'default' : 'destructive'} className={u.actif ? 'bg-emerald-500 hover:bg-emerald-600' : ''}>
+                                                    {u.actif ? 'Actif' : 'Suspendu'}
+                                                </Badge>
+                                            </td>
                                             <td className="px-4 py-3 text-right">
-                                                <Button variant="ghost" size="sm" asChild>
-                                                    <Link href={`/administration/utilisateurs/${u.id}/editer`}>
-                                                        <Pencil className="size-4" />
-                                                    </Link>
-                                                </Button>
+                                                <div className="flex justify-end gap-1">
+                                                    <Button variant="ghost" size="icon" asChild title="Éditer">
+                                                        <Link href={`/administration/utilisateurs/${u.id}/editer`}>
+                                                            <Pencil className="size-4" />
+                                                        </Link>
+                                                    </Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                title={u.actif ? 'Suspendre' : 'Activer'}
+                                                            >
+                                                                {u.actif ? <Ban className="size-4 text-amber-500" /> : <CheckCircle className="size-4 text-emerald-500" />}
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>{u.actif ? 'Suspendre le compte' : 'Activer le compte'}</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Voulez-vous vraiment {u.actif ? 'suspendre' : 'activer'} le compte de <strong>{u.name}</strong> ?
+                                                                    {u.actif && " Il ne pourra plus se connecter à l'application."}
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    className={u.actif ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-500 hover:bg-emerald-600'}
+                                                                    onClick={() => router.patch(`/administration/utilisateurs/${u.id}/statut`)}
+                                                                >
+                                                                    Confirmer
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                    
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                title="Supprimer"
+                                                            >
+                                                                <Trash2 className="size-4 text-destructive" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Supprimer le compte</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Voulez-vous vraiment supprimer cet utilisateur ? Cette action placera le compte dans la corbeille.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                                <AlertDialogAction 
+                                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                    onClick={() => router.delete(`/administration/utilisateurs/${u.id}`)}
+                                                                >
+                                                                    Supprimer
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

@@ -53,6 +53,7 @@ class AdministrationController extends Controller
                 'email' => $u->email,
                 'compagnie' => $u->compagnie?->nom,
                 'roles' => $u->roles->pluck('name')->toArray(),
+                'actif' => $u->actif,
                 'created_at' => $u->created_at?->toIso8601String(),
             ]);
 
@@ -128,6 +129,39 @@ class AdministrationController extends Controller
 
         return redirect()->route('administration.utilisateurs.index')
             ->with('success', "Utilisateur {$user->name} mis à jour.");
+    }
+
+    public function toggleStatutUtilisateur(Request $request, int $utilisateur): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $user = User::findOrFail($utilisateur);
+
+        if ($user->id === $request->user()->id) {
+            return back()->with('error', 'Vous ne pouvez pas suspendre votre propre compte.');
+        }
+
+        $user->actif = ! $user->actif;
+        $user->save();
+
+        $statut = $user->actif ? 'réactivé' : 'suspendu';
+
+        return back()->with('success', "Le compte de {$user->name} a été {$statut}.");
+    }
+
+    public function supprimerUtilisateur(Request $request, int $utilisateur): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $user = User::findOrFail($utilisateur);
+
+        if ($user->id === $request->user()->id) {
+            return back()->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
+        }
+
+        $user->delete();
+
+        return back()->with('success', "Le compte de {$user->name} a été supprimé.");
     }
 
     // -------------------------------------------------------------------------

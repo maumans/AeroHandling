@@ -68,6 +68,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/administration/utilisateurs', [AdministrationController::class, 'enregistrerUtilisateur'])->name('administration.utilisateurs.enregistrer');
         Route::get('/administration/utilisateurs/{utilisateur}/editer', [AdministrationController::class, 'editerUtilisateur'])->name('administration.utilisateurs.editer');
         Route::put('/administration/utilisateurs/{utilisateur}', [AdministrationController::class, 'mettreAJourUtilisateur'])->name('administration.utilisateurs.mettre_a_jour');
+        Route::patch('/administration/utilisateurs/{utilisateur}/statut', [AdministrationController::class, 'toggleStatutUtilisateur'])->name('administration.utilisateurs.toggle_statut');
+        Route::delete('/administration/utilisateurs/{utilisateur}', [AdministrationController::class, 'supprimerUtilisateur'])->name('administration.utilisateurs.supprimer');
 
         // Administration — Compagnies
         Route::get('/administration/compagnies', [AdministrationController::class, 'compagnies'])->name('administration.compagnies.index');
