@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ShieldCheck } from 'lucide-react';
+import { FileDown, ShieldCheck, User, Phone, Ticket } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,10 @@ interface DemandeAC {
     date_autorisation: string | null;
     compagnie: string | null;
     aeronef: string | null;
+    numero_landing_permit: string | null;
+    demandeur: string | null;
+    contact_demandeur: string | null;
+    manifeste_passager: boolean;
 }
 
 interface Props {
@@ -127,7 +131,7 @@ export default function AviationCivileIndex({ aTraiter, autorisees, totalATraite
                                 key={demande.id}
                                 className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
                             >
-                                <div className="flex min-w-0 flex-col gap-1">
+                                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <Link
                                             href={`/demandes/${demande.id}`}
@@ -145,6 +149,36 @@ export default function AviationCivileIndex({ aTraiter, autorisees, totalATraite
                                         {demande.aeronef && <span>• {demande.aeronef}</span>}
                                         <span>• Arrivée {formatDate(demande.date_arrivee)}</span>
                                         {demande.tonnage_prevu && <span>• {demande.tonnage_prevu} t</span>}
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                                        {demande.numero_landing_permit && (
+                                            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                                <Ticket className="size-3" />
+                                                LP: {demande.numero_landing_permit}
+                                            </span>
+                                        )}
+                                        {demande.demandeur && (
+                                            <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                                <User className="size-3" />
+                                                {demande.demandeur}
+                                            </span>
+                                        )}
+                                        {demande.contact_demandeur && (
+                                            <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                                <Phone className="size-3" />
+                                                {demande.contact_demandeur}
+                                            </span>
+                                        )}
+                                        {demande.manifeste_passager && (
+                                            <a
+                                                href={`/demandes/${demande.id}/manifeste`}
+                                                className="inline-flex items-center gap-1 text-[#1B98E0] hover:underline"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <FileDown className="size-3" />
+                                                Manifeste
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
                                 <BoutonAutoriser demandeId={demande.id} />

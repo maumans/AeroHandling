@@ -74,12 +74,8 @@ class GestionnaireDemande
 
             $this->enregistrerValidation($demande, $utilisateur, ActionValidation::ApprobationHandling, $commentaire);
 
-            // Notifier le créateur et Aviation Civile
+            // Notifier le créateur (l'AC ne se connecte plus au système)
             $demande->utilisateur->notify(new DemandeApprouveeNotification($demande));
-            $aviationCivileUsers = User::role('aviation_civile')->get();
-            foreach ($aviationCivileUsers as $acUser) {
-                $acUser->notify(new DemandeApprouveeNotification($demande));
-            }
 
             return $demande->fresh();
         });

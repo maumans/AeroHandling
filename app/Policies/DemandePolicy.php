@@ -14,14 +14,6 @@ class DemandePolicy
             return true;
         }
 
-        if ($user->hasRole('aviation_civile')) {
-            return in_array($demande->statut, [
-                StatutDemande::ApprouveeHandling,
-                StatutDemande::EnAttenteAviationCivile,
-                StatutDemande::Autorisee,
-            ]);
-        }
-
         return $demande->utilisateur_id === $user->id;
     }
 

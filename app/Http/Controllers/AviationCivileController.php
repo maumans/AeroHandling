@@ -13,10 +13,7 @@ class AviationCivileController extends Controller
     public function index(Request $request): Response
     {
         $aTraiter = Demande::with(['compagnie', 'aeronef', 'utilisateur'])
-            ->whereIn('statut', [
-                StatutDemande::ApprouveeHandling,
-                StatutDemande::EnAttenteAviationCivile,
-            ])
+            ->where('statut', StatutDemande::ApprouveeHandling)
             ->orderBy('date_arrivee')
             ->get()
             ->map(fn (Demande $d) => $this->transformer($d));
@@ -51,6 +48,10 @@ class AviationCivileController extends Controller
             'date_autorisation' => $demande->date_autorisation?->toIso8601String(),
             'compagnie' => $demande->compagnie_libelle ?? $demande->compagnie?->nom,
             'aeronef' => $demande->type_aeronef ?? $demande->aeronef?->code,
+            'numero_landing_permit' => $demande->numero_landing_permit,
+            'demandeur' => $demande->demandeur,
+            'contact_demandeur' => $demande->contact_demandeur,
+            'manifeste_passager' => $demande->manifeste_passager ? true : false,
         ];
     }
 }
