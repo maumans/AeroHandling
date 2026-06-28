@@ -1,1 +1,0 @@
-import{i as e,n as t,t as n}from"./jsx-runtime-CwAQB5bL.js";var r=t(),i=n();function a(){let t=(0,r.c)(1),n;return t[0]===Symbol.for(`react.memo_cache_sentinel`)?(n=(0,i.jsx)(i.Fragment,{children:(0,i.jsx)(e,{title:`Redirection...`})}),t[0]=n):n=t[0],n}a.layout={breadcrumbs:[{title:`Tableau de bord`,href:`/tableau-de-bord`}]};export{a as default};

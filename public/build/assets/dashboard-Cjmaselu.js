@@ -1,0 +1,1 @@
+import{ft as e,lt as t,mt as n}from"./app-DagpUsj6.js";var r=e(),i=t();function a(){let e=(0,r.c)(1),t;return e[0]===Symbol.for(`react.memo_cache_sentinel`)?(t=(0,i.jsx)(i.Fragment,{children:(0,i.jsx)(n,{title:`Redirection...`})}),e[0]=t):t=e[0],t}a.layout={breadcrumbs:[{title:`Tableau de bord`,href:`/tableau-de-bord`}]};export{a as default};

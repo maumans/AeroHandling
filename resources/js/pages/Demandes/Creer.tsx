@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
-import { Send } from 'lucide-react';
+import { AlertCircle, Send } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Option {
     value: string;
@@ -84,7 +85,12 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
 
     function enregistrer(action: 'brouillon' | 'soumettre') {
         transform((donnees) => ({ ...donnees, action }));
-        post('/demandes', { forceFormData: true });
+        post('/demandes', {
+            forceFormData: true,
+            onError: () => {
+                toast.error('Des erreurs ont été détectées. Vérifiez les champs du formulaire.');
+            },
+        });
     }
 
     return (
@@ -363,6 +369,21 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                             {/* Étape 6: Récapitulatif */}
                             {etapeActuelle === 5 && (
                                 <div className="space-y-4">
+                                    {Object.keys(errors).length > 0 && (
+                                        <div className="flex gap-3 rounded-lg border border-destructive bg-destructive/10 p-4">
+                                            <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                                            <div>
+                                                <p className="text-sm font-medium text-destructive">
+                                                    Des erreurs ont été détectées dans le formulaire :
+                                                </p>
+                                                <ul className="mt-1 list-inside list-disc text-sm text-destructive">
+                                                    {Object.entries(errors).map(([field, msg]) => (
+                                                        <li key={field}>{msg as string}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="rounded-lg border p-4 space-y-2">
                                         <h3 className="font-medium">Résumé de la demande</h3>
                                         <dl className="grid grid-cols-2 gap-2 text-sm">
