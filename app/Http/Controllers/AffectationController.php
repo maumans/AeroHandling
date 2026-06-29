@@ -29,6 +29,44 @@ class AffectationController extends Controller
             ]);
         }
 
+        // Vérification des conflits pour l'équipement
+        if (! empty($validated['equipement_id'])) {
+            $conflitEquipement = Affectation::where('equipement_id', $validated['equipement_id'])
+                ->where(function ($query) use ($validated) {
+                    $query->whereBetween('date_debut', [$validated['date_debut'], $validated['date_fin']])
+                        ->orWhereBetween('date_fin', [$validated['date_debut'], $validated['date_fin']])
+                        ->orWhere(function ($q) use ($validated) {
+                            $q->where('date_debut', '<=', $validated['date_debut'])
+                                ->where('date_fin', '>=', $validated['date_fin']);
+                        });
+                })->exists();
+
+            if ($conflitEquipement) {
+                return back()->withErrors([
+                    'equipement_id' => 'Cet équipement est déjà affecté à une autre demande sur cette plage horaire.',
+                ]);
+            }
+        }
+
+        // Vérification des conflits pour l'agent
+        if (! empty($validated['utilisateur_affectation_id'])) {
+            $conflitAgent = Affectation::where('utilisateur_affectation_id', $validated['utilisateur_affectation_id'])
+                ->where(function ($query) use ($validated) {
+                    $query->whereBetween('date_debut', [$validated['date_debut'], $validated['date_fin']])
+                        ->orWhereBetween('date_fin', [$validated['date_debut'], $validated['date_fin']])
+                        ->orWhere(function ($q) use ($validated) {
+                            $q->where('date_debut', '<=', $validated['date_debut'])
+                                ->where('date_fin', '>=', $validated['date_fin']);
+                        });
+                })->exists();
+
+            if ($conflitAgent) {
+                return back()->withErrors([
+                    'utilisateur_affectation_id' => 'Cet agent est déjà affecté à une autre demande sur cette plage horaire.',
+                ]);
+            }
+        }
+
         $affectation = $demande->affectations()->create($validated);
 
         if ($affectation->utilisateur_affectation_id) {

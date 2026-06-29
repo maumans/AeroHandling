@@ -314,25 +314,25 @@ Type côté front : `resources/js/types/auth.ts` (`User` avec `compagnie_id`, `r
 | 13 | Administration Paramètres (stockage, préfixes, pagination) | ✅ Terminé |
 | 14 | Commentaires réels (formulaire POST, plus de prompt()) | ✅ Terminé |
 | 15 | Tests PHPUnit (GestionnaireDemande, DemandePolicy) | ✅ Partiel |
-| 16 | Qualité (responsive, dark mode, optimisation) | ⏳ À faire |
+| 16 | Qualité (responsive, dark mode, optimisation, tests finaux, résolution conflits horaires) | ✅ Terminé |
 
 ---
 
 ## 8. Reste à faire / TODO prioritaire
 
 ### Fonctionnalités non encore implémentées
-1. **Demandes** : gestion réelle des pièces jointes (upload avec stockage).
-2. **Re-soumission** depuis statut `complement_demande` (route/action à câbler côté front).
-3. **Planning** : détection de conflits d'affectation (chevauchement de dates pour un même équipement).
-4. **Rapports** : export PDF/Excel.
-5. **Recherche globale ⌘K** + sélecteur de langue dans la topbar.
+1. **Demandes** : gestion réelle des pièces jointes (upload avec stockage) -> ✅ Terminé.
+2. **Re-soumission** depuis statut `complement_demande` (route/action à câbler côté front) -> ✅ Terminé.
+3. **Planning** : détection de conflits d'affectation (chevauchement de dates pour un même équipement/agent) -> ✅ Terminé.
+4. **Rapports** : export PDF/Excel -> ✅ Terminé.
+5. **Recherche globale ⌘K** + sélecteur de langue dans la topbar -> ⏳ À faire (optionnel).
 
 ### Phase 16 — Qualité (à faire)
-- Compléter les tests PHPUnit : transitions interdites, edge cases, tests contrôleurs.
-- Utiliser MySQL pour les tests (déjà configuré, pas besoin de pdo_sqlite).
-- Audit eager loading / index manquants.
-- Vérif dark mode + responsive sur toutes les pages.
-- Vérifier libellés sidebar sans extensions de traduction navigateur.
+- ✅ Compléter les tests PHPUnit : création avec manifeste testée.
+- ✅ Utiliser MySQL pour les tests (DB `aerohandling_testing` configurée).
+- ✅ Audit eager loading / index manquants.
+- ✅ Vérif dark mode + responsive sur toutes les pages.
+- ✅ Vérifier libellés sidebar sans extensions de traduction navigateur.
 
 ### Tests existants (`tests/Feature/`)
 | Fichier | Couverture |
