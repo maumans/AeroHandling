@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Plus, Search, CalendarPlus } from 'lucide-react';
+import { Eye, Pencil, Plus, Search, CalendarPlus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import ModalAffectation from '@/components/ModalAffectation';
 import AppLayout from '@/layouts/app-layout';
@@ -27,6 +27,8 @@ interface Demande {
     compagnie?: { nom: string };
     aeronef?: { code: string; modele: string };
     utilisateur?: { name: string };
+    peutModifier?: boolean;
+    peutSupprimer?: boolean;
 }
 
 interface PaginatedData {
@@ -48,6 +50,7 @@ interface Props {
         recherche?: string;
     };
     peutAffecterGlobal: boolean;
+    peutCreer: boolean;
     equipementsDisponibles: any[];
     agentsDisponibles: any[];
 }
@@ -63,7 +66,7 @@ function formatDate(dateStr: string): string {
     }).format(new Date(dateStr));
 }
 
-export default function DemandesIndex({ demandes, compagnies, filtres, peutAffecterGlobal, equipementsDisponibles, agentsDisponibles }: Props) {
+export default function DemandesIndex({ demandes, compagnies, filtres, peutAffecterGlobal, peutCreer, equipementsDisponibles, agentsDisponibles }: Props) {
     const [recherche, setRecherche] = useState(filtres.recherche ?? '');
 
     function filtrer(key: string, value: string | undefined) {
@@ -87,12 +90,14 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Demandes d&apos;assistance</h1>
-                    <Button asChild>
-                        <Link href="/demandes/creer">
-                            <Plus className="mr-2 size-4" />
-                            Nouvelle demande
-                        </Link>
-                    </Button>
+                    {peutCreer && (
+                        <Button asChild>
+                            <Link href="/demandes/creer">
+                                <Plus className="mr-2 size-4" />
+                                Nouvelle demande
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 {/* Filtres */}
@@ -203,22 +208,57 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                                         >
                                                             <Button
                                                                 variant="outline"
-                                                                size="sm"
-                                                                className="gap-2"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                                title="Planifier"
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
                                                                 <CalendarPlus className="size-4 text-primary" />
-                                                                <span className="hidden sm:inline">Planifier</span>
                                                             </Button>
                                                         </ModalAffectation>
                                                     )}
-                                                    <Button variant="ghost" size="sm" className="gap-2" onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        router.visit(`/demandes/${demande.id}`);
-                                                    }}>
+                                                    {demande.peutModifier && (
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="icon" 
+                                                            className="h-8 w-8 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary" 
+                                                            title="Modifier"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                router.visit(`/demandes/${demande.id}/editer`);
+                                                            }}
+                                                        >
+                                                            <Pencil className="size-4" />
+                                                        </Button>
+                                                    )}
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="icon" 
+                                                        className="h-8 w-8" 
+                                                        title="Détails"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            router.visit(`/demandes/${demande.id}`);
+                                                        }}
+                                                    >
                                                         <Eye className="size-4" />
-                                                        <span className="hidden sm:inline">Détails</span>
                                                     </Button>
+                                                    {demande.peutSupprimer && (
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="icon" 
+                                                            className="h-8 w-8 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive" 
+                                                            title="Supprimer"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (window.confirm('Êtes-vous sûr de vouloir supprimer cette demande ?')) {
+                                                                    router.delete(`/demandes/${demande.id}`);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

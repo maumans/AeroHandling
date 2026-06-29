@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\StatutEquipement;
 use App\Models\CapaciteStockage;
 use App\Models\Equipement;
+use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -40,5 +42,18 @@ class CapaciteController extends Controller
             'equipementsParStatut' => $equipementsParStatut,
             'totalEquipements' => Equipement::count(),
         ]);
+    }
+
+    public function mettreAJour(Request $request, CapaciteStockage $capacite): RedirectResponse
+    {
+        $request->validate([
+            'occupation_actuelle_tonnes' => ['required', 'numeric', 'min:0', "max:{$capacite->capacite_max_tonnes}"],
+        ]);
+
+        $capacite->update([
+            'occupation_actuelle_tonnes' => $request->occupation_actuelle_tonnes,
+        ]);
+
+        return back()->with('success', 'Capacité mise à jour avec succès.');
     }
 }

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
-import { AlertCircle, Send } from 'lucide-react';
+import { AlertCircle, Check, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Option {
@@ -104,30 +104,46 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                 <h1 className="text-2xl font-bold">Nouvelle demande d&apos;assistance</h1>
 
                 {/* Indicateur d'étapes */}
-                <div className="flex items-center gap-2">
-                    {etapes.map((etape, index) => (
-                        <div key={etape} className="flex items-center gap-2">
-                            <div
-                                className={`flex size-8 items-center justify-center rounded-full text-sm font-medium ${
-                                    index <= etapeActuelle
-                                        ? 'bg-[#0B2545] text-white'
-                                        : 'bg-muted text-muted-foreground'
-                                }`}
-                            >
-                                {index + 1}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {etapes.map((etape, index) => {
+                        const estComplete = index < etapeActuelle;
+                        const estActive = index === etapeActuelle;
+                        return (
+                            <div key={etape} className="flex items-center gap-2">
+                                <div
+                                    className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300 ${
+                                        estActive
+                                            ? 'bg-primary text-white shadow-brand ring-2 ring-primary/30 ring-offset-2 ring-offset-background scale-110'
+                                            : estComplete
+                                              ? 'bg-primary text-white'
+                                              : 'bg-muted text-muted-foreground'
+                                    }`}
+                                >
+                                    {estComplete ? <Check className="size-4" /> : index + 1}
+                                </div>
+                                <span
+                                    className={`hidden text-sm transition-colors sm:inline ${
+                                        estActive
+                                            ? 'font-semibold text-foreground'
+                                            : estComplete
+                                              ? 'font-medium text-foreground/70'
+                                              : 'text-muted-foreground'
+                                    }`}
+                                >
+                                    {etape}
+                                </span>
+                                {index < etapes.length - 1 && (
+                                    <div className="relative h-0.5 w-8 overflow-hidden rounded-full bg-muted">
+                                        <div
+                                            className={`absolute inset-y-0 left-0 bg-primary transition-all duration-500 ${
+                                                estComplete ? 'w-full' : 'w-0'
+                                            }`}
+                                        />
+                                    </div>
+                                )}
                             </div>
-                            <span
-                                className={`hidden text-sm sm:inline ${
-                                    index <= etapeActuelle ? 'font-medium' : 'text-muted-foreground'
-                                }`}
-                            >
-                                {etape}
-                            </span>
-                            {index < etapes.length - 1 && (
-                                <div className={`h-px w-8 ${index < etapeActuelle ? 'bg-[#0B2545]' : 'bg-muted'}`} />
-                            )}
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 <form onSubmit={(e) => e.preventDefault()}>

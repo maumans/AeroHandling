@@ -98,12 +98,17 @@ class DemandePolicy
 
     public function supprimer(User $user, Demande $demande): bool
     {
+        // Pour des raisons de traçabilité, une demande ne peut être supprimée 
+        // que si elle est encore à l'état de brouillon.
+        if ($demande->statut !== StatutDemande::Brouillon) {
+            return false;
+        }
+
         if ($user->hasRole('administrateur')) {
             return true;
         }
 
-        return $demande->utilisateur_id === $user->id
-            && $demande->statut === StatutDemande::Brouillon;
+        return $demande->utilisateur_id === $user->id;
     }
 
     public function affecter(User $user, Demande $demande): bool

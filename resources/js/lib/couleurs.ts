@@ -65,6 +65,22 @@ export const NATURE_VOL_LIBELLE: Record<string, string> = {
 export const NATURE_VOL_COULEURS_HEX = ['#0B2545', '#1B98E0', '#13C296', '#F59E0B', '#EF4444'];
 
 // ---------------------------------------------------------------------------
+// TypeMarchandise
+// ---------------------------------------------------------------------------
+
+export const TYPE_MARCHANDISE_LIBELLE: Record<string, string> = {
+    general: 'Général',
+    perissable: 'Périssable',
+    dangereux: 'Matières dangereuses (DGR)',
+    pharmaceutique: 'Pharmaceutique',
+    courrier: 'Courrier / Poste',
+    animaux_vivants: 'Animaux vivants',
+    excedent_bagages: 'Excédent bagages',
+    matieres_premieres: 'Matières premières',
+    valeurs_declares: 'Valeurs déclarées',
+};
+
+// ---------------------------------------------------------------------------
 // StatutEquipement
 // ---------------------------------------------------------------------------
 

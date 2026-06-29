@@ -7,11 +7,9 @@ use App\Enums\StatutDemande;
 use App\Models\Demande;
 use App\Models\User;
 use App\Models\Validation;
-use App\Notifications\DemandeApprouveeNotification;
-use App\Notifications\DemandeAutoriseeNotification;
-use App\Notifications\DemandeComplementRequisNotification;
-use App\Notifications\DemandeRejeteeNotification;
-use App\Notifications\DemandeSoumiseNotification;
+use App\Notifications\NewDemandeCreated;
+use App\Notifications\DemandeStatusChanged;
+use App\Notifications\ActionRequiredNotification;
 use Illuminate\Support\Facades\DB;
 
 class GestionnaireDemande
@@ -44,6 +42,34 @@ class GestionnaireDemande
         });
     }
 
+    public function modifier(Demande $demande, array $donnees, User $utilisateur): Demande
+    {
+        return DB::transaction(function () use ($demande, $donnees) {
+            $demande->update($donnees);
+
+            if (array_key_exists('equipements_demandes', $donnees)) {
+                DB::table('demande_equipement')->where('demande_id', $demande->id)->delete();
+
+                if (! empty($donnees['equipements_demandes'])) {
+                    $equipementsAInserer = collect($donnees['equipements_demandes'])->map(function ($eq) use ($demande) {
+                        return [
+                            'demande_id' => $demande->id,
+                            'equipement_id' => null,
+                            'type_equipement' => $eq['type'],
+                            'quantite' => $eq['quantite'],
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    })->toArray();
+
+                    DB::table('demande_equipement')->insert($equipementsAInserer);
+                }
+            }
+
+            return $demande->fresh();
+        });
+    }
+
     public function soumettre(Demande $demande, User $utilisateur, ?string $commentaire = null): Demande
     {
         return DB::transaction(function () use ($demande, $utilisateur, $commentaire) {
@@ -57,7 +83,7 @@ class GestionnaireDemande
             // Notifier les agents Handling
             $handlingUsers = User::role('handling')->get();
             foreach ($handlingUsers as $handlingUser) {
-                $handlingUser->notify(new DemandeSoumiseNotification($demande));
+                $handlingUser->notify(new NewDemandeCreated($demande));
             }
 
             return $demande->fresh();
@@ -75,7 +101,7 @@ class GestionnaireDemande
             $this->enregistrerValidation($demande, $utilisateur, ActionValidation::ApprobationHandling, $commentaire);
 
             // Notifier le créateur (l'AC ne se connecte plus au système)
-            $demande->utilisateur->notify(new DemandeApprouveeNotification($demande));
+            $demande->utilisateur->notify(new DemandeStatusChanged($demande));
 
             return $demande->fresh();
         });
@@ -93,7 +119,7 @@ class GestionnaireDemande
             $this->enregistrerValidation($demande, $utilisateur, ActionValidation::Rejet, $commentaire ?? $motif);
 
             // Notifier le créateur
-            $demande->utilisateur->notify(new DemandeRejeteeNotification($demande));
+            $demande->utilisateur->notify(new DemandeStatusChanged($demande));
 
             return $demande->fresh();
         });
@@ -109,7 +135,11 @@ class GestionnaireDemande
             $this->enregistrerValidation($demande, $utilisateur, ActionValidation::ComplementDemande, $commentaire);
 
             // Notifier le créateur
-            $demande->utilisateur->notify(new DemandeComplementRequisNotification($demande, $commentaire ?? ''));
+            $demande->utilisateur->notify(new ActionRequiredNotification(
+                $demande,
+                'Complément d\'information requis',
+                'Motif : ' . ($commentaire ?? 'Non spécifié')
+            ));
 
             return $demande->fresh();
         });
@@ -128,10 +158,10 @@ class GestionnaireDemande
 
             // Notifier le créateur et les coordinateurs
             $demande->refresh();
-            $demande->utilisateur->notify(new DemandeAutoriseeNotification($demande));
+            $demande->utilisateur->notify(new DemandeStatusChanged($demande));
             $coordinateurs = User::role('coordinateur')->get();
             foreach ($coordinateurs as $coordinateur) {
-                $coordinateur->notify(new DemandeAutoriseeNotification($demande));
+                $coordinateur->notify(new DemandeStatusChanged($demande));
             }
 
             return $demande;

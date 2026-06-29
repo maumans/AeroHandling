@@ -39,7 +39,7 @@ export function Combobox({
   const [open, setOpen] = React.useState(false)
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={true}>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -59,19 +59,6 @@ export function Combobox({
       <PopoverContent
         className="w-[--radix-popover-trigger-width] p-0"
         align="start"
-        onPointerDownOutside={(e) => {
-          // Prevent closing when clicking the native scrollbar.
-          // Radix's DismissableLayer treats scrollbar clicks as "outside" on some platforms.
-          const originalEvent = (e as unknown as CustomEvent<{ originalEvent: PointerEvent }>)
-            .detail?.originalEvent
-          if (!originalEvent) return
-          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-          const { clientX, clientY } = originalEvent
-          // +20px tolerance covers the native scrollbar width (Windows ~17px, macOS overlay 0px)
-          if (clientX >= rect.left && clientX <= rect.right + 20 && clientY >= rect.top && clientY <= rect.bottom) {
-            e.preventDefault()
-          }
-        }}
       >
         <Command>
           <CommandInput placeholder="Rechercher..." />

@@ -1,28 +1,25 @@
-import { usePage, router } from '@inertiajs/react';
 import { useEchoNotification } from '@laravel/echo-react';
 import { toast } from 'sonner';
-import { type SharedData } from '@/types';
 
 export function RealtimeNotifications() {
-    const user = usePage<SharedData>().props.auth?.user;
+    useEchoNotification((notification: any) => {
+        const { type, title, message, actionUrl } = notification;
 
-    // We only listen if there is an authenticated user
-    useEchoNotification(user ? `App.Models.User.${user.id}` : '', (notification) => {
-        if (!user) return;
-        
-        toast.info(notification.message || 'Nouvelle notification', {
-            description: notification.reference ? `Réf: ${notification.reference}` : undefined,
-            action: {
-                label: 'Voir',
-                onClick: () => {
-                    // Refreshes the page to get new data (notifications, demandes, etc.)
-                    router.reload();
-                }
-            }
+        const validTypes = ['success', 'info', 'warning', 'error'];
+        const toastType = validTypes.includes(type) ? type : 'info';
+        const toastFn = toast[toastType as keyof typeof toast];
+
+        toastFn(title || 'Nouvelle notification', {
+            description: message,
+            action: actionUrl
+                ? {
+                      label: 'Voir',
+                      onClick: () => {
+                          window.location.href = actionUrl;
+                      },
+                  }
+                : undefined,
         });
-        
-        // Soft reload to update notificationsNonLues count and recentNotifications list
-        router.reload({ only: ['notificationsNonLues', 'recentNotifications'] });
     });
 
     return null;

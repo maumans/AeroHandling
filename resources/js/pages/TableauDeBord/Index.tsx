@@ -119,29 +119,29 @@ export default function TableauDeBordIndex({
             titre: 'Total demandes',
             valeur: statistiques.total_demandes,
             icone: ClipboardList,
-            couleur: 'text-[#0B2545]',
-            bg: 'bg-[#0B2545]/10',
+            couleur: 'text-white',
+            bg: 'bg-indigo-500',
         },
         {
             titre: 'En attente',
             valeur: statistiques.demandes_en_attente,
             icone: Clock,
-            couleur: 'text-amber-600',
-            bg: 'bg-amber-50 dark:bg-amber-900/20',
+            couleur: 'text-white',
+            bg: 'bg-amber-500',
         },
         {
             titre: 'Approuvées',
             valeur: statistiques.demandes_approuvees,
             icone: CheckCircle2,
-            couleur: 'text-green-600',
-            bg: 'bg-green-50 dark:bg-green-900/20',
+            couleur: 'text-white',
+            bg: 'bg-emerald-500',
         },
         {
             titre: 'Autorisées',
             valeur: statistiques.demandes_autorisees,
             icone: ShieldCheck,
-            couleur: 'text-[#1B98E0]',
-            bg: 'bg-[#1B98E0]/10',
+            couleur: 'text-white',
+            bg: 'bg-sky-500',
         },
     ];
 
@@ -276,14 +276,14 @@ export default function TableauDeBordIndex({
                 {/* KPI Cards */}
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                     {kpis.map((kpi) => (
-                        <Card key={kpi.titre}>
+                        <Card key={kpi.titre} className="overflow-hidden transition-all hover:shadow-md dark:hover:shadow-indigo-500/5">
                             <CardContent className="flex items-center gap-4 p-4 md:p-6">
-                                <div className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${kpi.bg}`}>
+                                <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl shadow-sm ${kpi.bg}`}>
                                     <kpi.icone className={`size-6 ${kpi.couleur}`} />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="truncate text-sm text-muted-foreground">{kpi.titre}</p>
-                                    <p className="text-2xl font-bold tabular-nums">{kpi.valeur}</p>
+                                    <p className="truncate text-sm font-medium text-muted-foreground">{kpi.titre}</p>
+                                    <p className="text-2xl font-bold tracking-tight tabular-nums">{kpi.valeur}</p>
                                 </div>
                             </CardContent>
                         </Card>

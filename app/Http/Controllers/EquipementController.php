@@ -6,6 +6,8 @@ use App\Enums\StatutEquipement;
 use App\Enums\TypeEquipement;
 use App\Models\Equipement;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,6 +50,20 @@ class EquipementController extends Controller
             'types' => $types,
             'statuts' => $statuts,
             'filtres' => $request->only(['type', 'statut', 'recherche']),
+            'peutModifierStatut' => $request->user()->hasRole(['handling', 'coordinateur', 'administrateur']),
         ]);
+    }
+
+    public function changerStatut(Request $request, Equipement $equipement): RedirectResponse
+    {
+        $request->validate([
+            'statut' => ['required', 'string', Rule::enum(StatutEquipement::class)],
+        ]);
+
+        $equipement->update([
+            'statut' => $request->statut,
+        ]);
+
+        return back()->with('success', "Statut de l'équipement {$equipement->code} mis à jour avec succès.");
     }
 }

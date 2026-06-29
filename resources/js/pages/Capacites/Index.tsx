@@ -1,8 +1,12 @@
-import { Head } from '@inertiajs/react';
-import { AlertTriangle, Warehouse } from 'lucide-react';
+import { Head, useForm, router } from '@inertiajs/react';
+import { AlertTriangle, Warehouse, Edit2, Check } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { STATUT_EQUIPEMENT_BADGE } from '@/lib/couleurs';
 
 interface Zone {
@@ -35,7 +39,33 @@ function couleurJauge(pourcentage: number, enAlerte: boolean): string {
     return '#10b981';
 }
 
+import { useState, FormEventHandler } from 'react';
+
 export default function CapacitesIndex({ zones, equipementsParStatut, totalEquipements }: Props) {
+    const [zoneEdit, setZoneEdit] = useState<Zone | null>(null);
+    const { data, setData, put, processing, reset, errors } = useForm({
+        occupation_actuelle_tonnes: '',
+    });
+
+    const openEdit = (zone: Zone) => {
+        setZoneEdit(zone);
+        setData('occupation_actuelle_tonnes', zone.occupation.toString());
+    };
+
+    const closeEdit = () => {
+        setZoneEdit(null);
+        reset();
+    };
+
+    const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+        if (zoneEdit) {
+            put(`/capacites/${zoneEdit.id}`, {
+                onSuccess: () => closeEdit(),
+            });
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={[{ title: 'Capacités', href: '/capacites' }]}>
             <Head title="Capacités" />
@@ -51,12 +81,17 @@ export default function CapacitesIndex({ zones, equipementsParStatut, totalEquip
                                     <Warehouse className="size-5 text-muted-foreground" />
                                     Zone {zone.libelle}
                                 </CardTitle>
-                                {zone.en_alerte && (
-                                    <Badge variant="destructive" className="gap-1">
-                                        <AlertTriangle className="size-3" />
-                                        Seuil dépassé
-                                    </Badge>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {zone.en_alerte && (
+                                        <Badge variant="destructive" className="gap-1">
+                                            <AlertTriangle className="size-3" />
+                                            Seuil dépassé
+                                        </Badge>
+                                    )}
+                                    <Button variant="ghost" size="icon" onClick={() => openEdit(zone)}>
+                                        <Edit2 className="size-4" />
+                                    </Button>
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="flex items-end justify-between">
@@ -122,6 +157,42 @@ export default function CapacitesIndex({ zones, equipementsParStatut, totalEquip
                     </CardContent>
                 </Card>
             </div>
+
+            <Dialog open={!!zoneEdit} onOpenChange={(open) => !open && closeEdit()}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Mettre à jour l'occupation</DialogTitle>
+                        <DialogDescription>
+                            Modifiez le tonnage actuellement occupé pour la zone {zoneEdit?.libelle}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={submit} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="occupation">Tonnage occupé</Label>
+                            <Input
+                                id="occupation"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max={zoneEdit?.max}
+                                value={data.occupation_actuelle_tonnes}
+                                onChange={(e) => setData('occupation_actuelle_tonnes', e.target.value)}
+                            />
+                            {errors.occupation_actuelle_tonnes && (
+                                <p className="text-sm text-destructive">{errors.occupation_actuelle_tonnes}</p>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={closeEdit}>
+                                Annuler
+                            </Button>
+                            <Button type="submit" disabled={processing}>
+                                Enregistrer
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

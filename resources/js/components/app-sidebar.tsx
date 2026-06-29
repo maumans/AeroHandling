@@ -60,14 +60,6 @@ function useNavigationItems(): NavItem[] {
             );
         }
 
-        // Aviation Civile - handling, admin (l'AC ne se connecte pas)
-        if (roles.some((r: string) => ['handling', 'administrateur'].includes(r))) {
-            items.push({
-                title: 'Aviation Civile',
-                href: '/aviation-civile',
-                icon: Shield,
-            });
-        }
 
         // Rapports - handling, coordinateur, admin
         if (roles.some((r: string) => ['handling', 'coordinateur', 'administrateur'].includes(r))) {

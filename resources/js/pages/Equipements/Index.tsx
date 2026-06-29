@@ -35,11 +35,19 @@ interface Props {
     types: Option[];
     statuts: Option[];
     filtres: { type?: string; statut?: string; recherche?: string };
+    peutModifierStatut: boolean;
 }
 
 
-export default function EquipementsIndex({ equipements, types, statuts, filtres }: Props) {
+export default function EquipementsIndex({ equipements, types, statuts, filtres, peutModifierStatut }: Props) {
     const [recherche, setRecherche] = useState(filtres.recherche ?? '');
+
+    function changerStatut(equipementId: number, nouveauStatut: string) {
+        router.patch(`/equipements/${equipementId}/statut`, { statut: nouveauStatut }, {
+            preserveScroll: true,
+            preserveState: true,
+        });
+    }
 
     function filtrer(key: string, value: string | undefined) {
         router.get(
@@ -140,12 +148,36 @@ export default function EquipementsIndex({ equipements, types, statuts, filtres 
                                                 {equipement.capacite_max ? `${equipement.capacite_max} t` : '—'}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <Badge
-                                                    variant="secondary"
-                                                    className={STATUT_EQUIPEMENT_BADGE[equipement.statut] ?? ''}
-                                                >
-                                                    {libelleStatut(equipement.statut)}
-                                                </Badge>
+                                                {peutModifierStatut ? (
+                                                    <Select
+                                                        value={equipement.statut}
+                                                        onValueChange={(v) => changerStatut(equipement.id, v)}
+                                                    >
+                                                        <SelectTrigger className="w-40 h-8">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className={`size-2 rounded-full ${STATUT_EQUIPEMENT_BADGE[equipement.statut]?.includes('bg-') ? STATUT_EQUIPEMENT_BADGE[equipement.statut].split(' ').find(c => c.startsWith('bg-')) : 'bg-gray-500'}`} />
+                                                                <span className="truncate">{libelleStatut(equipement.statut)}</span>
+                                                            </div>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {statuts.map((s) => (
+                                                                <SelectItem key={s.value} value={s.value}>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className={`size-2 rounded-full ${STATUT_EQUIPEMENT_BADGE[s.value]?.includes('bg-') ? STATUT_EQUIPEMENT_BADGE[s.value].split(' ').find(c => c.startsWith('bg-')) : 'bg-gray-500'}`} />
+                                                                        {s.libelle}
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                ) : (
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className={STATUT_EQUIPEMENT_BADGE[equipement.statut] ?? ''}
+                                                    >
+                                                        {libelleStatut(equipement.statut)}
+                                                    </Badge>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

@@ -1,7 +1,7 @@
 # DEVBOOK — AeroHandling
 
 > Carnet de développement complet. À lire en début de nouvelle session pour reprendre le contexte sans perte.
-> Dernière mise à jour : 22/06/2026 (retour client : formulaire demande en texte libre + manifeste passager + code d'autorisation Aviation Civile saisi par le Handling).
+> Dernière mise à jour : 29/06/2026 (Notifications temps réel avec Laravel Echo + Sonner, suppression menu AC isolé, restriction stricte de la suppression de demandes).
 
 ---
 
@@ -125,7 +125,7 @@ brouillon ──soumettre──► soumise ──approuver──► approuvee_ha
 > **Autorisation Aviation Civile (changé le 22/06)** : l'AC **ne se connecte pas**. C'est le **Handling** (ou l'admin) qui saisit le **code d'autorisation fourni par l'AC**. Ce code est **obligatoire**, purement **informatif** (aucune vérification), et stocké dans `reference_autorisation`. La génération automatique `AUT-YYYY-NNNN` a été **supprimée**. `GestionnaireDemande::autoriser()` prend désormais `$codeAutorisation` en paramètre obligatoire.
 
 ### Policy `app/Policies/DemandePolicy.php`
-Méthodes : `voir`, `creer`, `modifier`, `soumettre`, `approuver`, `rejeter`, `demanderComplement`, `autoriser`, `supprimer`. Règles basées sur rôle + statut courant.
+Méthodes : `voir`, `creer`, `modifier`, `soumettre`, `approuver`, `rejeter`, `demanderComplement`, `autoriser`, `supprimer` (uniquement si le statut est `brouillon`, même pour un admin). Règles basées sur rôle + statut courant.
 
 ### FormRequests (`app/Http/Requests/`)
 `CreerDemandeRequest` (type_marchandise validé via `Rule::enum(TypeMarchandise::class)`), `RejeterDemandeRequest` (motif obligatoire), `AutoriserDemandeRequest` (commentaire optionnel), `StoreAeronefRequest`, `UpdateAeronefRequest`, `StoreEquipementRequest`, `UpdateEquipementRequest`, `StoreCompagnieRequest`, `UpdateCompagnieRequest`, `StoreUtilisateurRequest`, `UpdateUtilisateurRequest`.
@@ -133,14 +133,11 @@ Méthodes : `voir`, `creer`, `modifier`, `soumettre`, `approuver`, `rejeter`, `d
 ### Notifications (`app/Notifications/`, canal database + broadcast)
 | Notification | Destinataires |
 |---|---|
-| `DemandeSoumiseNotification` | → handling |
-| `DemandeApprouveeNotification` | → créateur + aviation_civile |
-| `DemandeAutoriseeNotification` | → créateur + coordinateurs |
-| `DemandeRejeteeNotification` | → créateur |
-| `DemandeComplementRequisNotification` | → créateur |
-| `NouvelleAffectationNotification` | → agent affecté |
+| `NewDemandeCreated` | → handling |
+| `DemandeStatusChanged` | → créateur (+ aviation_civile/coordinateur selon statut) |
+| `ActionRequiredNotification` | → handling / créateur (selon action) |
 
-Toutes les notifications utilisent le canal `database` + `broadcast` (Reverb). Le frontend les reçoit en temps réel via `@laravel/echo-react`.
+Toutes les notifications étendent la classe abstraite `RealtimeNotification` et utilisent le canal `database` + `broadcast` (Reverb). Le frontend les reçoit en temps réel via `@laravel/echo-react` dans le composant global `<RealtimeNotifications />` et les affiche sous forme de toast (`sonner`).
 
 ### Configuration centralisée (`config/aerohandling.php`)
 ```php
@@ -187,11 +184,9 @@ Les groupes de routes utilisent le middleware `role:` de spatie/laravel-permissi
 | GET | /equipements | equipements.index | EquipementController@index |
 | GET | /rapports | rapports.index | RapportController@index |
 
-### Routes aviation civile (`role:aviation_civile|administrateur`)
-| Méthode | URI | Nom | Contrôleur |
-|---------|-----|-----|-----------|
 | GET | /demandes/{demande}/manifeste | demandes.manifeste.telecharger | DemandeController@telechargerManifeste |
-| GET | /aviation-civile | aviation_civile.index | AviationCivileController@index (middleware `role:handling\|administrateur`) |
+
+> **Note** : Le contrôleur `AviationCivileController` et son menu ont été supprimés. L'Aviation Civile ne se connecte pas à l'application. Les actions d'autorisation se font directement sur la page de détail d'une demande.
 
 ### Routes administration (`role:administrateur`)
 | Méthode | URI | Nom | Contrôleur |

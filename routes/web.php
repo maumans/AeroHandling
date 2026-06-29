@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AdministrationController;
 use App\Http\Controllers\AffectationController;
-use App\Http\Controllers\AviationCivileController;
 use App\Http\Controllers\CapaciteController;
 use App\Http\Controllers\DemandeController;
 use App\Http\Controllers\EquipementController;
@@ -12,7 +11,9 @@ use App\Http\Controllers\RapportController;
 use App\Http\Controllers\TableauDeBordController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login')->name('home');
+Route::get('/', function () {
+    return auth()->check() ? redirect('/demandes') : redirect('/login');
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', '/tableau-de-bord');
@@ -25,6 +26,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/demandes/creer', [DemandeController::class, 'creer'])->name('demandes.creer');
     Route::post('/demandes', [DemandeController::class, 'enregistrer'])->name('demandes.enregistrer');
     Route::get('/demandes/{demande}', [DemandeController::class, 'afficher'])->name('demandes.afficher');
+    Route::get('/demandes/{demande}/editer', [DemandeController::class, 'editer'])->name('demandes.editer');
+    Route::put('/demandes/{demande}', [DemandeController::class, 'mettreAJour'])->name('demandes.mettre-a-jour');
     Route::delete('/demandes/{demande}', [DemandeController::class, 'supprimer'])->name('demandes.supprimer');
 
     // Workflow demandes
@@ -42,6 +45,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Pièces jointes
     Route::post('/demandes/{demande}/pieces-jointes', [DemandeController::class, 'ajouterPieceJointe'])->name('demandes.pieces_jointes.ajouter');
     Route::get('/demandes/{demande}/pieces-jointes/{pieceJointe}', [DemandeController::class, 'telechargerPieceJointe'])->name('demandes.pieces_jointes.telecharger');
+    Route::delete('/demandes/{demande}/pieces-jointes/{pieceJointe}', [DemandeController::class, 'supprimerPieceJointe'])->name('demandes.pieces_jointes.supprimer');
 
     // Manifeste passager
     Route::get('/demandes/{demande}/manifeste', [DemandeController::class, 'telechargerManifeste'])->name('demandes.manifeste.telecharger');
@@ -49,16 +53,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Planning, Capacités & Rapports (Handling & Coordinateur)
     Route::middleware(['role:handling|coordinateur|administrateur'])->group(function () {
         Route::get('/planning', [PlanningController::class, 'index'])->name('planning.index');
+        
         Route::get('/capacites', [CapaciteController::class, 'index'])->name('capacites.index');
+        Route::put('/capacites/{capacite}', [CapaciteController::class, 'mettreAJour'])->name('capacites.mettre_a_jour');
+        
         Route::get('/equipements', [EquipementController::class, 'index'])->name('equipements.index');
+        Route::patch('/equipements/{equipement}/statut', [EquipementController::class, 'changerStatut'])->name('equipements.changer_statut');
+        
         Route::get('/rapports', [RapportController::class, 'index'])->name('rapports.index');
         Route::get('/rapports/export', [RapportController::class, 'export'])->name('rapports.export');
     });
 
-    // Aviation Civile (l'AC ne se connecte pas : géré par le Handling + Admin)
-    Route::middleware(['role:handling|administrateur'])->group(function () {
-        Route::get('/aviation-civile', [AviationCivileController::class, 'index'])->name('aviation_civile.index');
-    });
 
     // Administration
     Route::middleware(['role:administrateur'])->group(function () {

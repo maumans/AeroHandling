@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { ACTION_VALIDATION_LIBELLE, STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LIBELLE } from '@/lib/couleurs';
+import { ACTION_VALIDATION_LIBELLE, STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LIBELLE, NATURE_VOL_LIBELLE, TYPE_MARCHANDISE_LIBELLE } from '@/lib/couleurs';
 
 interface Validation {
     id: number;
@@ -66,6 +66,24 @@ interface Demande {
     commentaires: Commentaire[];
     affectations: Affectation[];
     pieces_jointes: PieceJointe[];
+    equipements: {
+        id: number;
+        nom: string;
+        pivot: {
+            type_equipement: string;
+            quantite: number;
+        };
+    }[];
+    equipements_demandes: {
+        id: number;
+        nom: string;
+        pivot: {
+            type_equipement: string;
+            quantite: number;
+        };
+    }[];
+    date_decision_handling: string | null;
+    date_autorisation: string | null;
 }
 
 interface PieceJointe {
@@ -115,11 +133,13 @@ export default function DemandesAfficher({
     demande,
     equipementsDisponibles,
     agentsDisponibles,
+    peutModifier,
     peutSoumettre,
     peutApprouver,
     peutRejeter,
     peutDemanderComplement,
     peutAutoriser,
+    peutSupprimer,
     peutAffecter,
 }: Props) {
     const [rejetOpen, setRejetOpen] = useState(false);
@@ -211,6 +231,29 @@ export default function DemandesAfficher({
 
                     {/* Actions workflow */}
                     <div className="flex flex-wrap gap-2">
+                        {peutModifier && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => router.get(`/demandes/${demande.id}/editer`)}
+                            >
+                                Modifier
+                            </Button>
+                        )}
+                        {peutSupprimer && (
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => {
+                                    if (confirm('Voulez-vous vraiment supprimer cette demande ? Cette action est irréversible.')) {
+                                        router.delete(`/demandes/${demande.id}`);
+                                    }
+                                }}
+                            >
+                                <XCircle className="mr-1 size-4" />
+                                Supprimer
+                            </Button>
+                        )}
                         {peutSoumettre && demande.statut === 'complement_demande' && (
                             <Button
                                 size="sm"
@@ -395,6 +438,14 @@ export default function DemandesAfficher({
                                     <dd className="font-medium">{demande.contact_demandeur ?? '—'}</dd>
                                 </div>
                                 <div>
+                                    <dt className="text-sm text-muted-foreground">Numéro de vol</dt>
+                                    <dd className="font-medium">{demande.numero_vol}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-sm text-muted-foreground">Nature du vol</dt>
+                                    <dd className="font-medium">{demande.nature_vol ? (NATURE_VOL_LIBELLE[demande.nature_vol] ?? demande.nature_vol) : '—'}</dd>
+                                </div>
+                                <div>
                                     <dt className="text-sm text-muted-foreground">Arrivée</dt>
                                     <dd className="font-medium">{formatDate(demande.date_arrivee)}</dd>
                                 </div>
@@ -412,7 +463,7 @@ export default function DemandesAfficher({
                                 </div>
                                 <div>
                                     <dt className="text-sm text-muted-foreground">Type marchandise</dt>
-                                    <dd className="font-medium">{demande.type_marchandise ?? '—'}</dd>
+                                    <dd className="font-medium">{demande.type_marchandise ? (TYPE_MARCHANDISE_LIBELLE[demande.type_marchandise] ?? demande.type_marchandise) : '—'}</dd>
                                 </div>
                                 <div>
                                     <dt className="text-sm text-muted-foreground">Nombre ULD</dt>
@@ -426,6 +477,24 @@ export default function DemandesAfficher({
                                     <div>
                                         <dt className="text-sm text-muted-foreground">Exigences particulières</dt>
                                         <dd className="mt-1">{demande.exigences_particulieres}</dd>
+                                    </div>
+                                </>
+                            )}
+
+                            {demande.equipements_demandes && demande.equipements_demandes.length > 0 && (
+                                <>
+                                    <Separator className="my-4" />
+                                    <div>
+                                        <dt className="text-sm text-muted-foreground mb-2">Équipements demandés</dt>
+                                        <dd className="mt-1">
+                                            <ul className="list-inside list-disc text-sm">
+                                                {demande.equipements_demandes.map((eq) => (
+                                                    <li key={eq.id}>
+                                                        {eq.nom} (x{eq.pivot.quantite})
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </dd>
                                     </div>
                                 </>
                             )}
@@ -459,7 +528,7 @@ export default function DemandesAfficher({
                                             <Button variant="outline" size="sm" asChild>
                                                 <a href={`/demandes/${demande.id}/manifeste`} target="_blank" rel="noreferrer">
                                                     <Download className="mr-2 size-4" />
-                                                    Télécharger le manifeste
+                                                    Ouvrir le manifeste
                                                 </a>
                                             </Button>
                                         </dd>
@@ -594,12 +663,24 @@ export default function DemandesAfficher({
                                                     </p>
                                                 </div>
                                             </div>
-                                            <Button variant="ghost" size="sm" asChild>
-                                                <a href={`/demandes/${demande.id}/pieces-jointes/${pj.id}`} target="_blank" rel="noreferrer">
-                                                    <Download className="mr-2 size-4" />
-                                                    Télécharger
-                                                </a>
-                                            </Button>
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="ghost" size="sm" asChild>
+                                                    <a href={`/demandes/${demande.id}/pieces-jointes/${pj.id}`} target="_blank" rel="noreferrer">
+                                                        <Download className="mr-2 size-4" />
+                                                        Ouvrir
+                                                    </a>
+                                                </Button>
+                                                {peutModifier && (
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                        onClick={() => router.delete(`/demandes/${demande.id}/pieces-jointes/${pj.id}`)}
+                                                    >
+                                                        <XCircle className="size-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -681,6 +762,18 @@ export default function DemandesAfficher({
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Soumise le</span>
                                     <span>{formatDate(demande.date_soumission)}</span>
+                                </div>
+                            )}
+                            {demande.date_decision_handling && (
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Décision handling le</span>
+                                    <span>{formatDate(demande.date_decision_handling)}</span>
+                                </div>
+                            )}
+                            {demande.date_autorisation && (
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Autorisée le</span>
+                                    <span>{formatDate(demande.date_autorisation)}</span>
                                 </div>
                             )}
                         </CardContent>

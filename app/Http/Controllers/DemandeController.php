@@ -8,6 +8,7 @@ use App\Enums\TypeMarchandise;
 use App\Http\Requests\AutoriserDemandeRequest;
 use App\Http\Requests\CreerDemandeRequest;
 use App\Http\Requests\RejeterDemandeRequest;
+use App\Http\Requests\UpdateDemandeRequest;
 use App\Models\Compagnie;
 use App\Models\Demande;
 use App\Models\Equipement;
@@ -58,6 +59,13 @@ class DemandeController extends Controller
         }
 
         $demandes = $query->latest()->paginate(config('aerohandling.pagination.demandes', 15))->withQueryString();
+        
+        $demandes->getCollection()->transform(function ($demande) use ($user) {
+            $demande->peutModifier = $user->can('modifier', $demande);
+            $demande->peutSupprimer = $user->can('supprimer', $demande);
+            return $demande;
+        });
+
         $compagnies = Compagnie::where('actif', true)->orderBy('nom')->get(['id', 'nom']);
 
         $peutAffecterGlobal = $user->hasRole(['coordinateur', 'administrateur']);
@@ -69,6 +77,7 @@ class DemandeController extends Controller
             'compagnies' => $compagnies,
             'filtres' => $request->only(['statut', 'nature_vol', 'compagnie_id', 'recherche']),
             'peutAffecterGlobal' => $peutAffecterGlobal,
+            'peutCreer' => $user->can('creer', Demande::class),
             'equipementsDisponibles' => $equipementsDisponibles,
             'agentsDisponibles' => $agentsDisponibles,
         ]);
@@ -113,15 +122,78 @@ class DemandeController extends Controller
             ->with('success', 'Demande enregistrée comme brouillon.');
     }
 
+    public function editer(Request $request, Demande $demande): Response
+    {
+        $this->authorize('modifier', $demande);
+
+        $demande->load(['equipements']); // Ensure pivot data is available for equipments
+
+        $naturesVol = collect(NatureVol::cases())
+            ->map(fn ($n) => ['value' => $n->value, 'libelle' => $n->libelle()]);
+        $typesMarchandise = collect(TypeMarchandise::cases())
+            ->map(fn ($t) => ['value' => $t->value, 'libelle' => $t->libelle()]);
+        $typesEquipement = collect(TypeEquipement::cases())
+            ->map(fn ($t) => ['value' => $t->value, 'libelle' => $t->libelle()]);
+
+        return Inertia::render('Demandes/Editer', [
+            'demande' => $demande,
+            'naturesVol' => $naturesVol,
+            'typesMarchandise' => $typesMarchandise,
+            'typesEquipement' => $typesEquipement,
+        ]);
+    }
+
+    public function mettreAJour(UpdateDemandeRequest $request, Demande $demande): RedirectResponse
+    {
+        $donnees = $request->validated();
+
+        if ($request->hasFile('manifeste_passager')) {
+            // Delete old manifest if exists
+            if ($demande->manifeste_passager && Storage::exists($demande->manifeste_passager)) {
+                Storage::delete($demande->manifeste_passager);
+            }
+            $donnees['manifeste_passager'] = $request->file('manifeste_passager')->store('manifestes');
+        }
+
+        $demande = $this->gestionnaire->modifier($demande, $donnees, $request->user());
+
+        if ($request->validated('action') === 'soumettre') {
+            $this->gestionnaire->soumettre($demande, $request->user());
+
+            return redirect()->route('demandes.afficher', $demande)
+                ->with('success', 'Demande soumise avec succès.');
+        }
+
+        return redirect()->route('demandes.afficher', $demande)
+            ->with('success', 'Demande mise à jour.');
+    }
+
     public function afficher(Request $request, Demande $demande): Response
     {
         $this->authorize('voir', $demande);
 
-        $demande->load(['compagnie', 'aeronef', 'utilisateur', 'validations.utilisateur', 'commentaires.utilisateur', 'piecesJointes', 'affectations.equipement', 'affectations.utilisateurAffectation']);
+        $demande->load(['compagnie', 'aeronef', 'utilisateur', 'validations.utilisateur', 'commentaires.utilisateur', 'piecesJointes', 'affectations.equipement', 'affectations.utilisateurAffectation', 'equipements']);
 
         $peutAffecter = $request->user()->can('affecter', $demande);
         $equipementsDisponibles = $peutAffecter ? Equipement::where('statut', 'disponible')->get(['id', 'nom', 'code']) : [];
         $agentsDisponibles = $peutAffecter ? User::role('handling')->get(['id', 'name']) : [];
+
+        $equipementsDemandes = \Illuminate\Support\Facades\DB::table('demande_equipement')
+            ->where('demande_id', $demande->id)
+            ->get()
+            ->map(function ($eq) {
+                $type = \App\Enums\TypeEquipement::tryFrom($eq->type_equipement);
+                return [
+                    'id' => $eq->id,
+                    'nom' => $type ? $type->libelle() : $eq->type_equipement,
+                    'pivot' => [
+                        'type_equipement' => $eq->type_equipement,
+                        'quantite' => $eq->quantite,
+                    ]
+                ];
+            });
+
+        $demande->equipements_demandes = $equipementsDemandes;
 
         return Inertia::render('Demandes/Afficher', [
             'demande' => $demande,
@@ -231,6 +303,23 @@ class DemandeController extends Controller
         return back()->with('success', 'Pièce jointe ajoutée avec succès.');
     }
 
+    public function supprimerPieceJointe(Request $request, Demande $demande, PieceJointe $pieceJointe): RedirectResponse
+    {
+        $this->authorize('modifier', $demande);
+
+        if ($pieceJointe->demande_id !== $demande->id) {
+            abort(404);
+        }
+
+        if (Storage::exists($pieceJointe->chemin)) {
+            Storage::delete($pieceJointe->chemin);
+        }
+
+        $pieceJointe->delete();
+
+        return back()->with('success', 'Pièce jointe supprimée avec succès.');
+    }
+
     public function telechargerPieceJointe(Request $request, Demande $demande, PieceJointe $pieceJointe): StreamedResponse
     {
         $this->authorize('voir', $demande);
@@ -239,7 +328,7 @@ class DemandeController extends Controller
             abort(404);
         }
 
-        return Storage::download($pieceJointe->chemin, $pieceJointe->nom_fichier);
+        return Storage::response($pieceJointe->chemin, $pieceJointe->nom_fichier);
     }
 
     public function telechargerManifeste(Request $request, Demande $demande): StreamedResponse
@@ -252,6 +341,6 @@ class DemandeController extends Controller
 
         $nom = 'manifeste-'.$demande->reference.'.'.pathinfo($demande->manifeste_passager, PATHINFO_EXTENSION);
 
-        return Storage::download($demande->manifeste_passager, $nom);
+        return Storage::response($demande->manifeste_passager, $nom);
     }
 }
