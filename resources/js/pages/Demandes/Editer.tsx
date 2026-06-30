@@ -121,12 +121,12 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                 {/* Indicateur d'étapes */}
                 <div className="flex items-center gap-2">
                     {etapes.map((etape, index) => (
-                        <div key={etape} className="flex items-center gap-2">
+                        <div key={etape} className="flex items-center gap-2 cursor-pointer group" onClick={() => setEtapeActuelle(index)}>
                             <div
                                 className={`flex size-8 items-center justify-center rounded-full text-sm font-medium ${
                                     index <= etapeActuelle
-                                        ? 'bg-[#0B2545] text-white'
-                                        : 'bg-muted text-muted-foreground'
+                                        ? 'bg-[#0B2545] text-white group-hover:opacity-90'
+                                        : 'bg-muted text-muted-foreground group-hover:bg-muted/80'
                                 }`}
                             >
                                 {index + 1}

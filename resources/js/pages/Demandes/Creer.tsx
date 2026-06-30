@@ -110,14 +110,14 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                         const estComplete = index < etapeActuelle;
                         const estActive = index === etapeActuelle;
                         return (
-                            <div key={etape} className="flex items-center gap-2">
+                            <div key={etape} className="flex items-center gap-2 cursor-pointer group" onClick={() => setEtapeActuelle(index)}>
                                 <div
                                     className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300 ${
                                         estActive
                                             ? 'bg-primary text-white shadow-brand ring-2 ring-primary/30 ring-offset-2 ring-offset-background scale-110'
                                             : estComplete
-                                              ? 'bg-primary text-white'
-                                              : 'bg-muted text-muted-foreground'
+                                              ? 'bg-primary text-white group-hover:opacity-90'
+                                              : 'bg-muted text-muted-foreground group-hover:bg-muted/80'
                                     }`}
                                 >
                                     {estComplete ? <Check className="size-4" /> : index + 1}
