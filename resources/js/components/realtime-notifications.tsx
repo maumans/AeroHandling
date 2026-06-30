@@ -1,7 +1,9 @@
 import { useEchoNotification } from '@laravel/echo-react';
 import { toast } from 'sonner';
 
-export function RealtimeNotifications() {
+const isEchoEnabled = !!import.meta.env.VITE_PUSHER_APP_KEY;
+
+function RealtimeListener() {
     useEchoNotification((notification: any) => {
         const { type, title, message, actionUrl } = notification;
 
@@ -23,4 +25,12 @@ export function RealtimeNotifications() {
     });
 
     return null;
+}
+
+export function RealtimeNotifications() {
+    if (!isEchoEnabled) {
+        return null;
+    }
+
+    return <RealtimeListener />;
 }
