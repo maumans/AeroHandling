@@ -34,6 +34,14 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (\Spatie\Permission\Exceptions\UnauthorizedException $e, Request $request) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Vous n\'avez pas les droits nécessaires pour effectuer cette action.'], 403);
+            }
+            
+            return redirect()->route('tableau_de_bord.afficher')->with('error', 'Accès refusé. Vous n\'avez pas les droits nécessaires pour accéder à cette page.');
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );

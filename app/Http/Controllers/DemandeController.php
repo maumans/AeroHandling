@@ -87,6 +87,9 @@ class DemandeController extends Controller
     {
         $this->authorize('creer', Demande::class);
 
+        $user = $request->user();
+        $user->load('compagnie');
+
         $naturesVol = collect(NatureVol::cases())
             ->map(fn ($n) => ['value' => $n->value, 'libelle' => $n->libelle()]);
         $typesMarchandise = collect(TypeMarchandise::cases())
@@ -98,6 +101,7 @@ class DemandeController extends Controller
             'naturesVol' => $naturesVol,
             'typesMarchandise' => $typesMarchandise,
             'typesEquipement' => $typesEquipement,
+            'compagniePredefinie' => $user->compagnie?->nom,
         ]);
     }
 

@@ -18,6 +18,7 @@ interface Props {
     naturesVol: Option[];
     typesMarchandise: Option[];
     typesEquipement: Option[];
+    compagniePredefinie?: string;
 }
 
 const etapes = [
@@ -29,11 +30,11 @@ const etapes = [
     'Récapitulatif',
 ];
 
-export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquipement }: Props) {
+export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquipement, compagniePredefinie }: Props) {
     const [etapeActuelle, setEtapeActuelle] = useState(0);
 
     const { data, setData, post, processing, errors, transform } = useForm({
-        compagnie_libelle: '',
+        compagnie_libelle: compagniePredefinie || '',
         type_aeronef: '',
         numero_vol: '',
         numero_landing_permit: '',
@@ -162,6 +163,8 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             value={data.compagnie_libelle}
                                             onChange={(e) => setData('compagnie_libelle', e.target.value)}
                                             placeholder="Ex: Royal Air Maroc"
+                                            readOnly={!!compagniePredefinie}
+                                            className={compagniePredefinie ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : ""}
                                         />
                                         {errors.compagnie_libelle && <p className="text-sm text-destructive">{errors.compagnie_libelle}</p>}
                                     </div>
