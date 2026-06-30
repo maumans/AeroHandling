@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\StatutEquipement;
 use App\Enums\TypeEquipement;
 use App\Models\Equipement;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -50,7 +50,7 @@ class EquipementController extends Controller
             'types' => $types,
             'statuts' => $statuts,
             'filtres' => $request->only(['type', 'statut', 'recherche']),
-            'peutModifierStatut' => $request->user()->hasRole(['handling', 'coordinateur', 'administrateur']),
+            'peutModifierStatut' => $request->user()->hasRole(['handling', 'administrateur']),
         ]);
     }
 

@@ -34,7 +34,7 @@ export default function ParametresStockage({ capacites }: Props) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         setProcessing(true);
-        router.put('/administration/parametres-stockage', { parametres: formData }, {
+        router.put('/administration/parametres-stockage', { parametres: formData as any }, {
             onFinish: () => setProcessing(false),
         });
     };

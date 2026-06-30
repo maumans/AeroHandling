@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Services\GestionnaireDemande;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -59,16 +60,17 @@ class DemandeController extends Controller
         }
 
         $demandes = $query->latest()->paginate(config('aerohandling.pagination.demandes', 15))->withQueryString();
-        
+
         $demandes->getCollection()->transform(function ($demande) use ($user) {
             $demande->peutModifier = $user->can('modifier', $demande);
             $demande->peutSupprimer = $user->can('supprimer', $demande);
+
             return $demande;
         });
 
         $compagnies = Compagnie::where('actif', true)->orderBy('nom')->get(['id', 'nom']);
 
-        $peutAffecterGlobal = $user->hasRole(['coordinateur', 'administrateur']);
+        $peutAffecterGlobal = $user->hasRole(['handling', 'administrateur']);
         $equipementsDisponibles = $peutAffecterGlobal ? Equipement::where('statut', 'disponible')->get(['id', 'nom', 'code']) : [];
         $agentsDisponibles = $peutAffecterGlobal ? User::role('handling')->get(['id', 'name']) : [];
 
@@ -182,18 +184,19 @@ class DemandeController extends Controller
         $equipementsDisponibles = $peutAffecter ? Equipement::where('statut', 'disponible')->get(['id', 'nom', 'code']) : [];
         $agentsDisponibles = $peutAffecter ? User::role('handling')->get(['id', 'name']) : [];
 
-        $equipementsDemandes = \Illuminate\Support\Facades\DB::table('demande_equipement')
+        $equipementsDemandes = DB::table('demande_equipement')
             ->where('demande_id', $demande->id)
             ->get()
             ->map(function ($eq) {
-                $type = \App\Enums\TypeEquipement::tryFrom($eq->type_equipement);
+                $type = TypeEquipement::tryFrom($eq->type_equipement);
+
                 return [
                     'id' => $eq->id,
                     'nom' => $type ? $type->libelle() : $eq->type_equipement,
                     'pivot' => [
                         'type_equipement' => $eq->type_equipement,
                         'quantite' => $eq->quantite,
-                    ]
+                    ],
                 ];
             });
 

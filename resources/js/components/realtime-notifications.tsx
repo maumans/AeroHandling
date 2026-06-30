@@ -1,10 +1,13 @@
 import { useEchoNotification } from '@laravel/echo-react';
 import { toast } from 'sonner';
+import { usePage } from '@inertiajs/react';
 
 const isEchoEnabled = !!import.meta.env.VITE_PUSHER_APP_KEY;
 
 function RealtimeListener() {
-    useEchoNotification((notification: any) => {
+    const { auth } = usePage<{ auth: { user: { id: number } } }>().props;
+
+    useEchoNotification(`App.Models.User.${auth.user.id}`, (notification: any) => {
         const { type, title, message, actionUrl } = notification;
 
         const validTypes = ['success', 'info', 'warning', 'error'];

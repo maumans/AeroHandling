@@ -52,7 +52,7 @@ export default function Parametres({ capacites, configGenerale, onglet }: Props)
     const submitStockage: FormEventHandler = (e) => {
         e.preventDefault();
         setProcessingStockage(true);
-        router.put('/administration/parametres', { section: 'stockage', parametres: formStockage }, {
+        router.put('/administration/parametres', { section: 'stockage', parametres: formStockage as any }, {
             onFinish: () => setProcessingStockage(false),
         });
     };

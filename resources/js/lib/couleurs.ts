@@ -119,7 +119,6 @@ export const ROLE_LIBELLE: Record<string, string> = {
     administrateur: 'Administrateur',
     handling: 'Direction du Handling',
     aviation_civile: 'Aviation Civile',
-    coordinateur: 'Coordinateur / Superviseur',
     compagnie: 'Compagnie / Opérateur',
 };
 
@@ -131,7 +130,6 @@ export const ROLE_BADGE: Record<string, string> = {
     administrateur: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200',
     handling: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200',
     aviation_civile: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200',
-    coordinateur: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
     compagnie: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
 };
 

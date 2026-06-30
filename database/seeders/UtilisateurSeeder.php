@@ -35,13 +35,7 @@ class UtilisateurSeeder extends Seeder
                 'role' => RoleUtilisateur::AviationCivile,
                 'compagnie_id' => null,
             ],
-            [
-                'name' => 'Coordinateur Escale',
-                'email' => 'coordinateur@aerohandling.test',
-                'password' => bcrypt('password'),
-                'role' => RoleUtilisateur::Coordinateur,
-                'compagnie_id' => null,
-            ],
+
             [
                 'name' => 'Opérateur Royal Air Maroc',
                 'email' => 'operateur@ram.test',

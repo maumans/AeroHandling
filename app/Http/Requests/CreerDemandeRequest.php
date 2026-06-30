@@ -26,6 +26,7 @@ class CreerDemandeRequest extends FormRequest
             'aeronef_id' => ['nullable', 'exists:aeronefs,id'],
             'numero_vol' => ['required', 'string', 'max:20'],
             'numero_landing_permit' => ['nullable', 'string', 'max:100'],
+            'reference_autorisation' => ['nullable', 'string', 'max:100'],
             'nature_vol' => ['required', Rule::enum(NatureVol::class)],
             'demandeur' => ['required', 'string', 'max:255'],
             'contact_demandeur' => ['required', 'string', 'max:255'],

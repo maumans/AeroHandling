@@ -10,7 +10,7 @@ class DemandePolicy
 {
     public function voir(User $user, Demande $demande): bool
     {
-        if ($user->hasRole(['handling', 'coordinateur', 'administrateur'])) {
+        if ($user->hasRole(['handling', 'administrateur'])) {
             return true;
         }
 
@@ -19,12 +19,12 @@ class DemandePolicy
 
     public function creer(User $user): bool
     {
-        return $user->hasRole(['compagnie', 'administrateur']);
+        return $user->hasRole(['compagnie', 'handling', 'administrateur']);
     }
 
     public function modifier(User $user, Demande $demande): bool
     {
-        if ($demande->utilisateur_id !== $user->id && ! $user->hasRole('administrateur')) {
+        if ($demande->utilisateur_id !== $user->id && ! $user->hasRole(['handling', 'administrateur'])) {
             return false;
         }
 
@@ -36,7 +36,7 @@ class DemandePolicy
 
     public function soumettre(User $user, Demande $demande): bool
     {
-        if ($demande->utilisateur_id !== $user->id && ! $user->hasRole('administrateur')) {
+        if ($demande->utilisateur_id !== $user->id && ! $user->hasRole(['handling', 'administrateur'])) {
             return false;
         }
 
@@ -98,7 +98,7 @@ class DemandePolicy
 
     public function supprimer(User $user, Demande $demande): bool
     {
-        // Pour des raisons de traçabilité, une demande ne peut être supprimée 
+        // Pour des raisons de traçabilité, une demande ne peut être supprimée
         // que si elle est encore à l'état de brouillon.
         if ($demande->statut !== StatutDemande::Brouillon) {
             return false;
@@ -113,7 +113,7 @@ class DemandePolicy
 
     public function affecter(User $user, Demande $demande): bool
     {
-        if (! $user->hasRole(['coordinateur', 'administrateur'])) {
+        if (! $user->hasRole(['handling', 'administrateur'])) {
             return false;
         }
 

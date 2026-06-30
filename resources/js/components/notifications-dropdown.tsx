@@ -31,7 +31,7 @@ export function NotificationsDropdown() {
     }>().props;
 
     const marquerCommeLu = (id: string) => {
-        router.post(route('notifications.lire', id), {}, {
+        router.post(`/notifications/${id}/lire`, {}, {
             preserveScroll: true,
             preserveState: true,
             only: ['notificationsNonLues', 'recentNotifications'],
@@ -59,7 +59,7 @@ export function NotificationsDropdown() {
                             size="sm" 
                             className="h-auto p-0 text-xs text-muted-foreground hover:text-primary"
                             onClick={() => {
-                                router.post(route('notifications.lire_toutes'), {}, {
+                                router.post('/notifications/lire-toutes', {}, {
                                     preserveScroll: true,
                                     preserveState: true,
                                     only: ['notificationsNonLues', 'recentNotifications'],
@@ -103,7 +103,7 @@ export function NotificationsDropdown() {
                                     </div>
                                     {notification.data.demande_id && (
                                         <Link 
-                                            href={route('demandes.afficher', notification.data.demande_id)} 
+                                            href={`/demandes/${notification.data.demande_id}`} 
                                             className="mt-1 text-xs text-primary hover:underline"
                                             onClick={() => {
                                                 if (!notification.read_at) {

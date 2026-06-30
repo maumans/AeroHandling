@@ -33,11 +33,12 @@ const etapes = [
 export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquipement, compagniePredefinie }: Props) {
     const [etapeActuelle, setEtapeActuelle] = useState(0);
 
-    const { data, setData, post, processing, errors, transform } = useForm({
+    const { data, setData, post, processing, errors, transform, setError, clearErrors } = useForm({
         compagnie_libelle: compagniePredefinie || '',
         type_aeronef: '',
         numero_vol: '',
         numero_landing_permit: '',
+        reference_autorisation: '',
         nature_vol: '',
         demandeur: '',
         contact_demandeur: '',
@@ -72,11 +73,109 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
         setData('equipements_demandes', current);
     };
 
+    function validerEtape(etape: number): boolean {
+        let isValid = true;
+        
+        if (etape === 0) {
+            if (!data.compagnie_libelle) {
+                setError('compagnie_libelle', 'Le champ compagnie est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('compagnie_libelle');
+            }
+            if (!data.numero_vol) {
+                setError('numero_vol', 'Le numéro de vol est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('numero_vol');
+            }
+            if (!data.nature_vol) {
+                setError('nature_vol', 'La nature du vol est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('nature_vol');
+            }
+            if (!data.type_aeronef) {
+                setError('type_aeronef', 'Le type d\'aéronef est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('type_aeronef');
+            }
+        }
+        
+        if (etape === 1) {
+            if (!data.demandeur) {
+                setError('demandeur', 'Le champ demandeur est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('demandeur');
+            }
+            if (!data.contact_demandeur) {
+                setError('contact_demandeur', 'Le champ contact est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('contact_demandeur');
+            }
+        }
+        
+        if (etape === 2) {
+            if (!data.date_arrivee) {
+                setError('date_arrivee', 'La date d\'arrivée est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('date_arrivee');
+            }
+            if (!data.date_depart) {
+                setError('date_depart', 'La date de départ est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('date_depart');
+            }
+        }
+        
+        if (etape === 3) {
+            if (estCargo) {
+                if (!data.type_marchandise) {
+                    setError('type_marchandise', 'Le type de marchandise est obligatoire pour un vol cargo.');
+                    isValid = false;
+                } else {
+                    clearErrors('type_marchandise');
+                }
+            }
+        }
+        
+        return isValid;
+    }
+
     function suivant() {
-        if (etapeActuelle < etapes.length - 1) {
-            setEtapeActuelle(etapeActuelle + 1);
+        if (validerEtape(etapeActuelle)) {
+            if (etapeActuelle < etapes.length - 1) {
+                setEtapeActuelle(etapeActuelle + 1);
+            }
+        } else {
+            toast.error('Veuillez remplir tous les champs obligatoires avant de continuer.');
         }
     }
+
+    const allerAEtape = (index: number) => {
+        if (index < etapeActuelle) {
+            setEtapeActuelle(index);
+            return;
+        }
+        
+        let canAdvance = true;
+        for (let i = etapeActuelle; i < index; i++) {
+            if (!validerEtape(i)) {
+                canAdvance = false;
+                setEtapeActuelle(i);
+                toast.error('Veuillez remplir tous les champs obligatoires avant de continuer.');
+                break;
+            }
+        }
+        if (canAdvance) {
+            setEtapeActuelle(index);
+        }
+    };
 
     function precedent() {
         if (etapeActuelle > 0) {
@@ -110,7 +209,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                         const estComplete = index < etapeActuelle;
                         const estActive = index === etapeActuelle;
                         return (
-                            <div key={etape} className="flex items-center gap-2 cursor-pointer group" onClick={() => setEtapeActuelle(index)}>
+                            <div key={etape} className="flex items-center gap-2 cursor-pointer group" onClick={() => allerAEtape(index)}>
                                 <div
                                     className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300 ${
                                         estActive
@@ -202,15 +301,25 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                         {errors.type_aeronef && <p className="text-sm text-destructive">{errors.type_aeronef}</p>}
                                     </div>
 
-                                    <div className="space-y-2 md:col-span-2">
+                                    <div className="space-y-2 md:col-span-1">
                                         <Label htmlFor="numero_landing_permit">N° de landing permit</Label>
                                         <Input
                                             id="numero_landing_permit"
                                             value={data.numero_landing_permit}
                                             onChange={(e) => setData('numero_landing_permit', e.target.value)}
-                                            placeholder="Optionnel — Ex: LP-1234/26"
+                                            placeholder="Optionnel"
                                         />
                                         {errors.numero_landing_permit && <p className="text-sm text-destructive">{errors.numero_landing_permit}</p>}
+                                    </div>
+                                    <div className="space-y-2 md:col-span-1">
+                                        <Label htmlFor="reference_autorisation">Code Aviation Civile</Label>
+                                        <Input
+                                            id="reference_autorisation"
+                                            value={data.reference_autorisation}
+                                            onChange={(e) => setData('reference_autorisation', e.target.value)}
+                                            placeholder="Optionnel"
+                                        />
+                                        {errors.reference_autorisation && <p className="text-sm text-destructive">{errors.reference_autorisation}</p>}
                                     </div>
                                 </div>
                             )}
@@ -416,6 +525,8 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             <dd>{naturesVol.find((n) => n.value === data.nature_vol)?.libelle || '—'}</dd>
                                             <dt className="text-muted-foreground">Landing permit :</dt>
                                             <dd>{data.numero_landing_permit || '—'}</dd>
+                                            <dt className="text-muted-foreground">Code Aviation Civile :</dt>
+                                            <dd>{data.reference_autorisation || '—'}</dd>
                                             <dt className="text-muted-foreground">Demandeur :</dt>
                                             <dd>{data.demandeur || '—'}</dd>
                                             <dt className="text-muted-foreground">Contact :</dt>

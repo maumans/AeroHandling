@@ -66,7 +66,7 @@ class PlanningController extends Controller
             'libelleSemaine' => $debutSemaine->translatedFormat('d M').' — '.$finSemaine->translatedFormat('d M Y'),
             'equipementsDisponibles' => $equipementsDisponibles,
             'agentsDisponibles' => $agentsDisponibles,
-            'peutAffecter' => $request->user()->hasRole(['coordinateur', 'administrateur']),
+            'peutAffecter' => $request->user()->hasRole(['handling', 'administrateur']),
         ]);
     }
 }

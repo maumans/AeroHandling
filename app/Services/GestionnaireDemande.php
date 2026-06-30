@@ -7,9 +7,9 @@ use App\Enums\StatutDemande;
 use App\Models\Demande;
 use App\Models\User;
 use App\Models\Validation;
-use App\Notifications\NewDemandeCreated;
-use App\Notifications\DemandeStatusChanged;
 use App\Notifications\ActionRequiredNotification;
+use App\Notifications\DemandeStatusChanged;
+use App\Notifications\NewDemandeCreated;
 use Illuminate\Support\Facades\DB;
 
 class GestionnaireDemande
@@ -93,12 +93,19 @@ class GestionnaireDemande
     public function approuver(Demande $demande, User $utilisateur, ?string $commentaire = null): Demande
     {
         return DB::transaction(function () use ($demande, $utilisateur, $commentaire) {
+            $hasCode = ! empty($demande->reference_autorisation);
+
             $demande->update([
-                'statut' => StatutDemande::ApprouveeHandling,
+                'statut' => $hasCode ? StatutDemande::Autorisee : StatutDemande::ApprouveeHandling,
                 'date_decision_handling' => now(),
+                'date_autorisation' => $hasCode ? now() : null,
             ]);
 
             $this->enregistrerValidation($demande, $utilisateur, ActionValidation::ApprobationHandling, $commentaire);
+
+            if ($hasCode) {
+                $this->enregistrerValidation($demande, $utilisateur, ActionValidation::AutorisationAviationCivile, 'Autorisation automatique via code fourni à la création.');
+            }
 
             // Notifier le créateur (l'AC ne se connecte plus au système)
             $demande->utilisateur->notify(new DemandeStatusChanged($demande));
@@ -138,7 +145,7 @@ class GestionnaireDemande
             $demande->utilisateur->notify(new ActionRequiredNotification(
                 $demande,
                 'Complément d\'information requis',
-                'Motif : ' . ($commentaire ?? 'Non spécifié')
+                'Motif : '.($commentaire ?? 'Non spécifié')
             ));
 
             return $demande->fresh();
@@ -156,13 +163,9 @@ class GestionnaireDemande
 
             $this->enregistrerValidation($demande, $utilisateur, ActionValidation::AutorisationAviationCivile, $commentaire);
 
-            // Notifier le créateur et les coordinateurs
+            // Notifier le créateur
             $demande->refresh();
             $demande->utilisateur->notify(new DemandeStatusChanged($demande));
-            $coordinateurs = User::role('coordinateur')->get();
-            foreach ($coordinateurs as $coordinateur) {
-                $coordinateur->notify(new DemandeStatusChanged($demande));
-            }
 
             return $demande;
         });

@@ -44,8 +44,8 @@ function useNavigationItems(): NavItem[] {
             icon: ClipboardList,
         });
 
-        // Planning & Capacités - handling, coordinateur, admin
-        if (roles.some((r: string) => ['handling', 'coordinateur', 'administrateur'].includes(r))) {
+        // Planning & Capacités - handling, admin
+        if (roles.some((r: string) => ['handling', 'administrateur'].includes(r))) {
             items.push(
                 {
                     title: 'Planning',
@@ -61,8 +61,8 @@ function useNavigationItems(): NavItem[] {
         }
 
 
-        // Rapports - handling, coordinateur, admin
-        if (roles.some((r: string) => ['handling', 'coordinateur', 'administrateur'].includes(r))) {
+        // Rapports - handling, admin
+        if (roles.some((r: string) => ['handling', 'administrateur'].includes(r))) {
             items.push({
                 title: 'Rapports',
                 href: '/rapports',
