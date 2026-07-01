@@ -254,7 +254,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                             {etapeActuelle === 0 && (
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor="compagnie_libelle">Compagnie / Opérateur</Label>
+                                        <Label htmlFor="compagnie_libelle">Compagnie / Opérateur <span className="text-destructive">*</span></Label>
                                         <Input
                                             id="compagnie_libelle"
                                             value={data.compagnie_libelle}
@@ -265,7 +265,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="numero_vol">Numéro de vol</Label>
+                                        <Label htmlFor="numero_vol">Numéro de vol <span className="text-destructive">*</span></Label>
                                         <Input
                                             id="numero_vol"
                                             value={data.numero_vol}
@@ -276,7 +276,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="nature_vol">Nature du vol</Label>
+                                        <Label htmlFor="nature_vol">Nature du vol <span className="text-destructive">*</span></Label>
                                         <Combobox
                                             value={data.nature_vol}
                                             onChange={(v) => setData('nature_vol', v)}
@@ -287,7 +287,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="type_aeronef">Type d&apos;aéronef</Label>
+                                        <Label htmlFor="type_aeronef">Type d&apos;aéronef <span className="text-destructive">*</span></Label>
                                         <Input
                                             id="type_aeronef"
                                             value={data.type_aeronef}
@@ -324,7 +324,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                             {etapeActuelle === 1 && (
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor="demandeur">Demandeur</Label>
+                                        <Label htmlFor="demandeur">Demandeur <span className="text-destructive">*</span></Label>
                                         <Input
                                             id="demandeur"
                                             value={data.demandeur}
@@ -335,7 +335,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="contact_demandeur">Contact du demandeur</Label>
+                                        <Label htmlFor="contact_demandeur">Contact du demandeur <span className="text-destructive">*</span></Label>
                                         <Input
                                             id="contact_demandeur"
                                             value={data.contact_demandeur}
@@ -351,7 +351,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                             {etapeActuelle === 2 && (
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor="date_arrivee">Date et heure d&apos;arrivée</Label>
+                                        <Label htmlFor="date_arrivee">Date et heure d&apos;arrivée <span className="text-destructive">*</span></Label>
                                         <Input
                                             id="date_arrivee"
                                             type="datetime-local"
@@ -362,7 +362,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="date_depart">Date et heure de départ</Label>
+                                        <Label htmlFor="date_depart">Date et heure de départ <span className="text-destructive">*</span></Label>
                                         <Input
                                             id="date_depart"
                                             type="datetime-local"
@@ -404,7 +404,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                             </div>
 
                                             <div className="space-y-2">
-                                                <Label htmlFor="type_marchandise">Type de marchandise</Label>
+                                                <Label htmlFor="type_marchandise">Type de marchandise <span className="text-destructive">*</span></Label>
                                                 <Combobox
                                                     value={data.type_marchandise}
                                                     onChange={(v) => setData('type_marchandise', v)}

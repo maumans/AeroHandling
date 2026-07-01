@@ -154,13 +154,14 @@ export default function TableauDeBordIndex({
             <Head title="Tableau de bord" />
 
             <div className="flex flex-col gap-6 p-4 md:p-6">
-                {/* En-tête avec filtres */}
-                <div className="flex flex-col gap-4 border-b pb-4 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold">Tableau de bord</h1>
-                        <p className="text-sm text-muted-foreground">Vue d'ensemble de l'activité sur la période sélectionnée.</p>
-                    </div>
-                    <div className="flex flex-wrap items-end gap-3">
+                {/* En-tête */}
+                <div>
+                    <h1 className="text-2xl font-bold">Tableau de bord</h1>
+                    <p className="text-sm text-muted-foreground">Vue d'ensemble de l'activité sur la période sélectionnée.</p>
+                </div>
+
+                {/* Filtres */}
+                <div className="flex flex-wrap items-end gap-3 border-b pb-4">
                         <div className="space-y-1">
                             <Label htmlFor="debut" className="text-xs">Du</Label>
                             <DatePicker
@@ -222,7 +223,6 @@ export default function TableauDeBordIndex({
                                 Réinitialiser
                             </Button>
                         )}
-                    </div>
                 </div>
 
                 {/* Actions requises */}

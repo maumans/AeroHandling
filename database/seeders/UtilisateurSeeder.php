@@ -28,13 +28,13 @@ class UtilisateurSeeder extends Seeder
                 'role' => RoleUtilisateur::Handling,
                 'compagnie_id' => null,
             ],
-            [
+            /* [
                 'name' => 'Agent Aviation Civile',
                 'email' => 'aviation@aerohandling.test',
                 'password' => bcrypt('password'),
                 'role' => RoleUtilisateur::AviationCivile,
                 'compagnie_id' => null,
-            ],
+            ], */
 
             [
                 'name' => 'Opérateur Royal Air Maroc',
