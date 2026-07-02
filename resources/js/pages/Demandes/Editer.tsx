@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Combobox } from '@/components/ui/combobox';
 import { AlertCircle, Send } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,11 +15,19 @@ interface Option {
     libelle: string;
 }
 
+interface ServiceAssistance {
+    id: number;
+    code: string;
+    nom: string;
+    description: string | null;
+}
+
 interface Props {
     demande: any;
     naturesVol: Option[];
     typesMarchandise: Option[];
     typesEquipement: Option[];
+    servicesAssistance: ServiceAssistance[];
 }
 
 const etapes = [
@@ -30,8 +39,11 @@ const etapes = [
     'Récapitulatif',
 ];
 
-export default function DemandesEditer({ demande, naturesVol, typesMarchandise, typesEquipement }: Props) {
+const NATURES_VOL_SPECIALES = ['charter', 'vol_supplementaire', 'vol_evacuation_medicale'];
+
+export default function DemandesEditer({ demande, naturesVol, typesMarchandise, typesEquipement, servicesAssistance }: Props) {
     const [etapeActuelle, setEtapeActuelle] = useState(0);
+    const [manifesteMode, setManifesteMode] = useState<'fichier' | 'texte'>(demande.manifeste_passager_texte ? 'texte' : 'fichier');
 
     const formatDateTimeForInput = (dateString: string | null) => {
         if (!dateString) return '';
@@ -45,13 +57,19 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
         quantite: eq.pivot.quantite
     })) : [];
 
+    const initialServices = demande.services_assistance ? demande.services_assistance.map((s: any) => s.id) : [];
+
     const { data, setData, post, processing, errors, transform, setError, clearErrors } = useForm({
         compagnie_libelle: demande.compagnie_libelle || '',
         type_aeronef: demande.type_aeronef || '',
+        immatriculation: demande.immatriculation || '',
         numero_vol: demande.numero_vol || '',
         numero_landing_permit: demande.numero_landing_permit || '',
+        aeroport_provenance: demande.aeroport_provenance || '',
+        aeroport_destination: demande.aeroport_destination || '',
         reference_autorisation: demande.reference_autorisation || '',
         nature_vol: demande.nature_vol || '',
+        tow_bar_a_bord: demande.tow_bar_a_bord || false,
         demandeur: demande.demandeur || '',
         contact_demandeur: demande.contact_demandeur || '',
         date_arrivee: formatDateTimeForInput(demande.date_arrivee),
@@ -61,29 +79,40 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
         type_marchandise: demande.type_marchandise || '',
         nombre_uld: demande.nombre_uld || '',
         manifeste_passager: null as File | null,
+        manifeste_passager_texte: demande.manifeste_passager_texte || '',
         exigences_particulieres: demande.exigences_particulieres || '',
         equipements_demandes: initialEquipements,
+        services_assistance: initialServices,
         _method: 'put',
     });
 
     const estCargo = data.nature_vol === 'freighter';
+    const estVolSpecial = NATURES_VOL_SPECIALES.includes(data.nature_vol);
 
-    const handleEquipementChange = (type: string, quantite: string) => {
-        const qte = parseInt(quantite) || 0;
+    const handleEquipementToggle = (type: string, coche: boolean) => {
         const current = [...data.equipements_demandes];
-        const index = current.findIndex((eq) => eq.type === type);
+        const index = current.findIndex((eq: any) => eq.type === type);
 
-        if (qte > 0) {
-            if (index >= 0) {
-                current[index].quantite = qte;
-            } else {
-                current.push({ type, quantite: qte });
-            }
-        } else if (index >= 0) {
+        if (coche && index < 0) {
+            current.push({ type, quantite: 1 });
+        } else if (!coche && index >= 0) {
             current.splice(index, 1);
         }
 
         setData('equipements_demandes', current);
+    };
+
+    const handleServiceToggle = (serviceId: number, coche: boolean) => {
+        const current = [...data.services_assistance];
+        const index = current.indexOf(serviceId);
+
+        if (coche && index < 0) {
+            current.push(serviceId);
+        } else if (!coche && index >= 0) {
+            current.splice(index, 1);
+        }
+
+        setData('services_assistance', current);
     };
 
     function validerEtape(etape: number): boolean {
@@ -114,8 +143,32 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
             } else {
                 clearErrors('type_aeronef');
             }
+            if (!data.immatriculation) {
+                setError('immatriculation', 'L\'immatriculation est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('immatriculation');
+            }
+            if (!data.aeroport_provenance) {
+                setError('aeroport_provenance', 'L\'aéroport de provenance est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('aeroport_provenance');
+            }
+            if (!data.aeroport_destination) {
+                setError('aeroport_destination', 'L\'aéroport de destination est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('aeroport_destination');
+            }
+            if (estVolSpecial && !data.tow_bar_a_bord) {
+                setError('tow_bar_a_bord', 'Une barre de tractage (tow bar) doit obligatoirement être à bord pour les vols spéciaux.');
+                isValid = false;
+            } else {
+                clearErrors('tow_bar_a_bord');
+            }
         }
-        
+
         if (etape === 1) {
             if (!data.demandeur) {
                 setError('demandeur', 'Le champ demandeur est obligatoire.');
@@ -297,6 +350,39 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                         {errors.type_aeronef && <p className="text-sm text-destructive">{errors.type_aeronef}</p>}
                                     </div>
 
+                                    <div className="space-y-2">
+                                        <Label htmlFor="immatriculation">Immatriculation <span className="text-destructive">*</span></Label>
+                                        <Input
+                                            id="immatriculation"
+                                            value={data.immatriculation}
+                                            onChange={(e) => setData('immatriculation', e.target.value.toUpperCase())}
+                                            placeholder="Ex: CN-ROM"
+                                        />
+                                        {errors.immatriculation && <p className="text-sm text-destructive">{errors.immatriculation}</p>}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="aeroport_provenance">Aéroport de provenance <span className="text-destructive">*</span></Label>
+                                        <Input
+                                            id="aeroport_provenance"
+                                            value={data.aeroport_provenance}
+                                            onChange={(e) => setData('aeroport_provenance', e.target.value)}
+                                            placeholder="Ex: Paris CDG"
+                                        />
+                                        {errors.aeroport_provenance && <p className="text-sm text-destructive">{errors.aeroport_provenance}</p>}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="aeroport_destination">Aéroport de destination <span className="text-destructive">*</span></Label>
+                                        <Input
+                                            id="aeroport_destination"
+                                            value={data.aeroport_destination}
+                                            onChange={(e) => setData('aeroport_destination', e.target.value)}
+                                            placeholder="Ex: Casablanca"
+                                        />
+                                        {errors.aeroport_destination && <p className="text-sm text-destructive">{errors.aeroport_destination}</p>}
+                                    </div>
+
                                     <div className="space-y-2 md:col-span-1">
                                         <Label htmlFor="numero_landing_permit">N° de landing permit</Label>
                                         <Input
@@ -317,6 +403,25 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                         />
                                         {errors.reference_autorisation && <p className="text-sm text-destructive">{errors.reference_autorisation}</p>}
                                     </div>
+
+                                    {estVolSpecial && (
+                                        <div className="space-y-2 md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+                                            <div className="flex items-center gap-2">
+                                                <Checkbox
+                                                    id="tow_bar_a_bord"
+                                                    checked={data.tow_bar_a_bord}
+                                                    onCheckedChange={(checked) => setData('tow_bar_a_bord', checked === true)}
+                                                />
+                                                <Label htmlFor="tow_bar_a_bord" className="cursor-pointer">
+                                                    Barre de tractage (tow bar) à bord <span className="text-destructive">*</span>
+                                                </Label>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">
+                                                Obligatoire pour les vols spéciaux (charter, vol supplémentaire, évacuation médicale).
+                                            </p>
+                                            {errors.tow_bar_a_bord && <p className="text-sm text-destructive">{errors.tow_bar_a_bord}</p>}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -428,22 +533,57 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                     ) : (
                                         <div className="space-y-3">
                                             <p className="text-sm text-muted-foreground">
-                                                Pour un vol passagers ou autre, joignez le manifeste passager (PDF, image ou tableur).
+                                                Pour un vol passagers ou autre, joignez le manifeste passager ou saisissez la liste des passagers.
                                             </p>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="manifeste_passager">Manifeste passager</Label>
-                                                <input
-                                                    type="file"
-                                                    id="manifeste_passager"
-                                                    accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.csv"
-                                                    className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
-                                                    onChange={(e) => setData('manifeste_passager', e.target.files ? e.target.files[0] : null)}
-                                                />
-                                                {data.manifeste_passager && (
-                                                    <p className="text-xs text-muted-foreground">Fichier sélectionné : {data.manifeste_passager.name}</p>
-                                                )}
-                                                {errors.manifeste_passager && <p className="text-sm text-destructive">{errors.manifeste_passager}</p>}
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant={manifesteMode === 'fichier' ? 'default' : 'outline'}
+                                                    onClick={() => { setManifesteMode('fichier'); setData('manifeste_passager_texte', ''); }}
+                                                >
+                                                    Charger un fichier
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant={manifesteMode === 'texte' ? 'default' : 'outline'}
+                                                    onClick={() => { setManifesteMode('texte'); setData('manifeste_passager', null); }}
+                                                >
+                                                    Saisir la liste
+                                                </Button>
                                             </div>
+                                            {manifesteMode === 'fichier' ? (
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="manifeste_passager">Manifeste passager</Label>
+                                                    <input
+                                                        type="file"
+                                                        id="manifeste_passager"
+                                                        accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.csv"
+                                                        className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
+                                                        onChange={(e) => setData('manifeste_passager', e.target.files ? e.target.files[0] : null)}
+                                                    />
+                                                    {demande.manifeste_passager && !data.manifeste_passager && (
+                                                        <p className="text-xs text-muted-foreground">Un manifeste est déjà enregistré. Charger un nouveau fichier le remplacera.</p>
+                                                    )}
+                                                    {data.manifeste_passager && (
+                                                        <p className="text-xs text-muted-foreground">Fichier sélectionné : {data.manifeste_passager.name}</p>
+                                                    )}
+                                                    {errors.manifeste_passager && <p className="text-sm text-destructive">{errors.manifeste_passager}</p>}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="manifeste_passager_texte">Liste des passagers</Label>
+                                                    <textarea
+                                                        id="manifeste_passager_texte"
+                                                        className="flex min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                                        value={data.manifeste_passager_texte}
+                                                        onChange={(e) => setData('manifeste_passager_texte', e.target.value)}
+                                                        placeholder={'Un passager par ligne, ex :\nDUPONT Jean\nMARTIN Sophie'}
+                                                    />
+                                                    {errors.manifeste_passager_texte && <p className="text-sm text-destructive">{errors.manifeste_passager_texte}</p>}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -452,29 +592,48 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                             {/* Étape 5: Équipements */}
                             {etapeActuelle === 4 && (
                                 <div className="space-y-6">
-                                    <p className="text-muted-foreground">
-                                        Sélectionnez les équipements nécessaires pour cette opération en indiquant la quantité.
-                                    </p>
-                                    
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-                                        {typesEquipement.map((te) => {
-                                            const currentVal = data.equipements_demandes.find((eq: any) => eq.type === te.value)?.quantite || '';
-                                            return (
-                                                <div key={te.value} className="flex items-center justify-between rounded-lg border p-3">
-                                                    <Label htmlFor={`eq_${te.value}`} className="flex-1 cursor-pointer">{te.libelle}</Label>
-                                                    <Input 
-                                                        id={`eq_${te.value}`}
-                                                        type="number" 
-                                                        min="0"
-                                                        max="50"
-                                                        className="w-20"
-                                                        placeholder="0"
-                                                        value={currentVal}
-                                                        onChange={(e) => handleEquipementChange(te.value, e.target.value)}
-                                                    />
-                                                </div>
-                                            );
-                                        })}
+                                    <div>
+                                        <h3 className="mb-2 font-medium">Matériel d&apos;assistance</h3>
+                                        <p className="mb-3 text-sm text-muted-foreground">
+                                            Cochez le matériel nécessaire pour cette opération.
+                                        </p>
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                                            {typesEquipement.map((te) => {
+                                                const coche = data.equipements_demandes.some((eq: any) => eq.type === te.value);
+                                                return (
+                                                    <div key={te.value} className="flex items-center gap-2 rounded-lg border p-3">
+                                                        <Checkbox
+                                                            id={`eq_${te.value}`}
+                                                            checked={coche}
+                                                            onCheckedChange={(checked) => handleEquipementToggle(te.value, checked === true)}
+                                                        />
+                                                        <Label htmlFor={`eq_${te.value}`} className="flex-1 cursor-pointer">{te.libelle}</Label>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="mb-2 font-medium">Services d&apos;assistance</h3>
+                                        <p className="mb-3 text-sm text-muted-foreground">
+                                            Cochez les services d&apos;assistance requis pour cette opération.
+                                        </p>
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                                            {servicesAssistance.map((service) => {
+                                                const coche = data.services_assistance.includes(service.id);
+                                                return (
+                                                    <div key={service.id} className="flex items-center gap-2 rounded-lg border p-3">
+                                                        <Checkbox
+                                                            id={`svc_${service.id}`}
+                                                            checked={coche}
+                                                            onCheckedChange={(checked) => handleServiceToggle(service.id, checked === true)}
+                                                        />
+                                                        <Label htmlFor={`svc_${service.id}`} className="flex-1 cursor-pointer">{service.nom}</Label>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2 pt-4">
@@ -517,8 +676,20 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                             <dd>{data.numero_vol || '—'}</dd>
                                             <dt className="text-muted-foreground">Type d&apos;aéronef :</dt>
                                             <dd>{data.type_aeronef || '—'}</dd>
+                                            <dt className="text-muted-foreground">Immatriculation :</dt>
+                                            <dd>{data.immatriculation || '—'}</dd>
+                                            <dt className="text-muted-foreground">Provenance :</dt>
+                                            <dd>{data.aeroport_provenance || '—'}</dd>
+                                            <dt className="text-muted-foreground">Destination :</dt>
+                                            <dd>{data.aeroport_destination || '—'}</dd>
                                             <dt className="text-muted-foreground">Nature :</dt>
                                             <dd>{naturesVol.find((n) => n.value === data.nature_vol)?.libelle || '—'}</dd>
+                                            {estVolSpecial && (
+                                                <>
+                                                    <dt className="text-muted-foreground">Tow bar à bord :</dt>
+                                                    <dd>{data.tow_bar_a_bord ? 'Oui' : 'Non'}</dd>
+                                                </>
+                                            )}
                                             <dt className="text-muted-foreground">Landing permit :</dt>
                                             <dd>{data.numero_landing_permit || '—'}</dd>
                                             <dt className="text-muted-foreground">Code Aviation Civile :</dt>
@@ -541,7 +712,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                             ) : (
                                                 <>
                                                     <dt className="text-muted-foreground">Manifeste :</dt>
-                                                    <dd>{data.manifeste_passager?.name || '—'}</dd>
+                                                    <dd>{data.manifeste_passager?.name || (data.manifeste_passager_texte ? 'Saisi manuellement' : '—')}</dd>
                                                 </>
                                             )}
                                         </dl>
@@ -549,11 +720,23 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
 
                                     {data.equipements_demandes.length > 0 && (
                                         <div className="rounded-lg border p-4 space-y-2">
-                                            <h3 className="font-medium">Équipements demandés</h3>
+                                            <h3 className="font-medium">Matériel d&apos;assistance demandé</h3>
                                             <ul className="list-inside list-disc text-sm text-muted-foreground">
                                                 {data.equipements_demandes.map((eq: any) => {
                                                     const libelle = typesEquipement.find((t) => t.value === eq.type)?.libelle || eq.type;
-                                                    return <li key={eq.type}>{libelle} : {eq.quantite}</li>;
+                                                    return <li key={eq.type}>{libelle}</li>;
+                                                })}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {data.services_assistance.length > 0 && (
+                                        <div className="rounded-lg border p-4 space-y-2">
+                                            <h3 className="font-medium">Services d&apos;assistance demandés</h3>
+                                            <ul className="list-inside list-disc text-sm text-muted-foreground">
+                                                {data.services_assistance.map((id: number) => {
+                                                    const libelle = servicesAssistance.find((s) => s.id === id)?.nom || id;
+                                                    return <li key={id}>{libelle}</li>;
                                                 })}
                                             </ul>
                                         </div>

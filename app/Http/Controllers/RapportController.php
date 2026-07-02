@@ -69,6 +69,22 @@ class RapportController extends Controller
             'uld_total' => (int) $periode()->sum('nombre_uld'),
         ];
 
+        $parTypeAeronef = $periode()
+            ->whereNotNull('type_aeronef')
+            ->selectRaw('type_aeronef, count(*) as total')
+            ->groupBy('type_aeronef')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($ligne) => ['libelle' => $ligne->type_aeronef, 'total' => $ligne->total]);
+
+        $parImmatriculation = $periode()
+            ->whereNotNull('immatriculation')
+            ->selectRaw('immatriculation, count(*) as total')
+            ->groupBy('immatriculation')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($ligne) => ['libelle' => $ligne->immatriculation, 'total' => $ligne->total]);
+
         $registre = $periode()
             ->with(['compagnie', 'aeronef'])
             ->latest()
@@ -85,6 +101,8 @@ class RapportController extends Controller
             'indicateurs' => $indicateurs,
             'parCompagnie' => $parCompagnie,
             'parTonnage' => $parTonnage,
+            'parTypeAeronef' => $parTypeAeronef,
+            'parImmatriculation' => $parImmatriculation,
             'registre' => $registre,
             'filtresOptions' => [
                 'compagnies' => $compagniesList,

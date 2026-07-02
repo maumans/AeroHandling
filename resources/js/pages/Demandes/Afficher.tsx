@@ -37,6 +37,13 @@ interface Affectation {
     utilisateur_affectation?: { id: number; name: string };
 }
 
+interface ServiceAssistance {
+    id: number;
+    code: string;
+    nom: string;
+    description: string | null;
+}
+
 interface Demande {
     id: number;
     reference: string;
@@ -45,10 +52,16 @@ interface Demande {
     statut: string;
     compagnie_libelle: string | null;
     type_aeronef: string | null;
+    immatriculation: string | null;
     numero_landing_permit: string | null;
+    aeroport_provenance: string | null;
+    aeroport_destination: string | null;
+    tow_bar_a_bord: boolean;
     demandeur: string | null;
     contact_demandeur: string | null;
     manifeste_passager: string | null;
+    manifeste_passager_texte: string | null;
+    services_assistance: ServiceAssistance[];
     date_arrivee: string;
     date_depart: string;
     tonnage_prevu: string | null;
@@ -426,8 +439,24 @@ export default function DemandesAfficher({
                                     </dd>
                                 </div>
                                 <div>
+                                    <dt className="text-sm text-muted-foreground">Immatriculation</dt>
+                                    <dd className="font-medium">{demande.immatriculation ?? '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-sm text-muted-foreground">Aéroport de provenance</dt>
+                                    <dd className="font-medium">{demande.aeroport_provenance ?? '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-sm text-muted-foreground">Aéroport de destination</dt>
+                                    <dd className="font-medium">{demande.aeroport_destination ?? '—'}</dd>
+                                </div>
+                                <div>
                                     <dt className="text-sm text-muted-foreground">N° de landing permit</dt>
                                     <dd className="font-medium">{demande.numero_landing_permit ?? '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-sm text-muted-foreground">Tow bar à bord</dt>
+                                    <dd className="font-medium">{demande.tow_bar_a_bord ? 'Oui' : 'Non'}</dd>
                                 </div>
                                 <div>
                                     <dt className="text-sm text-muted-foreground">Demandeur</dt>
@@ -485,16 +514,42 @@ export default function DemandesAfficher({
                                 <>
                                     <Separator className="my-4" />
                                     <div>
-                                        <dt className="text-sm text-muted-foreground mb-2">Équipements demandés</dt>
+                                        <dt className="text-sm text-muted-foreground mb-2">Matériel d&apos;assistance demandé</dt>
                                         <dd className="mt-1">
                                             <ul className="list-inside list-disc text-sm">
                                                 {demande.equipements_demandes.map((eq) => (
                                                     <li key={eq.id}>
-                                                        {eq.nom} (x{eq.pivot.quantite})
+                                                        {eq.nom}
                                                     </li>
                                                 ))}
                                             </ul>
                                         </dd>
+                                    </div>
+                                </>
+                            )}
+
+                            {demande.services_assistance && demande.services_assistance.length > 0 && (
+                                <>
+                                    <Separator className="my-4" />
+                                    <div>
+                                        <dt className="text-sm text-muted-foreground mb-2">Services d&apos;assistance demandés</dt>
+                                        <dd className="mt-1">
+                                            <ul className="list-inside list-disc text-sm">
+                                                {demande.services_assistance.map((service) => (
+                                                    <li key={service.id}>{service.nom}</li>
+                                                ))}
+                                            </ul>
+                                        </dd>
+                                    </div>
+                                </>
+                            )}
+
+                            {demande.manifeste_passager_texte && (
+                                <>
+                                    <Separator className="my-4" />
+                                    <div>
+                                        <dt className="text-sm text-muted-foreground">Manifeste passager (saisi manuellement)</dt>
+                                        <dd className="mt-1 whitespace-pre-wrap text-sm">{demande.manifeste_passager_texte}</dd>
                                     </div>
                                 </>
                             )}

@@ -6,6 +6,7 @@ use App\Enums\NatureVol;
 use App\Enums\StatutDemande;
 use App\Models\Demande;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +19,7 @@ class DemandeCreationTest extends TestCase
     public function test_compagnie_peut_creer_et_soumettre_une_demande_avec_manifeste(): void
     {
         Storage::fake('local');
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         // Créer un utilisateur de type compagnie
         $utilisateur = User::factory()->create();
@@ -33,8 +34,11 @@ class DemandeCreationTest extends TestCase
             'action' => 'soumettre',
             'compagnie_libelle' => 'Air Test',
             'type_aeronef' => 'B737',
+            'immatriculation' => 'CN-TEST',
             'numero_vol' => 'AT1234',
             'numero_landing_permit' => 'LP-2026-999',
+            'aeroport_provenance' => 'Paris CDG',
+            'aeroport_destination' => 'Casablanca',
             'demandeur' => 'Jean Dupont',
             'contact_demandeur' => 'jean.dupont@airtest.com',
             'nature_vol' => NatureVol::Passager->value,

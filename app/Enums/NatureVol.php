@@ -25,4 +25,13 @@ enum NatureVol: string
     {
         return $this === self::Freighter;
     }
+
+    public function estVolSpecial(): bool
+    {
+        return in_array($this, [
+            self::Charter,
+            self::VolSupplementaire,
+            self::VolEvacuationMedicale,
+        ], true);
+    }
 }

@@ -33,6 +33,8 @@ interface Props {
         volume_total: number;
         uld_total: number;
     };
+    parTypeAeronef: { libelle: string; total: number }[];
+    parImmatriculation: { libelle: string; total: number }[];
     registre: {
         data: any[];
         links: any[];
@@ -53,6 +55,8 @@ export default function RapportsIndex({
     indicateurs,
     parCompagnie,
     parTonnage,
+    parTypeAeronef,
+    parImmatriculation,
     registre,
     filtresOptions,
     periode,
@@ -182,9 +186,10 @@ export default function RapportsIndex({
 
                 {/* Rubriques (Onglets) */}
                 <Tabs defaultValue="registre" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted">
+                    <TabsList className="grid w-full grid-cols-4 mb-6 bg-muted">
                         <TabsTrigger value="registre">Registre des opérations</TabsTrigger>
                         <TabsTrigger value="tonnage">Facturation & Volumes</TabsTrigger>
+                        <TabsTrigger value="vols">Stats vols</TabsTrigger>
                         <TabsTrigger value="performances">Performances & Délais</TabsTrigger>
                     </TabsList>
                     
@@ -303,6 +308,80 @@ export default function RapportsIndex({
                                 </div>
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    {/* RUBRIQUE: STATS VOLS */}
+                    <TabsContent value="vols" className="space-y-6">
+                        <div className="grid gap-6 md:grid-cols-2">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Répartition par type d&apos;appareil</CardTitle>
+                                    <CardDescription>Nombre de demandes reçues par type d&apos;aéronef.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="rounded-md border overflow-x-auto">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-muted text-muted-foreground uppercase text-xs">
+                                                <tr>
+                                                    <th className="px-4 py-3 font-medium">Type d&apos;appareil</th>
+                                                    <th className="px-4 py-3 font-medium text-right">Nombre de vols</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {parTypeAeronef.length > 0 ? (
+                                                    parTypeAeronef.map((ligne, index) => (
+                                                        <tr key={index} className="hover:bg-muted/50">
+                                                            <td className="px-4 py-3 font-medium">{ligne.libelle}</td>
+                                                            <td className="px-4 py-3 text-right">{ligne.total}</td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan={2} className="px-4 py-8 text-center text-muted-foreground">
+                                                            Aucune donnée trouvée.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Répartition par immatriculation</CardTitle>
+                                    <CardDescription>Nombre de demandes reçues par immatriculation d&apos;aéronef.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="rounded-md border overflow-x-auto">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-muted text-muted-foreground uppercase text-xs">
+                                                <tr>
+                                                    <th className="px-4 py-3 font-medium">Immatriculation</th>
+                                                    <th className="px-4 py-3 font-medium text-right">Nombre de vols</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {parImmatriculation.length > 0 ? (
+                                                    parImmatriculation.map((ligne, index) => (
+                                                        <tr key={index} className="hover:bg-muted/50">
+                                                            <td className="px-4 py-3 font-medium">{ligne.libelle}</td>
+                                                            <td className="px-4 py-3 text-right">{ligne.total}</td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan={2} className="px-4 py-8 text-center text-muted-foreground">
+                                                            Aucune donnée trouvée.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </TabsContent>
 
                     {/* RUBRIQUE: PERFORMANCES */}

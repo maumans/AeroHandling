@@ -24,9 +24,13 @@ class Demande extends Model
         'utilisateur_id',
         'aeronef_id',
         'type_aeronef',
+        'immatriculation',
         'numero_vol',
         'numero_landing_permit',
+        'aeroport_provenance',
+        'aeroport_destination',
         'nature_vol',
+        'tow_bar_a_bord',
         'date_arrivee',
         'date_depart',
         'tonnage_prevu',
@@ -34,6 +38,7 @@ class Demande extends Model
         'type_marchandise',
         'nombre_uld',
         'manifeste_passager',
+        'manifeste_passager_texte',
         'exigences_particulieres',
         'demandeur',
         'contact_demandeur',
@@ -58,6 +63,7 @@ class Demande extends Model
             'tonnage_prevu' => 'decimal:2',
             'volume_prevu' => 'decimal:2',
             'nombre_uld' => 'integer',
+            'tow_bar_a_bord' => 'boolean',
         ];
     }
 
@@ -108,6 +114,13 @@ class Demande extends Model
     {
         return $this->belongsToMany(Equipement::class, 'demande_equipement')
             ->withPivot(['type_equipement', 'quantite'])
+            ->withTimestamps();
+    }
+
+    /** @return BelongsToMany<ServiceAssistance, $this> */
+    public function servicesAssistance(): BelongsToMany
+    {
+        return $this->belongsToMany(ServiceAssistance::class, 'demande_service_assistance')
             ->withTimestamps();
     }
 }

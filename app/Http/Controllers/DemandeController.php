@@ -13,10 +13,12 @@ use App\Models\Compagnie;
 use App\Models\Demande;
 use App\Models\Equipement;
 use App\Models\PieceJointe;
+use App\Models\ServiceAssistance;
 use App\Models\User;
 use App\Services\GestionnaireDemande;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -103,6 +105,7 @@ class DemandeController extends Controller
             'naturesVol' => $naturesVol,
             'typesMarchandise' => $typesMarchandise,
             'typesEquipement' => $typesEquipement,
+            'servicesAssistance' => $this->servicesAssistanceActifs(),
             'compagniePredefinie' => $user->compagnie?->nom,
         ]);
     }
@@ -132,7 +135,7 @@ class DemandeController extends Controller
     {
         $this->authorize('modifier', $demande);
 
-        $demande->load(['equipements']); // Ensure pivot data is available for equipments
+        $demande->load(['equipements', 'servicesAssistance']); // Ensure pivot data is available for equipments
 
         $naturesVol = collect(NatureVol::cases())
             ->map(fn ($n) => ['value' => $n->value, 'libelle' => $n->libelle()]);
@@ -146,6 +149,7 @@ class DemandeController extends Controller
             'naturesVol' => $naturesVol,
             'typesMarchandise' => $typesMarchandise,
             'typesEquipement' => $typesEquipement,
+            'servicesAssistance' => $this->servicesAssistanceActifs(),
         ]);
     }
 
@@ -178,7 +182,7 @@ class DemandeController extends Controller
     {
         $this->authorize('voir', $demande);
 
-        $demande->load(['compagnie', 'aeronef', 'utilisateur', 'validations.utilisateur', 'commentaires.utilisateur', 'piecesJointes', 'affectations.equipement', 'affectations.utilisateurAffectation', 'equipements']);
+        $demande->load(['compagnie', 'aeronef', 'utilisateur', 'validations.utilisateur', 'commentaires.utilisateur', 'piecesJointes', 'affectations.equipement', 'affectations.utilisateurAffectation', 'equipements', 'servicesAssistance']);
 
         $peutAffecter = $request->user()->can('affecter', $demande);
         $equipementsDisponibles = $peutAffecter ? Equipement::where('statut', 'disponible')->get(['id', 'nom', 'code']) : [];
@@ -349,5 +353,14 @@ class DemandeController extends Controller
         $nom = 'manifeste-'.$demande->reference.'.'.pathinfo($demande->manifeste_passager, PATHINFO_EXTENSION);
 
         return Storage::response($demande->manifeste_passager, $nom);
+    }
+
+    /** @return Collection<int, array{id: int, code: string, nom: string, description: string|null}> */
+    private function servicesAssistanceActifs(): Collection
+    {
+        return ServiceAssistance::where('actif', true)
+            ->orderBy('ordre')
+            ->get(['id', 'code', 'nom', 'description'])
+            ->map(fn ($s) => ['id' => $s->id, 'code' => $s->code, 'nom' => $s->nom, 'description' => $s->description]);
     }
 }

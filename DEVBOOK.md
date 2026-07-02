@@ -320,7 +320,8 @@ Type côté front : `resources/js/types/auth.ts` (`User` avec `compagnie_id`, `r
 2. **Re-soumission** depuis statut `complement_demande` (route/action à câbler côté front) -> ✅ Terminé.
 3. **Planning** : détection de conflits d'affectation (chevauchement de dates pour un même équipement/agent) -> ✅ Terminé.
 4. **Rapports** : export PDF/Excel -> ✅ Terminé.
-5. **Recherche globale ⌘K** + sélecteur de langue dans la topbar -> ⏳ À faire (optionnel).
+5. **Recherche globale ⌘K** -> ✅ Terminé (voir §13).
+6. **Sélecteur de langue dans la topbar** -> ⏳ Reporté, chantier à part (voir §13) : nécessite une refonte i18n complète (aucune infrastructure de traduction côté frontend actuellement, tout le texte est en français en dur).
 
 ### Phase 16 — Qualité (à faire)
 - ✅ Compléter les tests PHPUnit : création avec manifeste testée.
@@ -375,3 +376,28 @@ Options selon priorité :
 1. **Re-soumission** — Câbler le bouton re-soumettre depuis le statut `complement_demande` côté front.
 2. **Export rapports** — PDF/Excel pour les indicateurs et graphiques.
 3. **Qualité** — compléter les tests PHPUnit (couvrir le flux création→soumission avec manifeste) + audit dark mode/responsive.
+
+## 12. Retour client du 02/07/2026 (implémenté)
+
+Nouvelles demandes client livrées :
+- **Immatriculation** : nouveau champ obligatoire sur la demande (`immatriculation`), indexé pour les stats.
+- **Aéroports de provenance / destination** : nouveaux champs obligatoires (`aeroport_provenance`, `aeroport_destination`).
+- **Tow bar obligatoire** : nouveau champ `tow_bar_a_bord` (booléen). Obligatoire (`accepted_if`) quand `nature_vol` est un vol spécial (`charter`, `vol_supplementaire`, `vol_evacuation_medicale` — cf. `NatureVol::estVolSpecial()`).
+- **Services d'assistance** : nouvelle table `services_assistance` (+ pivot `demande_service_assistance`) listant GPU, ASU, Pushback, Servicing toilette, Cobus, Tracteur de manutention, Bus VIP, Escalier passager, Chariot vrac, Passerelle télescopique, Assistance PMR. Sélection en **cases à cocher** dans le wizard (étape Équipements). Modèle `ServiceAssistance`, relation `Demande::servicesAssistance()`.
+- **Matériel d'assistance en cases à cocher** : l'étape Équipements du wizard (`Creer.tsx`/`Editer.tsx`) n'utilise plus des champs quantité — chaque type d'équipement est une checkbox (quantité forcée à 1 côté backend).
+- **Pousseur renommé en Pushback** : `TypeEquipement::Pousseur` → `TypeEquipement::Pushback` (migration de données `2026_07_02_114842_renommer_pousseur_en_pushback.php`).
+- **Manifeste passager** : possibilité de **saisir manuellement** la liste des passagers (`manifeste_passager_texte`, textarea) en alternative à l'upload de fichier. Bascule via deux boutons dans le wizard.
+- **Notification mail** : `NewDemandeCreated` envoie désormais aussi un mail (canal `mail` ajouté, en plus de `database`+`broadcast`) au Handling à chaque soumission de demande.
+- **Stats par type d'appareil / immatriculation** : nouvel onglet « Stats vols » dans `Rapports/Index.tsx`, alimenté par `RapportController` (`parTypeAeronef`, `parImmatriculation` — groupBy SQL sur la période filtrée).
+
+### Pièges rencontrés
+- **Nom de contrainte MySQL trop long** : `$table->unique(['demande_id', 'service_assistance_id'])` générait un nom d'index de 69 caractères (limite MySQL = 64) → erreur `Identifier name ... is too long`. Corrigé en nommant explicitement la contrainte : `$table->unique([...], 'demande_service_assistance_unique')`. **Réflexe à avoir** : nommer explicitement les contraintes uniques/index composites dès que les deux noms de colonnes combinés dépassent ~50 caractères.
+- Le test `DemandeCreationTest` a dû être mis à jour avec les nouveaux champs obligatoires (`immatriculation`, `aeroport_provenance`, `aeroport_destination`).
+
+`php artisan test --compact` : 35/37 passent (2 échecs pré-existants sans rapport : `profile.destroy` route non définie, `ExampleTest` 302 vs 200). `npx vite build` : OK. `vendor/bin/pint --dirty` : OK.
+
+## 13. Recherche globale ⌘K (implémentée le 02/07/2026)
+
+- **Composants** : `resources/js/hooks/use-recherche-globale-items.ts` (liste statique des destinations, filtrée par rôle exactement comme `useNavigationItems` dans `app-sidebar.tsx`) + `resources/js/components/recherche-globale.tsx` (bouton déclencheur dans la topbar + `CommandDialog` de shadcn/ui, déjà scaffoldé via `cmdk` — aucune nouvelle dépendance). Raccourci `⌘K` / `Ctrl+K` global (listener `keydown` sur `document`), plus un bouton visible dans `app-sidebar-header.tsx`.
+- **Portée actuelle** : navigation statique uniquement (pages + « Nouvelle demande »), pas de recherche d'entités (ex. rechercher une demande par référence ou une compagnie par nom) — le modèle existant est une recherche serveur par page (`Demandes/Index.tsx`), pas un index côté client. Une future itération pourrait ajouter un endpoint `GET /recherche-globale` pour indexer les entités si le besoin se confirme.
+- **Sélecteur de langue** : reporté à la demande du client — nécessiterait une refonte i18n complète (dictionnaire de traductions + mécanisme de bascule + traduction de tout le texte actuellement en dur en français dans chaque page). À planifier comme chantier séparé si besoin confirmé.

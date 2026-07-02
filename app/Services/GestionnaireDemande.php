@@ -38,6 +38,10 @@ class GestionnaireDemande
                 DB::table('demande_equipement')->insert($equipementsAInserer);
             }
 
+            if (! empty($donnees['services_assistance'])) {
+                $demande->servicesAssistance()->sync($donnees['services_assistance']);
+            }
+
             return $demande;
         });
     }
@@ -64,6 +68,10 @@ class GestionnaireDemande
 
                     DB::table('demande_equipement')->insert($equipementsAInserer);
                 }
+            }
+
+            if (array_key_exists('services_assistance', $donnees)) {
+                $demande->servicesAssistance()->sync($donnees['services_assistance'] ?? []);
             }
 
             return $demande->fresh();

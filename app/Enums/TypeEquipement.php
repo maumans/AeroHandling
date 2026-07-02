@@ -10,7 +10,7 @@ enum TypeEquipement: string
     case GPU = 'gpu';
     case TapisBagages = 'tapis_bagages';
     case Escalier = 'escalier';
-    case Pousseur = 'pousseur';
+    case Pushback = 'pushback';
 
     public function libelle(): string
     {
@@ -21,7 +21,7 @@ enum TypeEquipement: string
             self::GPU => 'Ground Power Unit',
             self::TapisBagages => 'Tapis à bagages',
             self::Escalier => 'Escalier',
-            self::Pousseur => 'Pousseur',
+            self::Pushback => 'Pushback',
         };
     }
 }

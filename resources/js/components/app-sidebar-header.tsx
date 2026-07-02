@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Bell, ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { RechercheGlobale } from '@/components/recherche-globale';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -24,9 +25,10 @@ export function AppSidebarHeader({
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
             <div className="flex items-center gap-1">
+                <RechercheGlobale />
                 <NotificationsDropdown />
                 <ThemeToggle />
-                
+
                 {auth?.user && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

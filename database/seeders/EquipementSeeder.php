@@ -26,7 +26,7 @@ class EquipementSeeder extends Seeder
             ['code' => 'TB-002', 'nom' => 'Tapis à bagages #2', 'type' => TypeEquipement::TapisBagages, 'statut' => StatutEquipement::EnService, 'capacite_max' => null],
             ['code' => 'ESC-001', 'nom' => 'Escalier passagers #1', 'type' => TypeEquipement::Escalier, 'statut' => StatutEquipement::Disponible, 'capacite_max' => null],
             ['code' => 'ESC-002', 'nom' => 'Escalier passagers #2', 'type' => TypeEquipement::Escalier, 'statut' => StatutEquipement::Disponible, 'capacite_max' => null],
-            ['code' => 'POU-001', 'nom' => 'Pousseur #1', 'type' => TypeEquipement::Pousseur, 'statut' => StatutEquipement::Disponible, 'capacite_max' => null],
+            ['code' => 'PSH-001', 'nom' => 'Pushback #1', 'type' => TypeEquipement::Pushback, 'statut' => StatutEquipement::Disponible, 'capacite_max' => null],
         ];
 
         foreach ($equipements as $equipement) {
