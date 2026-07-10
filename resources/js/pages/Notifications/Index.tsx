@@ -1,22 +1,20 @@
-import { Head, router, usePage } from '@inertiajs/react';
-import { Bell, BellOff, Check, CheckCheck } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { BellOff, Check, CheckCheck, ChevronRight } from 'lucide-react';
+import { NotificationIcon } from '@/components/notification-icon';
 import AppLayout from '@/layouts/app-layout';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { NOTIFICATION_TYPE_BADGE, NOTIFICATION_TYPE_LIBELLE } from '@/lib/couleurs';
 
 interface NotificationData {
-    demande_id?: number;
-    reference?: string;
-    numero_vol?: string;
-    reference_autorisation?: string;
+    type: 'info' | 'success' | 'warning' | 'error' | string;
+    title?: string;
     message: string;
-    type: string;
+    actionUrl?: string;
 }
 
 interface Notification {
     id: string;
-    type: string;
     data: NotificationData;
     read_at: string | null;
     created_at: string;
@@ -34,25 +32,6 @@ interface Props {
     notifications: PaginatedNotifications;
     nonLues: number;
 }
-
-const typeConfig: Record<string, { label: string; couleur: string }> = {
-    demande_soumise: {
-        label: 'Soumission',
-        couleur: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    },
-    demande_approuvee: {
-        label: 'Approuvée',
-        couleur: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    },
-    demande_autorisee: {
-        label: 'Autorisée',
-        couleur: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
-    },
-    demande_rejetee: {
-        label: 'Rejetée',
-        couleur: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-    },
-};
 
 function formatDate(dateStr: string): string {
     const date = new Date(dateStr);
@@ -81,7 +60,6 @@ function groupByDate(notifications: Notification[]): Record<string, Notification
 }
 
 export default function NotificationsIndex({ notifications, nonLues }: Props) {
-    const { notificationsNonLues } = usePage().props;
     const grouped = groupByDate(notifications.data);
 
     function marquerLue(id: string) {
@@ -92,8 +70,17 @@ export default function NotificationsIndex({ notifications, nonLues }: Props) {
         router.post('/notifications/lire-toutes', {}, { preserveScroll: true });
     }
 
-    function allerDemande(demandeId?: number) {
-        if (demandeId) router.visit(`/demandes/${demandeId}`);
+    function ouvrirNotification(notif: Notification) {
+        if (!notif.data.actionUrl) return;
+
+        if (!notif.read_at) {
+            router.post(`/notifications/${notif.id}/lire`, {}, {
+                onFinish: () => router.visit(notif.data.actionUrl!),
+            });
+            return;
+        }
+
+        router.visit(notif.data.actionUrl);
     }
 
     return (
@@ -138,45 +125,43 @@ export default function NotificationsIndex({ notifications, nonLues }: Props) {
                             <CardContent className="p-0">
                                 <ul className="divide-y divide-border">
                                     {notifs.map((notif) => {
-                                        const config = typeConfig[notif.data.type] ?? {
-                                            label: notif.data.type,
-                                            couleur: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
-                                        };
+                                        const cliquable = !!notif.data.actionUrl;
+                                        const libelleType = NOTIFICATION_TYPE_LIBELLE[notif.data.type] ?? notif.data.type;
+                                        const badgeType = NOTIFICATION_TYPE_BADGE[notif.data.type] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+
                                         return (
                                             <li
                                                 key={notif.id}
+                                                role={cliquable ? 'button' : undefined}
+                                                tabIndex={cliquable ? 0 : undefined}
+                                                onClick={() => ouvrirNotification(notif)}
+                                                onKeyDown={(e) => {
+                                                    if (cliquable && (e.key === 'Enter' || e.key === ' ')) {
+                                                        ouvrirNotification(notif);
+                                                    }
+                                                }}
                                                 className={`flex items-start gap-4 px-4 py-4 transition-colors ${
-                                                    notif.read_at === null
-                                                        ? 'bg-blue-50/50 dark:bg-blue-950/20'
-                                                        : ''
-                                                }`}
+                                                    cliquable ? 'cursor-pointer hover:bg-accent/50' : ''
+                                                } ${notif.read_at === null ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''}`}
                                             >
-                                                {/* Indicateur non lu */}
-                                                <div className="mt-1 flex-shrink-0">
-                                                    {notif.read_at === null ? (
-                                                        <span className="block h-2.5 w-2.5 rounded-full bg-[#1B98E0]" />
-                                                    ) : (
-                                                        <span className="block h-2.5 w-2.5 rounded-full bg-transparent" />
-                                                    )}
-                                                </div>
+                                                <NotificationIcon type={notif.data.type} className="mt-0.5 size-9" />
 
                                                 {/* Contenu */}
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex flex-wrap items-center gap-2">
-                                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.couleur}`}>
-                                                            {config.label}
+                                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${badgeType}`}>
+                                                            {libelleType}
                                                         </span>
-                                                        {notif.data.reference && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => allerDemande(notif.data.demande_id)}
-                                                                className="text-xs font-medium text-[#1B98E0] hover:underline"
-                                                            >
-                                                                {notif.data.reference}
-                                                            </button>
+                                                        {notif.read_at === null && (
+                                                            <span className="block h-1.5 w-1.5 rounded-full bg-[#1B98E0]" />
                                                         )}
                                                     </div>
-                                                    <p className="mt-1 text-sm text-foreground">
+                                                    {notif.data.title && (
+                                                        <p className={`mt-1 text-sm ${notif.read_at === null ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
+                                                            {notif.data.title}
+                                                        </p>
+                                                    )}
+                                                    <p className="mt-0.5 text-sm text-muted-foreground">
                                                         {notif.data.message}
                                                     </p>
                                                     <p className="mt-1 text-xs text-muted-foreground">
@@ -184,17 +169,25 @@ export default function NotificationsIndex({ notifications, nonLues }: Props) {
                                                     </p>
                                                 </div>
 
-                                                {/* Action marquer lu */}
-                                                {notif.read_at === null && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => marquerLue(notif.id)}
-                                                        title="Marquer comme lu"
-                                                        className="mt-0.5 flex-shrink-0 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                                                    >
-                                                        <Check className="size-4" />
-                                                    </button>
-                                                )}
+                                                {/* Actions */}
+                                                <div className="flex shrink-0 items-center gap-1">
+                                                    {notif.read_at === null && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                marquerLue(notif.id);
+                                                            }}
+                                                            title="Marquer comme lu"
+                                                            className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                                                        >
+                                                            <Check className="size-4" />
+                                                        </button>
+                                                    )}
+                                                    {cliquable && (
+                                                        <ChevronRight className="size-4 text-muted-foreground" />
+                                                    )}
+                                                </div>
                                             </li>
                                         );
                                     })}

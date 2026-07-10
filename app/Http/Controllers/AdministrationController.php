@@ -8,19 +8,24 @@ use App\Enums\TypeEquipement;
 use App\Http\Requests\StoreAeronefRequest;
 use App\Http\Requests\StoreCompagnieRequest;
 use App\Http\Requests\StoreEquipementRequest;
+use App\Http\Requests\StoreJourFerieRequest;
 use App\Http\Requests\StoreUtilisateurRequest;
 use App\Http\Requests\UpdateAeronefRequest;
 use App\Http\Requests\UpdateCompagnieRequest;
 use App\Http\Requests\UpdateEquipementRequest;
+use App\Http\Requests\UpdateJourFerieRequest;
 use App\Http\Requests\UpdateParametresStockageRequest;
 use App\Http\Requests\UpdateUtilisateurRequest;
 use App\Models\Aeronef;
 use App\Models\CapaciteStockage;
 use App\Models\Compagnie;
 use App\Models\Equipement;
+use App\Models\JourFerie;
 use App\Models\User;
+use App\Notifications\AccountActivated;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -46,14 +51,32 @@ class AdministrationController extends Controller
             });
         }
 
-        $utilisateurs = $query->orderBy('name')->paginate(config('aerohandling.pagination.utilisateurs', 20))->withQueryString()
+        match ($request->input('statut')) {
+            'actif' => $query->where('actif', true),
+            'en_attente' => $query->where('actif', false)->whereNull('valide_le'),
+            'suspendu' => $query->where('actif', false)->whereNotNull('valide_le'),
+            default => null,
+        };
+
+        if ($request->filled('compagnie_id')) {
+            $query->where('compagnie_id', $request->input('compagnie_id'));
+        }
+
+        // Priorité d'affichage : en attente de validation, puis suspendus, puis actifs — pour que
+        // les inscriptions à traiter ne soient jamais noyées au milieu d'une liste triée par nom.
+        $utilisateurs = $query
+            ->orderByRaw('CASE WHEN actif = 0 AND valide_le IS NULL THEN 0 WHEN actif = 0 THEN 1 ELSE 2 END')
+            ->orderBy('name')
+            ->paginate(config('aerohandling.pagination.utilisateurs', 20))->withQueryString()
             ->through(fn (User $u) => [
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
                 'compagnie' => $u->compagnie?->nom,
+                'compagnie_id' => $u->compagnie_id,
                 'roles' => $u->roles->pluck('name')->toArray(),
                 'actif' => $u->actif,
+                'valide_le' => $u->valide_le?->toIso8601String(),
                 'created_at' => $u->created_at?->toIso8601String(),
             ]);
 
@@ -62,7 +85,8 @@ class AdministrationController extends Controller
         return Inertia::render('Administration/Utilisateurs/Index', [
             'utilisateurs' => $utilisateurs,
             'roles' => $roles,
-            'filtres' => $request->only(['recherche']),
+            'compagnies' => Compagnie::orderBy('nom')->get(['id', 'nom']),
+            'filtres' => $request->only(['recherche', 'statut', 'compagnie_id']),
         ]);
     }
 
@@ -141,8 +165,38 @@ class AdministrationController extends Controller
             return back()->with('error', 'Vous ne pouvez pas suspendre votre propre compte.');
         }
 
-        $user->actif = ! $user->actif;
-        $user->save();
+        $compagnieActivee = DB::transaction(function () use ($user) {
+            $user->actif = ! $user->actif;
+
+            if ($user->actif && $user->valide_le === null) {
+                $user->valide_le = now();
+            }
+
+            $user->save();
+
+            $compagnieActivee = null;
+
+            if ($user->actif) {
+                $compagnie = $user->compagnie;
+
+                if ($compagnie && ! $compagnie->actif && $compagnie->valide_le === null) {
+                    $compagnie->actif = true;
+                    $compagnie->valide_le = now();
+                    $compagnie->save();
+                    $compagnieActivee = $compagnie;
+                }
+            }
+
+            return $compagnieActivee;
+        });
+
+        if ($user->actif) {
+            $user->notify(new AccountActivated);
+        }
+
+        if ($compagnieActivee) {
+            return back()->with('success', "Le compte de {$user->name} a été activé, ainsi que la compagnie {$compagnieActivee->nom}.");
+        }
 
         $statut = $user->actif ? 'réactivé' : 'suspendu';
 
@@ -173,6 +227,7 @@ class AdministrationController extends Controller
         $this->authorizeAdmin($request);
 
         $compagnies = Compagnie::withCount('demandes', 'utilisateurs')
+            ->orderByRaw('CASE WHEN actif = 0 AND valide_le IS NULL THEN 0 WHEN actif = 0 THEN 1 ELSE 2 END')
             ->orderBy('nom')
             ->paginate(config('aerohandling.pagination.compagnies', 20))
             ->through(fn (Compagnie $c) => [
@@ -182,6 +237,7 @@ class AdministrationController extends Controller
                 'code_icao' => $c->code_icao,
                 'pays' => $c->pays,
                 'actif' => $c->actif,
+                'valide_le' => $c->valide_le?->toIso8601String(),
                 'demandes_count' => $c->demandes_count,
                 'utilisateurs_count' => $c->utilisateurs_count,
             ]);
@@ -232,10 +288,53 @@ class AdministrationController extends Controller
     public function mettreAJourCompagnie(UpdateCompagnieRequest $request, int $compagnie): RedirectResponse
     {
         $c = Compagnie::findOrFail($compagnie);
-        $c->update($request->validated());
+
+        $donnees = $request->validated();
+        $activeLaCompagnie = ($donnees['actif'] ?? false) && ! $c->actif && $c->valide_le === null;
+
+        $c->update($donnees);
+
+        if ($activeLaCompagnie) {
+            $c->valide_le = now();
+            $c->save();
+        }
 
         return redirect()->route('administration.compagnies.index')
             ->with('success', "Compagnie {$c->nom} mise à jour.");
+    }
+
+    public function toggleStatutCompagnie(Request $request, int $compagnie): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $c = Compagnie::findOrFail($compagnie);
+
+        $c->actif = ! $c->actif;
+
+        if ($c->actif && $c->valide_le === null) {
+            $c->valide_le = now();
+        }
+
+        $c->save();
+
+        $statut = $c->actif ? 'activée' : 'désactivée';
+
+        return back()->with('success', "La compagnie {$c->nom} a été {$statut}.");
+    }
+
+    public function supprimerCompagnie(Request $request, int $compagnie): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $c = Compagnie::findOrFail($compagnie);
+
+        if ($c->utilisateurs()->exists()) {
+            return back()->with('error', "Impossible de supprimer {$c->nom} : des utilisateurs y sont encore rattachés.");
+        }
+
+        $c->delete();
+
+        return back()->with('success', "Compagnie {$c->nom} supprimée.");
     }
 
     // -------------------------------------------------------------------------
@@ -404,6 +503,63 @@ class AdministrationController extends Controller
     private function authorizeAdmin(Request $request): void
     {
         abort_unless($request->user()->hasRole('administrateur'), 403);
+    }
+
+    // -------------------------------------------------------------------------
+    // Jours Fériés
+    // -------------------------------------------------------------------------
+
+    public function joursFeries(Request $request): Response
+    {
+        $this->authorizeAdmin($request);
+
+        $jours = JourFerie::orderBy('date', 'desc')->paginate(config('aerohandling.pagination.demandes', 15));
+
+        return Inertia::render('Administration/JoursFeries/Index', [
+            'jours' => $jours,
+        ]);
+    }
+
+    public function creerJourFerie(Request $request): Response
+    {
+        $this->authorizeAdmin($request);
+
+        return Inertia::render('Administration/JoursFeries/Creer');
+    }
+
+    public function enregistrerJourFerie(StoreJourFerieRequest $request): RedirectResponse
+    {
+        $jour = JourFerie::create($request->validated());
+
+        return redirect()->route('administration.jours_feries.index')
+            ->with('success', "Jour férié {$jour->nom} créé.");
+    }
+
+    public function editerJourFerie(Request $request, JourFerie $jourFerie): Response
+    {
+        $this->authorizeAdmin($request);
+
+        return Inertia::render('Administration/JoursFeries/Editer', [
+            'jour' => $jourFerie,
+        ]);
+    }
+
+    public function mettreAJourJourFerie(UpdateJourFerieRequest $request, JourFerie $jourFerie): RedirectResponse
+    {
+        $jourFerie->update($request->validated());
+
+        return redirect()->route('administration.jours_feries.index')
+            ->with('success', "Jour férié {$jourFerie->nom} mis à jour.");
+    }
+
+    public function supprimerJourFerie(Request $request, JourFerie $jourFerie): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+        $nom = $jourFerie->nom;
+        $jourFerie->delete();
+
+        return redirect()->route('administration.jours_feries.index')
+            ->with('success', "Jour férié {$nom} supprimé.");
     }
 
     // -------------------------------------------------------------------------

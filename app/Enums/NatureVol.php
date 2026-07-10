@@ -9,6 +9,7 @@ enum NatureVol: string
     case Charter = 'charter';
     case VolSupplementaire = 'vol_supplementaire';
     case VolEvacuationMedicale = 'vol_evacuation_medicale';
+    case VolRapatriementHumanitaire = 'vol_rapatriement_humanitaire';
 
     public function libelle(): string
     {
@@ -18,6 +19,7 @@ enum NatureVol: string
             self::Charter => 'Charter',
             self::VolSupplementaire => 'Vol supplémentaire',
             self::VolEvacuationMedicale => 'Vol évacuation médicale',
+            self::VolRapatriementHumanitaire => 'Vol de rapatriement / humanitaire',
         };
     }
 
@@ -32,6 +34,7 @@ enum NatureVol: string
             self::Charter,
             self::VolSupplementaire,
             self::VolEvacuationMedicale,
+            self::VolRapatriementHumanitaire,
         ], true);
     }
 }

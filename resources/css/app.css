@@ -70,8 +70,8 @@
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.21 0.03 277);
 
-    /* Marque — #4409a3 (Deep Purple) */
-    --primary: #4409a3;
+    /* Marque — Navy #0B2545 (cf. DEVBOOK) */
+    --primary: #0b2545;
     --primary-foreground: oklch(0.985 0 0);
 
     --secondary: oklch(0.962 0.014 286);
@@ -88,7 +88,7 @@
 
     --border: oklch(0.912 0.012 286);
     --input: oklch(0.905 0.014 286);
-    --ring: #4409a3;
+    --ring: #0b2545;
 
     /* Graphiques — palette multicolore vive */
     --chart-1: #4409a3;
@@ -102,12 +102,12 @@
     /* Sidebar — panneau froid teinté indigo */
     --sidebar: oklch(0.982 0.008 286);
     --sidebar-foreground: oklch(0.37 0.035 277);
-    --sidebar-primary: #4409a3;
+    --sidebar-primary: #0b2545;
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.948 0.03 292);
     --sidebar-accent-foreground: oklch(0.45 0.2 285);
     --sidebar-border: oklch(0.912 0.012 286);
-    --sidebar-ring: #4409a3;
+    --sidebar-ring: #0b2545;
 }
 
 .dark {
@@ -119,8 +119,8 @@
     --popover: oklch(0.223 0.025 281);
     --popover-foreground: oklch(0.97 0.01 286);
 
-    /* Marque — violet clair pour contraste sur fond sombre */
-    --primary: #8b5cf6;
+    /* Marque — Cyan #1B98E0 (accent) pour un contraste suffisant sur fond sombre */
+    --primary: #1b98e0;
     --primary-foreground: oklch(0.99 0.01 286);
 
     --secondary: oklch(0.278 0.03 281);
@@ -137,7 +137,7 @@
 
     --border: oklch(0.3 0.028 281);
     --input: oklch(0.32 0.03 281);
-    --ring: #8b5cf6;
+    --ring: #1b98e0;
 
     --chart-1: #8b5cf6;
     --chart-2: oklch(0.68 0.2 300);
@@ -148,12 +148,12 @@
     /* Sidebar — panneau plus sombre que le contenu */
     --sidebar: oklch(0.165 0.022 281);
     --sidebar-foreground: oklch(0.82 0.02 286);
-    --sidebar-primary: #8b5cf6;
+    --sidebar-primary: #1b98e0;
     --sidebar-primary-foreground: oklch(0.99 0.01 286);
     --sidebar-accent: oklch(0.3 0.05 285);
     --sidebar-accent-foreground: oklch(0.92 0.04 290);
     --sidebar-border: oklch(0.28 0.025 281);
-    --sidebar-ring: #8b5cf6;
+    --sidebar-ring: #1b98e0;
 }
 
 @layer base {

@@ -59,10 +59,11 @@ export const NATURE_VOL_LIBELLE: Record<string, string> = {
     charter: 'Charter',
     vol_supplementaire: 'Vol supplémentaire',
     vol_evacuation_medicale: 'Vol évacuation médicale',
+    vol_rapatriement_humanitaire: 'Vol de rapatriement / humanitaire',
 };
 
 /** Palette hex pour les graphiques (ordre des cases de l'enum) */
-export const NATURE_VOL_COULEURS_HEX = ['#0B2545', '#1B98E0', '#13C296', '#F59E0B', '#EF4444'];
+export const NATURE_VOL_COULEURS_HEX = ['#0B2545', '#1B98E0', '#13C296', '#F59E0B', '#EF4444', '#8B5CF6'];
 
 // ---------------------------------------------------------------------------
 // TypeMarchandise
@@ -142,3 +143,30 @@ export const COULEURS_MARQUE = {
     navySecondaire: '#13315C',
     cyan: '#1B98E0',
 } as const;
+
+// ---------------------------------------------------------------------------
+// Notifications (type sémantique renvoyé par RealtimeNotification::getPayload())
+// ---------------------------------------------------------------------------
+
+export const NOTIFICATION_TYPE_LIBELLE: Record<string, string> = {
+    info: 'Information',
+    success: 'Succès',
+    warning: 'Attention',
+    error: 'Urgent',
+};
+
+/** Classes Tailwind pour le badge de type notification */
+export const NOTIFICATION_TYPE_BADGE: Record<string, string> = {
+    info: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200',
+    success: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
+    warning: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
+    error: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200',
+};
+
+/** Classes Tailwind pour le fond de la pastille icône, par type de notification */
+export const NOTIFICATION_TYPE_ICONE_FOND: Record<string, string> = {
+    info: 'bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400',
+    success: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400',
+    warning: 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400',
+    error: 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
+};

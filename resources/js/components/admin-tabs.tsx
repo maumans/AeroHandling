@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Building2, Plane, Settings, Wrench, Users } from 'lucide-react';
+import { Building2, Plane, Settings, Wrench, Users, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function AdminTabs() {
@@ -29,6 +29,12 @@ export default function AdminTabs() {
             href: '/administration/equipements',
             icon: Wrench,
             active: url.startsWith('/administration/equipements'),
+        },
+        {
+            name: 'Jours Fériés',
+            href: '/administration/jours-feries',
+            icon: CalendarDays,
+            active: url.startsWith('/administration/jours-feries'),
         },
         {
             name: 'Paramètres',

@@ -5,6 +5,7 @@ use App\Http\Controllers\AffectationController;
 use App\Http\Controllers\CapaciteController;
 use App\Http\Controllers\DemandeController;
 use App\Http\Controllers\EquipementController;
+use App\Http\Controllers\InscriptionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\RapportController;
@@ -14,6 +15,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return auth()->check() ? redirect('/demandes') : redirect('/login');
 })->name('home');
+
+Route::middleware('guest')->group(function () {
+    Route::get('/inscription', [InscriptionController::class, 'afficher'])->name('inscription.afficher');
+    Route::post('/inscription', [InscriptionController::class, 'enregistrer'])
+        ->middleware('throttle:inscription')
+        ->name('inscription.enregistrer');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', '/tableau-de-bord');
@@ -50,20 +58,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Manifeste passager
     Route::get('/demandes/{demande}/manifeste', [DemandeController::class, 'telechargerManifeste'])->name('demandes.manifeste.telecharger');
 
+    // Facture Proforma
+    Route::get('/demandes/{demande}/proforma', [DemandeController::class, 'telechargerProforma'])->name('demandes.proforma.telecharger');
+
     // Planning, Capacités & Rapports (Handling & Coordinateur)
     Route::middleware(['role:handling|coordinateur|administrateur'])->group(function () {
         Route::get('/planning', [PlanningController::class, 'index'])->name('planning.index');
-        
+
         Route::get('/capacites', [CapaciteController::class, 'index'])->name('capacites.index');
         Route::put('/capacites/{capacite}', [CapaciteController::class, 'mettreAJour'])->name('capacites.mettre_a_jour');
-        
+
         Route::get('/equipements', [EquipementController::class, 'index'])->name('equipements.index');
         Route::patch('/equipements/{equipement}/statut', [EquipementController::class, 'changerStatut'])->name('equipements.changer_statut');
-        
+
         Route::get('/rapports', [RapportController::class, 'index'])->name('rapports.index');
         Route::get('/rapports/export', [RapportController::class, 'export'])->name('rapports.export');
     });
-
 
     // Administration
     Route::middleware(['role:administrateur'])->group(function () {
@@ -82,6 +92,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/administration/compagnies', [AdministrationController::class, 'enregistrerCompagnie'])->name('administration.compagnies.enregistrer');
         Route::get('/administration/compagnies/{compagnie}/editer', [AdministrationController::class, 'editerCompagnie'])->name('administration.compagnies.editer');
         Route::put('/administration/compagnies/{compagnie}', [AdministrationController::class, 'mettreAJourCompagnie'])->name('administration.compagnies.mettre_a_jour');
+        Route::patch('/administration/compagnies/{compagnie}/statut', [AdministrationController::class, 'toggleStatutCompagnie'])->name('administration.compagnies.toggle_statut');
+        Route::delete('/administration/compagnies/{compagnie}', [AdministrationController::class, 'supprimerCompagnie'])->name('administration.compagnies.supprimer');
 
         // Administration — Aéronefs
         Route::get('/administration/aeronefs', [AdministrationController::class, 'aeronefs'])->name('administration.aeronefs.index');
@@ -97,6 +109,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/administration/equipements', [AdministrationController::class, 'enregistrerEquipement'])->name('administration.equipements.enregistrer');
         Route::get('/administration/equipements/{equipement}/editer', [AdministrationController::class, 'editerEquipement'])->name('administration.equipements.editer');
         Route::put('/administration/equipements/{equipement}', [AdministrationController::class, 'mettreAJourEquipement'])->name('administration.equipements.mettre_a_jour');
+
+        // Administration — Jours Fériés
+        Route::get('/administration/jours-feries', [AdministrationController::class, 'joursFeries'])->name('administration.jours_feries.index');
+        Route::get('/administration/jours-feries/creer', [AdministrationController::class, 'creerJourFerie'])->name('administration.jours_feries.creer');
+        Route::post('/administration/jours-feries', [AdministrationController::class, 'enregistrerJourFerie'])->name('administration.jours_feries.enregistrer');
+        Route::get('/administration/jours-feries/{jourFerie}/editer', [AdministrationController::class, 'editerJourFerie'])->name('administration.jours_feries.editer');
+        Route::put('/administration/jours-feries/{jourFerie}', [AdministrationController::class, 'mettreAJourJourFerie'])->name('administration.jours_feries.mettre_a_jour');
+        Route::delete('/administration/jours-feries/{jourFerie}', [AdministrationController::class, 'supprimerJourFerie'])->name('administration.jours_feries.supprimer');
 
         // Administration — Paramètres
         Route::get('/administration/parametres', [AdministrationController::class, 'parametres'])->name('administration.parametres.index');

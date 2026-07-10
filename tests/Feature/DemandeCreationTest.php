@@ -42,12 +42,14 @@ class DemandeCreationTest extends TestCase
             'demandeur' => 'Jean Dupont',
             'contact_demandeur' => 'jean.dupont@airtest.com',
             'nature_vol' => NatureVol::Passager->value,
+            'mtow' => 78.5,
             'date_arrivee' => now()->addDays(2)->format('Y-m-d H:i:s'),
             'date_depart' => now()->addDays(2)->addHours(4)->format('Y-m-d H:i:s'),
             'tonnage_prevu' => null,
             'volume_prevu' => null,
             'type_marchandise' => null,
             'nombre_uld' => null,
+            'nombre_palettes' => null,
             'exigences_particulieres' => 'Pas d\'exigences.',
             'manifeste_passager' => $fichierManifeste,
         ];
@@ -62,6 +64,7 @@ class DemandeCreationTest extends TestCase
             'numero_vol' => 'AT1234',
             'compagnie_libelle' => 'Air Test',
             'type_aeronef' => 'B737',
+            'mtow' => 78.5,
             'statut' => StatutDemande::Soumise,
             'utilisateur_id' => $utilisateur->id,
         ]);
@@ -71,5 +74,71 @@ class DemandeCreationTest extends TestCase
         // Vérification de l'upload du manifeste
         $this->assertNotNull($demande->manifeste_passager);
         Storage::disk('local')->assertExists($demande->manifeste_passager);
+    }
+
+    public function test_le_mtow_est_obligatoire_a_la_creation(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $utilisateur = User::factory()->create();
+        $utilisateur->assignRole('compagnie');
+        $this->actingAs($utilisateur);
+
+        $response = $this->post(route('demandes.enregistrer'), [
+            'action' => 'brouillon',
+            'compagnie_libelle' => 'Air Test',
+            'type_aeronef' => 'B737',
+            'immatriculation' => 'CN-TEST',
+            'numero_vol' => 'AT9999',
+            'aeroport_provenance' => 'Paris CDG',
+            'aeroport_destination' => 'Casablanca',
+            'demandeur' => 'Jean Dupont',
+            'contact_demandeur' => 'jean.dupont@airtest.com',
+            'nature_vol' => NatureVol::Passager->value,
+            'date_arrivee' => now()->addDays(2)->format('Y-m-d H:i:s'),
+            'date_depart' => now()->addDays(2)->addHours(4)->format('Y-m-d H:i:s'),
+        ]);
+
+        $response->assertSessionHasErrors('mtow');
+        $this->assertDatabaseMissing('demandes', ['numero_vol' => 'AT9999']);
+    }
+
+    public function test_le_vol_de_rapatriement_humanitaire_exige_la_barre_de_tractage(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $utilisateur = User::factory()->create();
+        $utilisateur->assignRole('compagnie');
+        $this->actingAs($utilisateur);
+
+        $donnees = [
+            'action' => 'brouillon',
+            'compagnie_libelle' => 'Air Test',
+            'type_aeronef' => 'B737',
+            'immatriculation' => 'CN-TEST',
+            'numero_vol' => 'AT7777',
+            'aeroport_provenance' => 'Paris CDG',
+            'aeroport_destination' => 'Casablanca',
+            'demandeur' => 'Jean Dupont',
+            'contact_demandeur' => 'jean.dupont@airtest.com',
+            'nature_vol' => NatureVol::VolRapatriementHumanitaire->value,
+            'mtow' => 120,
+            'date_arrivee' => now()->addDays(2)->format('Y-m-d H:i:s'),
+            'date_depart' => now()->addDays(2)->addHours(4)->format('Y-m-d H:i:s'),
+        ];
+
+        // Sans tow bar : refusé
+        $this->post(route('demandes.enregistrer'), $donnees)
+            ->assertSessionHasErrors('tow_bar_a_bord');
+
+        // Avec tow bar : accepté
+        $this->post(route('demandes.enregistrer'), [...$donnees, 'tow_bar_a_bord' => true])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('demandes', [
+            'numero_vol' => 'AT7777',
+            'nature_vol' => NatureVol::VolRapatriementHumanitaire->value,
+            'tow_bar_a_bord' => true,
+        ]);
     }
 }

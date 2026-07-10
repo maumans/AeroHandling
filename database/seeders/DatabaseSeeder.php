@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             AeronefSeeder::class,
             EquipementSeeder::class,
             ServiceAssistanceSeeder::class,
+            JourFerieSeeder::class,
             CapaciteStockageSeeder::class,
             UtilisateurSeeder::class,
             DemandeSeeder::class,

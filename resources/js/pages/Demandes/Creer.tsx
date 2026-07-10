@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Combobox } from '@/components/ui/combobox';
-import { AlertCircle, Check, Send } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Check, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Option {
@@ -39,7 +39,7 @@ const etapes = [
     'Récapitulatif',
 ];
 
-const NATURES_VOL_SPECIALES = ['charter', 'vol_supplementaire', 'vol_evacuation_medicale'];
+const NATURES_VOL_SPECIALES = ['charter', 'vol_supplementaire', 'vol_evacuation_medicale', 'vol_rapatriement_humanitaire'];
 
 export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquipement, servicesAssistance, compagniePredefinie }: Props) {
     const [etapeActuelle, setEtapeActuelle] = useState(0);
@@ -54,7 +54,9 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
         aeroport_provenance: '',
         aeroport_destination: '',
         reference_autorisation: '',
+        payeur: '',
         nature_vol: '',
+        mtow: '',
         tow_bar_a_bord: false,
         demandeur: '',
         contact_demandeur: '',
@@ -64,6 +66,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
         volume_prevu: '',
         type_marchandise: '',
         nombre_uld: '',
+        nombre_palettes: '',
         manifeste_passager: null as File | null,
         manifeste_passager_texte: '',
         exigences_particulieres: '',
@@ -121,6 +124,12 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                 isValid = false;
             } else {
                 clearErrors('nature_vol');
+            }
+            if (!data.mtow) {
+                setError('mtow', 'Le MTOW est obligatoire.');
+                isValid = false;
+            } else {
+                clearErrors('mtow');
             }
             if (!data.type_aeronef) {
                 setError('type_aeronef', 'Le type d\'aéronef est obligatoire.');
@@ -342,6 +351,20 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                     </div>
 
                                     <div className="space-y-2">
+                                        <Label htmlFor="mtow">MTOW — Masse max. au décollage (tonnes) <span className="text-destructive">*</span></Label>
+                                        <Input
+                                            id="mtow"
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            value={data.mtow}
+                                            onChange={(e) => setData('mtow', e.target.value)}
+                                            placeholder="Ex: 78.5"
+                                        />
+                                        {errors.mtow && <p className="text-sm text-destructive">{errors.mtow}</p>}
+                                    </div>
+
+                                    <div className="space-y-2">
                                         <Label htmlFor="type_aeronef">Type d&apos;aéronef <span className="text-destructive">*</span></Label>
                                         <Input
                                             id="type_aeronef"
@@ -405,23 +428,41 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                         />
                                         {errors.reference_autorisation && <p className="text-sm text-destructive">{errors.reference_autorisation}</p>}
                                     </div>
+                                    <div className="space-y-2 md:col-span-1">
+                                        <Label htmlFor="payeur">Payeur (PE)</Label>
+                                        <Input
+                                            id="payeur"
+                                            value={data.payeur}
+                                            onChange={(e) => setData('payeur', e.target.value)}
+                                            placeholder="Optionnel"
+                                        />
+                                        {errors.payeur && <p className="text-sm text-destructive">{errors.payeur}</p>}
+                                    </div>
 
                                     {estVolSpecial && (
-                                        <div className="space-y-2 md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+                                        <div className="space-y-3 md:col-span-2 rounded-lg border-2 border-amber-400 bg-amber-50 p-4 dark:border-amber-600 dark:bg-amber-900/25">
+                                            <div className="flex items-start gap-3">
+                                                <AlertTriangle className="mt-0.5 size-8 shrink-0 text-amber-600 dark:text-amber-400" />
+                                                <div>
+                                                    <p className="text-lg font-extrabold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                                                        Barre de tractage (tow bar) OBLIGATOIRE à bord
+                                                    </p>
+                                                    <p className="text-sm font-medium text-amber-700/90 dark:text-amber-300/90">
+                                                        Ce vol spécial (charter, vol supplémentaire, évacuation médicale, rapatriement / humanitaire) exige impérativement la présence d&apos;une barre de tractage à bord.
+                                                    </p>
+                                                </div>
+                                            </div>
                                             <div className="flex items-center gap-2">
                                                 <Checkbox
                                                     id="tow_bar_a_bord"
                                                     checked={data.tow_bar_a_bord}
                                                     onCheckedChange={(checked) => setData('tow_bar_a_bord', checked === true)}
                                                 />
-                                                <Label htmlFor="tow_bar_a_bord" className="cursor-pointer">
-                                                    Barre de tractage (tow bar) à bord <span className="text-destructive">*</span>
+                                                <Label htmlFor="tow_bar_a_bord" className="cursor-pointer text-base font-semibold">
+                                                    Je confirme que la barre de tractage est à bord <span className="text-destructive">*</span>
                                                 </Label>
                                             </div>
-                                            <p className="text-xs text-muted-foreground">
-                                                Obligatoire pour les vols spéciaux (charter, vol supplémentaire, évacuation médicale).
-                                            </p>
-                                            {errors.tow_bar_a_bord && <p className="text-sm text-destructive">{errors.tow_bar_a_bord}</p>}
+                                            {errors.tow_bar_a_bord && <p className="text-sm font-semibold text-destructive">{errors.tow_bar_a_bord}</p>}
                                         </div>
                                     )}
                                 </div>
@@ -499,7 +540,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             </div>
 
                                             <div className="space-y-2">
-                                                <Label htmlFor="volume_prevu">Volume prévu (m³)</Label>
+                                                <Label htmlFor="volume_prevu">Volume cargo prévu (m³)</Label>
                                                 <Input
                                                     id="volume_prevu"
                                                     type="number"
@@ -508,6 +549,19 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                                     onChange={(e) => setData('volume_prevu', e.target.value)}
                                                     placeholder="Ex: 120"
                                                 />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="nombre_palettes">Nombre de palettes prévues</Label>
+                                                <Input
+                                                    id="nombre_palettes"
+                                                    type="number"
+                                                    min="0"
+                                                    value={data.nombre_palettes}
+                                                    onChange={(e) => setData('nombre_palettes', e.target.value)}
+                                                    placeholder="Ex: 8"
+                                                />
+                                                {errors.nombre_palettes && <p className="text-sm text-destructive">{errors.nombre_palettes}</p>}
                                             </div>
 
                                             <div className="space-y-2">
@@ -683,6 +737,8 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             <dd>{data.aeroport_destination || '—'}</dd>
                                             <dt className="text-muted-foreground">Nature :</dt>
                                             <dd>{naturesVol.find((n) => n.value === data.nature_vol)?.libelle || '—'}</dd>
+                                            <dt className="text-muted-foreground">MTOW :</dt>
+                                            <dd>{data.mtow ? `${data.mtow} t` : '—'}</dd>
                                             {estVolSpecial && (
                                                 <>
                                                     <dt className="text-muted-foreground">Tow bar à bord :</dt>
@@ -693,6 +749,8 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             <dd>{data.numero_landing_permit || '—'}</dd>
                                             <dt className="text-muted-foreground">Code Aviation Civile :</dt>
                                             <dd>{data.reference_autorisation || '—'}</dd>
+                                            <dt className="text-muted-foreground">Payeur (PE) :</dt>
+                                            <dd>{data.payeur || '—'}</dd>
                                             <dt className="text-muted-foreground">Demandeur :</dt>
                                             <dd>{data.demandeur || '—'}</dd>
                                             <dt className="text-muted-foreground">Contact :</dt>
@@ -707,6 +765,10 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                                     <dd>{typesMarchandise.find((t) => t.value === data.type_marchandise)?.libelle || '—'}</dd>
                                                     <dt className="text-muted-foreground">Tonnage :</dt>
                                                     <dd>{data.tonnage_prevu ? `${data.tonnage_prevu} t` : '—'}</dd>
+                                                    <dt className="text-muted-foreground">Volume cargo :</dt>
+                                                    <dd>{data.volume_prevu ? `${data.volume_prevu} m³` : '—'}</dd>
+                                                    <dt className="text-muted-foreground">Palettes prévues :</dt>
+                                                    <dd>{data.nombre_palettes || '—'}</dd>
                                                 </>
                                             ) : (
                                                 <>

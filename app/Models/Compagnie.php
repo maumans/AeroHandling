@@ -28,6 +28,7 @@ class Compagnie extends Model
     {
         return [
             'actif' => 'boolean',
+            'valide_le' => 'datetime',
         ];
     }
 

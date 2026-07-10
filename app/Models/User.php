@@ -29,6 +29,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  * @property bool $actif
+ * @property Carbon|null $valide_le
  */
 #[Fillable(['name', 'email', 'password', 'compagnie_id', 'actif'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -48,6 +49,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'actif' => 'boolean',
+            'valide_le' => 'datetime',
         ];
     }
 

@@ -19,6 +19,9 @@ class ServiceAssistance extends Model
         'code',
         'nom',
         'description',
+        'tarif_unitaire',
+        'unite_facturation',
+        'facture_par_quantite',
         'actif',
         'ordre',
     ];
@@ -26,6 +29,8 @@ class ServiceAssistance extends Model
     protected function casts(): array
     {
         return [
+            'tarif_unitaire' => 'decimal:2',
+            'facture_par_quantite' => 'boolean',
             'actif' => 'boolean',
             'ordre' => 'integer',
         ];

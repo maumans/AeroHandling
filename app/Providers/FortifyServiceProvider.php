@@ -51,7 +51,7 @@ class FortifyServiceProvider extends ServiceProvider
             if ($user && Hash::check($request->password, $user->password)) {
                 if (! $user->actif) {
                     throw ValidationException::withMessages([
-                        Fortify::username() => 'Votre compte a été suspendu par un administrateur.',
+                        Fortify::username() => 'Ce compte n\'est pas encore actif. Il est peut-être en attente de validation ou a été suspendu — contactez un administrateur.',
                     ]);
                 }
 
@@ -95,6 +95,10 @@ class FortifyServiceProvider extends ServiceProvider
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
+        });
+
+        RateLimiter::for('inscription', function (Request $request) {
+            return Limit::perMinute(3)->by($request->ip());
         });
 
     }

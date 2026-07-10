@@ -6,6 +6,7 @@ use App\Enums\NatureVol;
 use App\Enums\StatutDemande;
 use App\Models\Compagnie;
 use App\Models\Demande;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -129,6 +130,10 @@ class TableauDeBordController extends Controller
                 StatutDemande::ApprouveeHandling,
                 StatutDemande::EnAttenteAviationCivile,
             ])->count();
+        }
+
+        if (in_array('administrateur', $roles, true)) {
+            $actions['a_valider'] = User::where('actif', false)->whereNull('valide_le')->count();
         }
 
         return $actions;

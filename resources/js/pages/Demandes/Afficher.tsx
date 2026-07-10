@@ -49,6 +49,7 @@ interface Demande {
     reference: string;
     numero_vol: string;
     nature_vol: string;
+    mtow: string | null;
     statut: string;
     compagnie_libelle: string | null;
     type_aeronef: string | null;
@@ -61,6 +62,7 @@ interface Demande {
     contact_demandeur: string | null;
     manifeste_passager: string | null;
     manifeste_passager_texte: string | null;
+    payeur: string | null;
     services_assistance: ServiceAssistance[];
     date_arrivee: string;
     date_depart: string;
@@ -68,6 +70,7 @@ interface Demande {
     volume_prevu: string | null;
     type_marchandise: string | null;
     nombre_uld: number | null;
+    nombre_palettes: number | null;
     exigences_particulieres: string | null;
     motif_rejet: string | null;
     reference_autorisation: string | null;
@@ -129,6 +132,12 @@ interface Props {
     peutAutoriser: boolean;
     peutSupprimer: boolean;
     peutAffecter: boolean;
+    proforma?: {
+        total_ht: number;
+        tva: number;
+        total_ttc: number;
+        total_majorations: number;
+    };
 }
 
 
@@ -154,6 +163,7 @@ export default function DemandesAfficher({
     peutAutoriser,
     peutSupprimer,
     peutAffecter,
+    proforma,
 }: Props) {
     const [rejetOpen, setRejetOpen] = useState(false);
     const { data: rejetData, setData: setRejetData, post: postRejet, processing: processingRejet, reset: resetRejet } = useForm({ motif_rejet: '' });
@@ -455,6 +465,10 @@ export default function DemandesAfficher({
                                     <dd className="font-medium">{demande.numero_landing_permit ?? '—'}</dd>
                                 </div>
                                 <div>
+                                    <dt className="text-sm text-muted-foreground">Payeur (PE)</dt>
+                                    <dd className="font-medium">{demande.payeur ?? '—'}</dd>
+                                </div>
+                                <div>
                                     <dt className="text-sm text-muted-foreground">Tow bar à bord</dt>
                                     <dd className="font-medium">{demande.tow_bar_a_bord ? 'Oui' : 'Non'}</dd>
                                 </div>
@@ -475,6 +489,10 @@ export default function DemandesAfficher({
                                     <dd className="font-medium">{demande.nature_vol ? (NATURE_VOL_LIBELLE[demande.nature_vol] ?? demande.nature_vol) : '—'}</dd>
                                 </div>
                                 <div>
+                                    <dt className="text-sm text-muted-foreground">MTOW</dt>
+                                    <dd className="font-medium">{demande.mtow ? `${demande.mtow} t` : '—'}</dd>
+                                </div>
+                                <div>
                                     <dt className="text-sm text-muted-foreground">Arrivée</dt>
                                     <dd className="font-medium">{formatDate(demande.date_arrivee)}</dd>
                                 </div>
@@ -487,7 +505,7 @@ export default function DemandesAfficher({
                                     <dd className="font-medium">{demande.tonnage_prevu ? `${demande.tonnage_prevu} t` : '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Volume prévu</dt>
+                                    <dt className="text-sm text-muted-foreground">Volume cargo prévu</dt>
                                     <dd className="font-medium">{demande.volume_prevu ? `${demande.volume_prevu} m³` : '—'}</dd>
                                 </div>
                                 <div>
@@ -497,6 +515,10 @@ export default function DemandesAfficher({
                                 <div>
                                     <dt className="text-sm text-muted-foreground">Nombre ULD</dt>
                                     <dd className="font-medium">{demande.nombre_uld ?? '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-sm text-muted-foreground">Nombre de palettes</dt>
+                                    <dd className="font-medium">{demande.nombre_palettes ?? '—'}</dd>
                                 </div>
                             </dl>
 
@@ -589,6 +611,47 @@ export default function DemandesAfficher({
                                         </dd>
                                     </div>
                                 </>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Section Facture Proforma */}
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle>Facture Proforma</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 pt-4">
+                            {proforma ? (
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Sous-total HT</span>
+                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.total_ht - proforma.total_majorations)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Majorations (Nuit/Férié)</span>
+                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.total_majorations)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">TVA (18%)</span>
+                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.tva)}</span>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between font-bold">
+                                        <span>Total TTC</span>
+                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.total_ttc)}</span>
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <Button className="w-full" asChild>
+                                            <a href={`/demandes/${demande.id}/proforma`} target="_blank" rel="noreferrer">
+                                                <Download className="mr-2 size-4" />
+                                                Télécharger la facture proforma
+                                            </a>
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">Calcul en cours ou non disponible.</p>
                             )}
                         </CardContent>
                     </Card>

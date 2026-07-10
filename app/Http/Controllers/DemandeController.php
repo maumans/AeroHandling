@@ -16,6 +16,7 @@ use App\Models\PieceJointe;
 use App\Models\ServiceAssistance;
 use App\Models\User;
 use App\Services\GestionnaireDemande;
+use App\Services\ProformaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -29,6 +30,7 @@ class DemandeController extends Controller
 {
     public function __construct(
         private GestionnaireDemande $gestionnaire,
+        private ProformaService $proformaService,
     ) {}
 
     public function index(Request $request): Response
@@ -206,10 +208,13 @@ class DemandeController extends Controller
 
         $demande->equipements_demandes = $equipementsDemandes;
 
+        $proforma = $this->proformaService->calculer($demande);
+
         return Inertia::render('Demandes/Afficher', [
             'demande' => $demande,
             'equipementsDisponibles' => $equipementsDisponibles,
             'agentsDisponibles' => $agentsDisponibles,
+            'proforma' => $proforma,
             'peutModifier' => $request->user()->can('modifier', $demande),
             'peutSoumettre' => $request->user()->can('soumettre', $demande),
             'peutApprouver' => $request->user()->can('approuver', $demande),
@@ -353,6 +358,15 @@ class DemandeController extends Controller
         $nom = 'manifeste-'.$demande->reference.'.'.pathinfo($demande->manifeste_passager, PATHINFO_EXTENSION);
 
         return Storage::response($demande->manifeste_passager, $nom);
+    }
+
+    public function telechargerProforma(Demande $demande)
+    {
+        $this->authorize('voir', $demande);
+
+        $pdf = $this->proformaService->genererPdf($demande);
+
+        return $pdf->download("proforma_{$demande->reference}.pdf");
     }
 
     /** @return Collection<int, array{id: int, code: string, nom: string, description: string|null}> */

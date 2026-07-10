@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { afficher } from '@/routes/inscription';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
@@ -89,7 +90,11 @@ export default function Login({ status, canResetPassword }: Props) {
                         </div>
 
                         <p className="text-center text-xs text-muted-foreground">
-                            Accès réservé. Les comptes sont créés par un administrateur.
+                            Vous représentez une compagnie ?{' '}
+                            <TextLink href={afficher()}>Créer un compte</TextLink>
+                        </p>
+                        <p className="text-center text-xs text-muted-foreground">
+                            Comptes internes (Handling, Aviation Civile, Administration) créés par un administrateur.
                         </p>
                     </>
                 )}

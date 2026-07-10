@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ROLE_BADGE, ROLE_LIBELLE } from '@/lib/couleurs';
 import {
     AlertDialog,
@@ -25,8 +27,10 @@ interface Utilisateur {
     name: string;
     email: string;
     compagnie: string | null;
+    compagnie_id: number | null;
     roles: string[];
     actif: boolean;
+    valide_le: string | null;
     created_at: string | null;
 }
 
@@ -40,12 +44,17 @@ interface PaginatedData {
 interface Props {
     utilisateurs: PaginatedData;
     roles: string[];
-    filtres: { recherche?: string };
+    compagnies: { id: number; nom: string }[];
+    filtres: { recherche?: string; statut?: string; compagnie_id?: string };
 }
 
 
-export default function AdministrationUtilisateursIndex({ utilisateurs, filtres }: Props) {
+export default function AdministrationUtilisateursIndex({ utilisateurs, compagnies, filtres }: Props) {
     const [recherche, setRecherche] = useState(filtres.recherche ?? '');
+
+    function appliquerFiltres(patch: Record<string, string | undefined>) {
+        router.get('/administration/utilisateurs', { ...filtres, recherche: recherche || undefined, ...patch }, { preserveState: true, replace: true });
+    }
 
     return (
         <AppLayout breadcrumbs={[
@@ -69,12 +78,13 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, filtres 
                 <AdminTabs />
 
                 <Card>
-                    <CardContent className="p-4">
+                    <CardContent className="flex flex-wrap items-end gap-3 p-4">
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();
-                                router.get('/administration/utilisateurs', { recherche: recherche || undefined }, { preserveState: true, replace: true });
+                                appliquerFiltres({});
                             }}
+                            className="flex-1"
                         >
                             <div className="relative w-full max-w-sm">
                                 <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -86,6 +96,36 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, filtres 
                                 />
                             </div>
                         </form>
+
+                        <Select
+                            value={filtres.statut || 'all'}
+                            onValueChange={(val) => appliquerFiltres({ statut: val === 'all' ? undefined : val })}
+                        >
+                            <SelectTrigger className="w-[200px] bg-background">
+                                <SelectValue placeholder="Statut" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Tous les statuts</SelectItem>
+                                <SelectItem value="actif">Actif</SelectItem>
+                                <SelectItem value="en_attente">En attente de validation</SelectItem>
+                                <SelectItem value="suspendu">Suspendu</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Select
+                            value={filtres.compagnie_id || 'all'}
+                            onValueChange={(val) => appliquerFiltres({ compagnie_id: val === 'all' ? undefined : val })}
+                        >
+                            <SelectTrigger className="w-[220px] bg-background">
+                                <SelectValue placeholder="Compagnie" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Toutes les compagnies</SelectItem>
+                                {compagnies.map((c) => (
+                                    <SelectItem key={c.id} value={String(c.id)}>{c.nom}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </CardContent>
                 </Card>
 
@@ -104,11 +144,27 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, filtres 
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {utilisateurs.data.map((u) => (
-                                        <tr key={u.id} className="border-b hover:bg-muted/30">
+                                    {utilisateurs.data.map((u) => {
+                                        const enAttente = !u.actif && u.valide_le === null;
+
+                                        return (
+                                        <tr
+                                            key={u.id}
+                                            className={`border-b transition-colors hover:bg-muted/30 ${
+                                                enAttente ? 'border-l-4 border-l-amber-400 bg-amber-50/60 dark:bg-amber-950/15' : ''
+                                            }`}
+                                        >
                                             <td className="px-4 py-3 font-medium">{u.name}</td>
                                             <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                                            <td className="px-4 py-3 text-muted-foreground">{u.compagnie ?? '—'}</td>
+                                            <td className="px-4 py-3 text-muted-foreground">
+                                                {u.compagnie && u.compagnie_id ? (
+                                                    <Link href={`/administration/compagnies/${u.compagnie_id}/editer`} className="hover:underline">
+                                                        {u.compagnie}
+                                                    </Link>
+                                                ) : (
+                                                    '—'
+                                                )}
+                                            </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex flex-wrap gap-1">
                                                     {u.roles.map((role) => (
@@ -126,33 +182,52 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, filtres 
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <Badge variant={u.actif ? 'default' : 'destructive'} className={u.actif ? 'bg-emerald-500 hover:bg-emerald-600' : ''}>
-                                                    {u.actif ? 'Actif' : 'Suspendu'}
-                                                </Badge>
+                                                {u.actif ? (
+                                                    <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">Actif</Badge>
+                                                ) : enAttente ? (
+                                                    <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">En attente de validation</Badge>
+                                                ) : (
+                                                    <Badge variant="destructive">Suspendu</Badge>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-right">
-                                                <div className="flex justify-end gap-1">
-                                                    <Button variant="ghost" size="icon" asChild title="Éditer">
-                                                        <Link href={`/administration/utilisateurs/${u.id}/editer`}>
-                                                            <Pencil className="size-4" />
-                                                        </Link>
-                                                    </Button>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                title={u.actif ? 'Suspendre' : 'Activer'}
-                                                            >
-                                                                {u.actif ? <Ban className="size-4 text-amber-500" /> : <CheckCircle className="size-4 text-emerald-500" />}
+                                                <div className="flex justify-end gap-1.5">
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button variant="outline" size="icon" className="rounded-full" asChild>
+                                                                <Link href={`/administration/utilisateurs/${u.id}/editer`}>
+                                                                    <Pencil className="size-4" />
+                                                                </Link>
                                                             </Button>
-                                                        </AlertDialogTrigger>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Éditer l'utilisateur</TooltipContent>
+                                                    </Tooltip>
+
+                                                    <AlertDialog>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button
+                                                                        variant={u.actif ? 'outline' : 'default'}
+                                                                        size="icon"
+                                                                        className={u.actif ? 'rounded-full border-amber-300 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950' : 'rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600'}
+                                                                    >
+                                                                        {u.actif ? <Ban className="size-4" /> : <CheckCircle className="size-4" />}
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>{u.actif ? 'Suspendre le compte' : 'Activer le compte'}</TooltipContent>
+                                                        </Tooltip>
                                                         <AlertDialogContent>
                                                             <AlertDialogHeader>
                                                                 <AlertDialogTitle>{u.actif ? 'Suspendre le compte' : 'Activer le compte'}</AlertDialogTitle>
                                                                 <AlertDialogDescription>
                                                                     Voulez-vous vraiment {u.actif ? 'suspendre' : 'activer'} le compte de <strong>{u.name}</strong> ?
-                                                                    {u.actif && " Il ne pourra plus se connecter à l'application."}
+                                                                    {u.actif
+                                                                        ? " Il ne pourra plus se connecter à l'application."
+                                                                        : u.compagnie
+                                                                            ? ` Sa compagnie « ${u.compagnie} » sera également activée si elle est encore en attente.`
+                                                                            : ' Il pourra alors se connecter à l\'application.'}
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
@@ -166,17 +241,22 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, filtres 
                                                             </AlertDialogFooter>
                                                         </AlertDialogContent>
                                                     </AlertDialog>
-                                                    
+
                                                     <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                title="Supprimer"
-                                                            >
-                                                                <Trash2 className="size-4 text-destructive" />
-                                                            </Button>
-                                                        </AlertDialogTrigger>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="icon"
+                                                                        className="rounded-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                    >
+                                                                        <Trash2 className="size-4" />
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>Supprimer le compte</TooltipContent>
+                                                        </Tooltip>
                                                         <AlertDialogContent>
                                                             <AlertDialogHeader>
                                                                 <AlertDialogTitle>Supprimer le compte</AlertDialogTitle>
@@ -186,7 +266,7 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, filtres 
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
                                                                 <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                                                <AlertDialogAction 
+                                                                <AlertDialogAction
                                                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                                                     onClick={() => router.delete(`/administration/utilisateurs/${u.id}`)}
                                                                 >
@@ -198,7 +278,8 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, filtres 
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                     {utilisateurs.data.length === 0 && (
                                         <tr>
                                             <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">

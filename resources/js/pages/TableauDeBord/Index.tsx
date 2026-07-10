@@ -8,6 +8,7 @@ import {
     Clock,
     ShieldCheck,
     FilterX,
+    UserCheck,
 } from 'lucide-react';
 import { GraphiqueBarres } from '@/components/charts/graphique-barres';
 import { GraphiqueDonut } from '@/components/charts/graphique-donut';
@@ -61,7 +62,7 @@ interface Props {
     repartitionNatures: RepartitionNature[];
     demandesParJour: DemandeParJour[];
     demandesRecentes: DemandeRecente[];
-    actionsRequises: { a_evaluer?: number; a_autoriser?: number };
+    actionsRequises: { a_evaluer?: number; a_autoriser?: number; a_valider?: number };
     roles: string[];
     filtresOptions: {
         compagnies: { id: number; nom: string }[];
@@ -147,7 +148,8 @@ export default function TableauDeBordIndex({
 
     const aEvaluer = actionsRequises.a_evaluer ?? 0;
     const aAutoriser = actionsRequises.a_autoriser ?? 0;
-    const aDesActions = aEvaluer > 0 || aAutoriser > 0;
+    const aValider = actionsRequises.a_valider ?? 0;
+    const aDesActions = aEvaluer > 0 || aAutoriser > 0 || aValider > 0;
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Tableau de bord', href: '/tableau-de-bord' }]}>
@@ -268,6 +270,27 @@ export default function TableauDeBordIndex({
                                     </div>
                                 </div>
                                 <ArrowRight className="size-5 text-sky-600 transition-transform group-hover:translate-x-1 dark:text-sky-400" />
+                            </Link>
+                        )}
+                        {aValider > 0 && (
+                            <Link
+                                href="/administration/utilisateurs?statut=en_attente"
+                                className="group flex items-center justify-between rounded-xl border border-violet-200 bg-violet-50 p-4 transition-colors hover:bg-violet-100 dark:border-violet-900/50 dark:bg-violet-900/20 dark:hover:bg-violet-900/30"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="flex size-10 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/40">
+                                        <UserCheck className="size-5 text-violet-600 dark:text-violet-400" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-violet-900 dark:text-violet-200">
+                                            {aValider} compte{aValider > 1 ? 's' : ''} à valider
+                                        </p>
+                                        <p className="text-sm text-violet-700 dark:text-violet-400">
+                                            Inscriptions en attente de validation
+                                        </p>
+                                    </div>
+                                </div>
+                                <ArrowRight className="size-5 text-violet-600 transition-transform group-hover:translate-x-1 dark:text-violet-400" />
                             </Link>
                         )}
                     </div>
