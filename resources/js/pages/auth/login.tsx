@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -7,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { toast } from 'sonner';
 import { afficher } from '@/routes/inscription';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
@@ -17,6 +19,16 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
+    useEffect(() => {
+        if (status) {
+            toast.success('Inscription réussie', {
+                description: status,
+                position: 'top-right',
+                duration: 6000,
+            });
+        }
+    }, [status]);
+
     return (
         <>
             <Head title="Connexion" />
@@ -99,12 +111,6 @@ export default function Login({ status, canResetPassword }: Props) {
                     </>
                 )}
             </Form>
-
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
         </>
     );
 }

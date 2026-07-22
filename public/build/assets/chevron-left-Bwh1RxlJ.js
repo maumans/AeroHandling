@@ -1,1 +1,0 @@
-import{vt as e}from"./app-Ckt_N5aQ.js";var t=e(`ChevronLeft`,[[`path`,{d:`m15 18-6-6 6-6`,key:`1wnfg3`}]]);export{t};
