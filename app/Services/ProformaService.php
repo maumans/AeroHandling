@@ -40,26 +40,13 @@ class ProformaService
 
         // 1. Forfait de base
         $forfait = $this->grilleTarifaire->forfaitBase($categorie, $estCargo);
-
-        // Appliquer réduction Ambulance / Rapatriement (-50%) si applicable
-        // Hypothèse : on traite le vol humanitaire comme un vol spécial (ou on peut le réduire ici si on le souhaite)
-        // Le Guide stipule "Vols d'évacuation sanitaire : 50% de réduction". On ne l'applique qu'aux évacuations (Ambulance).
-        if ($demande->nature_vol === NatureVol::VolEvacuationMedicale) {
-            $forfait = $forfait * 0.5;
-            $lignes[] = [
-                'designation' => "Forfait d'assistance en escale (Cat. $categorie) - Réduction Ambulance (50%)",
-                'quantite' => 1,
-                'prix_unitaire' => $forfait,
-                'total' => $forfait,
-            ];
-        } else {
-            $lignes[] = [
-                'designation' => "Forfait d'assistance en escale (Cat. $categorie)",
-                'quantite' => 1,
-                'prix_unitaire' => $forfait,
-                'total' => $forfait,
-            ];
-        }
+        
+        $lignes[] = [
+            'designation' => "Forfait d'assistance en escale (Cat. $categorie)",
+            'quantite' => 1,
+            'prix_unitaire' => $forfait,
+            'total' => $forfait,
+        ];
         $sousTotalHt += $forfait;
 
         // 2. Services d'assistance supplémentaires
@@ -105,32 +92,50 @@ class ProformaService
         }
 
         // 4. Majorations (Nuit, Férié)
-        // Les majorations s'appliquent sur le sous-total (Forfait + Services) selon le Guide.
+        // Selon le Guide, la majoration est calculée sur le forfait de base, et on applique la plus forte sans cumul.
         $majorations = [];
         $totalMajorations = 0.0;
 
         $estNuit = $this->grilleTarifaire->estServiceDeNuit($demande->date_arrivee);
         $estFerie = $this->grilleTarifaire->estJourFerie($demande->date_arrivee);
 
-        if ($estNuit) {
-            $montantNuit = $sousTotalHt * 0.25;
+        if ($estFerie) {
+            $tauxFerie = $this->grilleTarifaire->tauxMajorationJourFerie();
+            $montantFerie = $forfait * $tauxFerie; // Sur forfait de base
+            $pourcentage = $tauxFerie * 100;
             $majorations[] = [
-                'designation' => 'Majoration de Nuit (23h00 - 06h00) : 25%',
+                'designation' => "Majoration Dimanche / Jour Férié : {$pourcentage}% du forfait de base",
+                'montant' => $montantFerie,
+            ];
+            $totalMajorations += $montantFerie;
+        } elseif ($estNuit) {
+            $tauxNuit = $this->grilleTarifaire->tauxMajorationNuit();
+            $montantNuit = $forfait * $tauxNuit; // Sur forfait de base
+            $pourcentage = $tauxNuit * 100;
+            $majorations[] = [
+                'designation' => "Majoration de Nuit (23h00 - 06h00) : {$pourcentage}% du forfait de base",
                 'montant' => $montantNuit,
             ];
             $totalMajorations += $montantNuit;
         }
 
-        if ($estFerie) {
-            $montantFerie = $sousTotalHt * 0.25;
-            $majorations[] = [
-                'designation' => 'Majoration Dimanche / Jour Férié : 25%',
-                'montant' => $montantFerie,
+        $totalHt = $sousTotalHt + $totalMajorations;
+
+        // 5. Réduction Ambulance / Humanitaire (-50%)
+        // Le Guide stipule "Les assistances complètes pour des vols ambulances seront facturées 50% du tarif général"
+        if ($demande->nature_vol === NatureVol::VolEvacuationMedicale) {
+            $reduction = $totalHt * 0.5;
+            $lignes[] = [
+                'designation' => "Réduction Ambulance / Évacuation Sanitaire (-50% sur l'assistance complète)",
+                'quantite' => 1,
+                'prix_unitaire' => -$reduction,
+                'total' => -$reduction,
             ];
-            $totalMajorations += $montantFerie;
+            $totalHt -= $reduction;
+            // On met à jour le sous-total affiché dans la facture pour que les totaux balancent
+            $sousTotalHt -= $reduction; 
         }
 
-        $totalHt = $sousTotalHt + $totalMajorations;
         // TVA Guinéenne standard 18%
         $tva = $totalHt * 0.18;
         $totalTtc = $totalHt + $tva;

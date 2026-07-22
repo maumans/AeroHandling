@@ -24,13 +24,19 @@ interface Props {
 }
 
 export default function FormulaireAffectation({ demandeId, equipementsDisponibles, agentsDisponibles, onSuccess }: Props) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, transform } = useForm({
         equipement_id: '',
         utilisateur_affectation_id: '',
         date_debut: '',
         date_fin: '',
         notes: '',
     });
+
+    transform((data) => ({
+        ...data,
+        equipement_id: data.equipement_id === 'null' ? '' : data.equipement_id,
+        utilisateur_affectation_id: data.utilisateur_affectation_id === 'null' ? '' : data.utilisateur_affectation_id,
+    }));
 
     const soumettre: FormEventHandler = (e) => {
         e.preventDefault();
@@ -45,6 +51,11 @@ export default function FormulaireAffectation({ demandeId, equipementsDisponible
 
     return (
         <form onSubmit={soumettre} className="space-y-4">
+            {errors.affectation && (
+                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive border border-destructive/20">
+                    {errors.affectation}
+                </div>
+            )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                     <Label htmlFor="equipement_id">Équipement</Label>

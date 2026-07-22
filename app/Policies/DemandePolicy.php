@@ -24,7 +24,8 @@ class DemandePolicy
 
     public function modifier(User $user, Demande $demande): bool
     {
-        if ($demande->utilisateur_id !== $user->id && ! $user->hasRole(['handling', 'administrateur'])) {
+        // Seul le créateur de la demande (ou un admin) peut modifier
+        if ($demande->utilisateur_id !== $user->id && ! $user->hasRole('administrateur')) {
             return false;
         }
 
@@ -36,7 +37,8 @@ class DemandePolicy
 
     public function soumettre(User $user, Demande $demande): bool
     {
-        if ($demande->utilisateur_id !== $user->id && ! $user->hasRole(['handling', 'administrateur'])) {
+        // Seul le créateur de la demande (ou un admin) peut soumettre
+        if ($demande->utilisateur_id !== $user->id && ! $user->hasRole('administrateur')) {
             return false;
         }
 

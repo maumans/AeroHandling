@@ -10,8 +10,13 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
-class RapportExport implements FromQuery, WithHeadings, WithMapping
+class RapportExport implements FromQuery, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
     use Exportable;
 
@@ -69,8 +74,8 @@ class RapportExport implements FromQuery, WithHeadings, WithMapping
 
         return [
             $demande->reference,
-            $demande->compagnie?->nom ?? '',
-            $demande->aeronef ? "{$demande->aeronef->code} ({$demande->aeronef->modele})" : '',
+            $demande->compagnie_libelle ?? $demande->compagnie?->nom ?? '-',
+            $demande->type_aeronef ?? ($demande->aeronef ? "{$demande->aeronef->code} ({$demande->aeronef->modele})" : '-'),
             $demande->numero_vol,
             $nature,
             Carbon::parse($demande->date_arrivee)->format('d/m/Y H:i'),
@@ -80,6 +85,28 @@ class RapportExport implements FromQuery, WithHeadings, WithMapping
             $demande->volume_prevu,
             $statut,
             Carbon::parse($demande->created_at)->format('d/m/Y H:i'),
+        ];
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        return [
+            1 => [
+                'font' => [
+                    'bold' => true,
+                    'color' => ['argb' => 'FFFFFFFF'],
+                    'size' => 12,
+                ],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FF0B2545'],
+                ],
+            ],
+            'A:L' => [
+                'alignment' => [
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+            ],
         ];
     }
 }

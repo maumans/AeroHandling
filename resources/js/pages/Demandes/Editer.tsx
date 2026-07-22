@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Combobox } from '@/components/ui/combobox';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, AlertTriangle, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -589,24 +590,20 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                             <p className="text-sm text-muted-foreground">
                                                 Pour un vol passagers ou autre, joignez le manifeste passager ou saisissez la liste des passagers.
                                             </p>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    type="button"
-                                                    size="sm"
-                                                    variant={manifesteMode === 'fichier' ? 'default' : 'outline'}
-                                                    onClick={() => { setManifesteMode('fichier'); setData('manifeste_passager_texte', ''); }}
-                                                >
-                                                    Charger un fichier
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    size="sm"
-                                                    variant={manifesteMode === 'texte' ? 'default' : 'outline'}
-                                                    onClick={() => { setManifesteMode('texte'); setData('manifeste_passager', null); }}
-                                                >
-                                                    Saisir la liste
-                                                </Button>
-                                            </div>
+                                            <Tabs
+                                                value={manifesteMode}
+                                                onValueChange={(val) => {
+                                                    setManifesteMode(val as 'fichier' | 'texte');
+                                                    if (val === 'fichier') setData('manifeste_passager_texte', '');
+                                                    if (val === 'texte') setData('manifeste_passager', null);
+                                                }}
+                                                className="w-full sm:w-[400px]"
+                                            >
+                                                <TabsList className="grid w-full grid-cols-2">
+                                                    <TabsTrigger value="fichier">Charger un fichier</TabsTrigger>
+                                                    <TabsTrigger value="texte">Saisir la liste</TabsTrigger>
+                                                </TabsList>
+                                            </Tabs>
                                             {manifesteMode === 'fichier' ? (
                                                 <div className="space-y-2">
                                                     <Label htmlFor="manifeste_passager">Manifeste passager</Label>

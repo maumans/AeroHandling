@@ -28,7 +28,15 @@ export default function ModalAffectation({ demandeId, equipementsDisponibles, ag
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent 
+                className="sm:max-w-[500px]" 
+                onClick={(e) => e.stopPropagation()}
+                onInteractOutside={(e) => {
+                    if ((e.target as Element).closest('[data-radix-popper-content-wrapper]')) {
+                        e.preventDefault();
+                    }
+                }}
+            >
                 <DialogHeader>
                     <DialogTitle>Planifier une affectation</DialogTitle>
                     <DialogDescription>

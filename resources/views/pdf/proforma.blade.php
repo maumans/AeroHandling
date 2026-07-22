@@ -152,7 +152,7 @@
                 <strong>Date Prévue :</strong> {{ \Carbon\Carbon::parse($demande->date_arrivee)->format('d/m/Y H:i') }}<br>
                 <strong>Aéronef :</strong> {{ $demande->type_aeronef }} (Catégorie {{ $calculs['categorie'] }})<br>
                 <strong>MTOW :</strong> {{ number_format($demande->mtow, 2, ',', ' ') }} Tonnes<br>
-                <strong>Nature :</strong> {{ \App\Enums\NatureVol::from($demande->nature_vol)->libelle() }}
+                <strong>Nature :</strong> {{ $demande->nature_vol instanceof \App\Enums\NatureVol ? $demande->nature_vol->libelle() : ($demande->nature_vol ? \App\Enums\NatureVol::from($demande->nature_vol)->libelle() : 'N/A') }}
             </td>
         </tr>
     </table>

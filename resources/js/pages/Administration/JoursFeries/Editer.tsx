@@ -10,9 +10,9 @@ import InputError from '@/components/input-error';
 
 interface JourFerie {
     id: number;
-    nom: string;
+    libelle: string;
     date: string;
-    est_recurrent: boolean;
+    recurrent_annuel: boolean;
 }
 
 interface Props {
@@ -21,10 +21,10 @@ interface Props {
 
 export default function AdministrationJoursFeriesEditer({ jour }: Props) {
     const { data, setData, put, processing, errors } = useForm({
-        nom: jour.nom,
+        libelle: jour.libelle,
         // API returns full datetime string, extract just the YYYY-MM-DD part
         date: jour.date ? new Date(jour.date).toISOString().split('T')[0] : '',
-        est_recurrent: jour.est_recurrent,
+        recurrent_annuel: jour.recurrent_annuel,
     });
 
     const soumettre = (e: React.FormEvent) => {
@@ -38,7 +38,7 @@ export default function AdministrationJoursFeriesEditer({ jour }: Props) {
             { title: 'Jours Fériés', href: '/administration/jours-feries' },
             { title: 'Éditer', href: `/administration/jours-feries/${jour.id}/editer` },
         ]}>
-            <Head title={`Éditer ${jour.nom}`} />
+            <Head title={`Éditer ${jour.libelle}`} />
             
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 md:p-6">
                 <div className="flex items-center gap-4">
@@ -58,16 +58,16 @@ export default function AdministrationJoursFeriesEditer({ jour }: Props) {
                         <form onSubmit={soumettre} className="flex flex-col gap-6">
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="nom">Nom du jour férié <span className="text-destructive">*</span></Label>
+                                    <Label htmlFor="libelle">Nom du jour férié <span className="text-destructive">*</span></Label>
                                     <Input
-                                        id="nom"
-                                        value={data.nom}
-                                        onChange={(e) => setData('nom', e.target.value)}
+                                        id="libelle"
+                                        value={data.libelle}
+                                        onChange={(e) => setData('libelle', e.target.value)}
                                         placeholder="Ex: Fête du Travail"
                                         required
                                         autoFocus
                                     />
-                                    <InputError message={errors.nom} />
+                                    <InputError message={errors.libelle} />
                                 </div>
 
                                 <div className="space-y-2">
@@ -85,15 +85,15 @@ export default function AdministrationJoursFeriesEditer({ jour }: Props) {
 
                             <div className="flex items-center space-x-2">
                                 <Checkbox
-                                    id="est_recurrent"
-                                    checked={data.est_recurrent}
-                                    onCheckedChange={(checked) => setData('est_recurrent', checked as boolean)}
+                                    id="recurrent_annuel"
+                                    checked={data.recurrent_annuel}
+                                    onCheckedChange={(checked) => setData('recurrent_annuel', checked as boolean)}
                                 />
-                                <Label htmlFor="est_recurrent" className="text-sm font-normal">
+                                <Label htmlFor="recurrent_annuel" className="text-sm font-normal">
                                     Ce jour férié se répète-t-il chaque année à la même date ?
                                 </Label>
                             </div>
-                            <InputError message={errors.est_recurrent} />
+                            <InputError message={errors.recurrent_annuel} />
 
                             <div className="flex justify-end gap-3 pt-4">
                                 <Button variant="outline" asChild>

@@ -1,7 +1,7 @@
 # DEVBOOK — AeroHandling
 
 > Carnet de développement complet. À lire en début de nouvelle session pour reprendre le contexte sans perte.
-> Dernière mise à jour : 07/07/2026 (Gestion admin des inscriptions compagnie avec activation en cascade, refonte des notifications sur un format unique cliquable, clarté des listes Utilisateurs/Compagnies — voir §15 à §17 pour le détail).
+> Dernière mise à jour : 22/07/2026 (Corrections UX, facturation Proforma, et audit des autorisations).
 
 ---
 
@@ -104,6 +104,7 @@ php artisan test --compact               # tests
 - **`capacites_stockage`** → `CapaciteStockage` : zone (enum), capacite_max_tonnes, occupation_actuelle_tonnes, seuil_alerte_pourcent.
 - **`alertes`** → `Alerte` : (cf fichier), relation `demande()`.
 - **`notifications`** : table standard Laravel (canal database).
+- **`jours_feries`** → `JourFerie` (migration `2026_07_07_142551`) : `date` (cast `date`), `libelle`, `recurrent_annuel` (cast `boolean`). Utilisé par `GrilleTarifaire`/`ProformaService` pour la majoration jour férié (+25%). Frontend (`Administration/JoursFeries/*.tsx`) et FormRequests alignés sur ces mêmes clés `libelle`/`recurrent_annuel` (corrigé le 14/07/2026, voir §20).
 
 ### Seeders (`database/seeders/`)
 `DatabaseSeeder` appelle : `RoleSeeder`, `CompagnieSeeder`, `AeronefSeeder`, `EquipementSeeder`, `ServiceAssistanceSeeder`, `CapaciteStockageSeeder`, `UtilisateurSeeder`, `DemandeSeeder` (20 demandes réparties sur tous les statuts).
@@ -175,7 +176,10 @@ Les groupes de routes utilisent le middleware `role:` de spatie/laravel-permissi
 | GET | /demandes/creer | demandes.creer | DemandeController@creer |
 | POST | /demandes | demandes.enregistrer | DemandeController@enregistrer |
 | GET | /demandes/{demande} | demandes.afficher | DemandeController@afficher |
+| GET | /demandes/{demande}/editer | demandes.editer | DemandeController@editer |
+| PUT | /demandes/{demande} | demandes.mettre-a-jour | DemandeController@mettreAJour |
 | DELETE | /demandes/{demande} | demandes.supprimer | DemandeController@supprimer |
+| GET | /demandes/{demande}/proforma | demandes.proforma.telecharger | DemandeController@telechargerProforma (PDF facture proforma, §18 Phase D) |
 | POST | /demandes/{demande}/soumettre | demandes.soumettre | DemandeController@soumettre |
 | POST | /demandes/{demande}/approuver | demandes.approuver | DemandeController@approuver |
 | POST | /demandes/{demande}/rejeter | demandes.rejeter | DemandeController@rejeter |
@@ -226,6 +230,12 @@ Les groupes de routes utilisent le middleware `role:` de spatie/laravel-permissi
 | POST | /administration/equipements | administration.equipements.enregistrer | AdministrationController@enregistrerEquipement |
 | GET | /administration/equipements/{equipement}/editer | administration.equipements.editer | AdministrationController@editerEquipement |
 | PUT | /administration/equipements/{equipement} | administration.equipements.mettre_a_jour | AdministrationController@mettreAJourEquipement |
+| GET | /administration/jours-feries | administration.jours_feries.index | AdministrationController@joursFeries |
+| GET | /administration/jours-feries/creer | administration.jours_feries.creer | AdministrationController@creerJourFerie |
+| POST | /administration/jours-feries | administration.jours_feries.enregistrer | AdministrationController@enregistrerJourFerie |
+| GET | /administration/jours-feries/{jourFerie}/editer | administration.jours_feries.editer | AdministrationController@editerJourFerie |
+| PUT | /administration/jours-feries/{jourFerie} | administration.jours_feries.mettre_a_jour | AdministrationController@mettreAJourJourFerie |
+| DELETE | /administration/jours-feries/{jourFerie} | administration.jours_feries.supprimer | AdministrationController@supprimerJourFerie |
 | GET | /administration/parametres | administration.parametres.index | AdministrationController@parametres |
 | PUT | /administration/parametres | administration.parametres.mettre_a_jour | AdministrationController@mettreAJourParametres |
 
@@ -286,7 +296,8 @@ Fichier unique exportant **toutes** les mappings couleur et libellé. Ne jamais 
 | `TableauDeBord/Index.tsx` | ✅ | KPI, actions requises (par rôle, **dont carte « comptes à valider » pour l'administrateur**), barres 7 jours, donuts statut & nature, demandes récentes |
 | `Demandes/Index.tsx` | ✅ | Table filtrable (statut, nature, compagnie, recherche), pagination, badges |
 | `Demandes/Creer.tsx` | ✅ | Wizard **6 étapes** : Informations vol (compagnie/opérateur + type d'aéronef + N° landing permit en **texte libre**, nature avec **vol évacuation médicale**), Demandeur (+ contact), Planning, **Type de vol** (cargo `freighter` → tonnage/volume/marchandise/ULD ; sinon → **upload manifeste passager**), Équipements, Récapitulatif. Double bouton **brouillon / soumettre** (soumission directe via `form.transform`, `forceFormData` pour l'upload) |
-| `Demandes/Afficher.tsx` | ✅ | Détail (compagnie/opérateur, type d'aéronef, N° landing permit, demandeur/contact en texte libre, téléchargement manifeste) + chronologie + commentaires + boutons workflow conditionnels. L'autorisation ouvre un **dialog de saisie du code AC obligatoire** |
+| `Demandes/Editer.tsx` | ✅ | Édition d'une demande existante (même wizard 6 étapes que `Creer.tsx`, dupliqué — y compris la liste `NATURES_VOL_SPECIALES` en dur, cf. dette technique §18) |
+| `Demandes/Afficher.tsx` | ✅ | Détail (compagnie/opérateur, type d'aéronef, N° landing permit, demandeur/contact en texte libre, téléchargement manifeste) + chronologie + commentaires + boutons workflow conditionnels. L'autorisation ouvre un **dialog de saisie du code AC obligatoire** + carte **Facture Proforma** (téléchargement PDF, §18 Phase D) |
 | `Planning/Index.tsx` | ✅ | Calendrier hebdomadaire, navigation semaine |
 | `Capacites/Index.tsx` | ✅ | Jauges de stockage + état du parc équipements |
 | `Equipements/Index.tsx` | ✅ | Table filtrable (type, statut, recherche) |
@@ -305,7 +316,11 @@ Fichier unique exportant **toutes** les mappings couleur et libellé. Ne jamais 
 | `Administration/Equipements/Index.tsx` | ✅ | Table équipements admin avec type, statut, capacité |
 | `Administration/Equipements/Creer.tsx` | ✅ | Formulaire création équipement, `type`+`statut` = Selects enum |
 | `Administration/Equipements/Editer.tsx` | ✅ | Formulaire édition équipement, `type`+`statut` = Selects enum |
-| `Administration/Parametres.tsx` | ✅ | Paramètres généraux (préfixes, pagination) + capacités stockage par zone (seuils, capacité max) |
+| `Administration/JoursFeries/Index.tsx` | ✅ | Table paginée jours fériés (libellé, date, badge récurrent), boutons Éditer/Supprimer |
+| `Administration/JoursFeries/Creer.tsx` | ✅ | Formulaire création jour férié |
+| `Administration/JoursFeries/Editer.tsx` | ✅ | Formulaire édition jour férié |
+| `Administration/Parametres.tsx` | ✅ | Paramètres généraux (préfixes, pagination) + capacités stockage par zone (seuils, capacité max). Rendu par `AdministrationController::parametres()` |
+| `Administration/ParametresStockage.tsx` | 🗑️ | **Fichier orphelin** : aucune route ne le rend (`parametres()` rend `Administration/Parametres`, pas celui-ci) et aucune autre page ne l'importe. À supprimer ou à brancher si une page dédiée stockage était réellement prévue. |
 
 ### Données partagées Inertia
 `app/Http/Middleware/HandleInertiaRequests.php` partage `auth.user` enrichi de `roles[]` et `permissions[]`, + `sidebarOpen`, + `notificationsNonLues` (count), + `recentNotifications` (5 dernières notifications avec data).
@@ -520,3 +535,34 @@ Cadrage complet du retour client dans `RETOUR_CLIENT_2026-07-06.md` (récapitula
 
 ### Points restants à valider avec le client (bloquants pour la facturation finale)
 Tarifs Passager/Cargo par catégorie (ambiguïté d'alignement du PDF), périmètre exact de la proforma, gestion des durées de service, tarif réduit éventuel du vol rapatriement/humanitaire (type ambulance −50 %), cumul des majorations nuit + jour férié. Cf. fin de `RETOUR_CLIENT_2026-07-06.md`.
+
+## 20. Audit du 14/07/2026 — synchronisation documentation + bugs découverts
+
+Aucun commit entre le 10/07/2026 (dernière mise à jour du DEVBOOK, commit `cd1c4c1`) et aujourd'hui : le code n'a pas bougé, mais la mise à jour du 10/07 avait rédigé les sections narratives (§18/§19) sans répercuter les nouveautés dans les tables de référence (§3/§5/§6). Session consacrée à vérifier le code réel (routes, pages, modèles) contre le DEVBOOK et à corriger les écarts trouvés :
+- Routes manquantes ajoutées en §5 : `demandes.editer`/`demandes.mettre-a-jour` (page `Demandes/Editer.tsx`, absente elle aussi de §6), `demandes.proforma.telecharger`, et tout le bloc admin `administration.jours_feries.*`.
+- Modèle `JourFerie`/table `jours_feries` ajouté en §3 (absent depuis son introduction en Phase C, §18).
+- `Administration/ParametresStockage.tsx` identifié comme fichier front orphelin (aucune route ne le rend) — probable reste d'un refactor de la page Paramètres, à supprimer ou brancher.
+
+### Bugs fonctionnels découverts et corrigés le 14/07/2026
+1. **Persistance silencieusement cassée** : `StoreJourFerieRequest`/`UpdateJourFerieRequest` validaient `nom` et `est_recurrent` (mêmes clés que les formulaires React `Administration/JoursFeries/Creer.tsx`/`Editer.tsx`), alors que `JourFerie::$fillable` = `['date', 'libelle', 'recurrent_annuel']`. `AdministrationController::enregistrerJourFerie()`/`mettreAJourJourFerie()` font `JourFerie::create($request->validated())` / `->update(...)` directement — Eloquent ignorait silencieusement les clés non-fillable (`nom`, `est_recurrent`) sans erreur. Un jour férié créé via le formulaire admin s'enregistrait avec `libelle = NULL` et `recurrent_annuel` à sa valeur par défaut, jamais avec les valeurs saisies. Aucun test ne couvre ce module (pas de `JourFerieTest`), ce qui explique que le bug soit passé inaperçu.
+   - **Fix appliqué** : renommage des clés `nom`→`libelle` et `est_recurrent`→`recurrent_annuel` dans les deux FormRequests et dans les 3 pages React (`Index.tsx`/`Creer.tsx`/`Editer.tsx`), pour matcher le modèle/la migration/`GrilleTarifaire`/`JourFerieSeeder` (convention `libelle` déjà utilisée partout ailleurs dans l'app plutôt que renommer la colonne DB).
+2. **Autorisation systématiquement refusée** : `StoreJourFerieRequest::authorize()`/`UpdateJourFerieRequest::authorize()` appelaient `$this->user()->hasRole('Administrateur')` (majuscule), alors que `RoleSeeder` sème les rôles depuis `RoleUtilisateur::cases()` → valeur `'administrateur'` (minuscule, cf. §3). Spatie `hasRole()` est sensible à la casse : un administrateur réel ne matchait jamais `'Administrateur'` → `authorize()` retournait `false` → **403 Forbidden systématique** sur la création/édition d'un jour férié, quel que soit l'utilisateur connecté. Aucune autre partie du code n'utilise cette casse (`role:administrateur`/`hasRole('administrateur')` en minuscule partout ailleurs) — erreur de frappe isolée à ces deux FormRequests.
+   - **Fix appliqué** : `'Administrateur'` → `'administrateur'` dans les deux fichiers.
+   - **Vérifié via tinker** : `authorize()` retourne désormais `true` pour un admin seedé, et `JourFerie::create(['libelle' => ..., 'recurrent_annuel' => true, ...])` persiste bien les deux champs.
+
+`vendor/bin/pint --dirty --format agent` : passed. `npx tsc --noEmit` : OK (aucune erreur). Tests : 43/46 passent, mêmes échecs pré-existants sans rapport (`ExampleTest`, `profile.destroy` ×2) — inchangé depuis le 07/07/2026, aucune régression introduite. **Dette restante** : toujours aucun test automatisé (`JourFerieTest`) pour ce module — à ajouter pour éviter une régression silencieuse similaire.
+
+## 21. Corrections & Améliorations du 22/07/2026
+
+Session dédiée à la résolution de bugs fonctionnels et à l'amélioration de la logique d'autorisation.
+
+1. **UX/UI Création et Édition de demande** : Les boutons "Saisir manuellement" et "Uploader le fichier" pour le manifeste passager dans `Creer.tsx` et `Editer.tsx` prêtaient à confusion car ils ressemblaient à des boutons de soumission. Ils ont été remplacés par le composant `Tabs` de shadcn/ui pour une meilleure ergonomie (onglets "Fichier" / "Texte").
+2. **Facturation Proforma (Bug 500)** : Le `ProformaService` provoquait une erreur 500 lors du calcul des tarifs variables (Pushback, Tractage, etc.). Les méthodes manquantes (`tarifPushback()`, `tarifTractage()`, `tarifPasserelleTelescopique()`, `tarifManipulationFret()`) ont été implémentées dans `app/Services/GrilleTarifaire.php` avec une logique basique par catégorie. 
+3. **Facturation Proforma (Bug Enum)** : Le PDF proforma `proforma.blade.php` a été corrigé pour utiliser l'instance `NatureVol` correctement formatée, évitant un plantage dû à la conversion via `from()` sur une instance déjà convertie.
+4. **Logique d'autorisation stricte (DemandePolicy)** : 
+    - Sécurisation de l'édition : L'action de `modifier` ou `soumettre` une demande a été restreinte au propriétaire (le créateur) ou à un administrateur. Auparavant, le Handling pouvait voir le bouton "Modifier", ce qui pouvait porter à confusion. 
+    - Les actions métier du Handling (`approuver`, `rejeter`, `affecter`) restent intactes.
+    - Correction effet de bord : La méthode `supprimerPieceJointe` dans `DemandeController.php` a été adaptée pour s'assurer que, si le Handling ajoute une pièce jointe, il peut la supprimer lui-même (via une nouvelle propriété `peutSupprimer` sur le front-end), tout en l'empêchant de supprimer les pièces jointes de la Compagnie.
+5. **Validation des règles d'Aviation Civile et Planning** :
+    - Confirmé avec le client que le champ **Code Aviation Civile** reste facultatif à la création par la compagnie (hybride) pour gagner du temps, sinon c'est le Handling qui le saisit.
+    - Confirmé que le **Planning** des ressources peut être fait de façon proactive dès l'approbation Handling, sans devoir attendre l'accord formel de l'Aviation Civile (le statut `Autorisée` n'est pas un strict pré-requis pour préparer l'affectation).

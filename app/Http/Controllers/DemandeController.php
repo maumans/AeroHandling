@@ -186,6 +186,23 @@ class DemandeController extends Controller
 
         $demande->load(['compagnie', 'aeronef', 'utilisateur', 'validations.utilisateur', 'commentaires.utilisateur', 'piecesJointes', 'affectations.equipement', 'affectations.utilisateurAffectation', 'equipements', 'servicesAssistance']);
 
+        $peutModifierDemande = $request->user()->can('modifier', $demande);
+        $estHandling = $request->user()->hasRole(['handling', 'administrateur']);
+
+        $demande->piecesJointes->transform(function ($pj) use ($request, $peutModifierDemande, $estHandling) {
+            $estProprietaire = $pj->utilisateur_id === $request->user()->id;
+            
+            if ($request->user()->hasRole('administrateur')) {
+                $pj->peutSupprimer = true;
+            } elseif ($estHandling) {
+                $pj->peutSupprimer = $estProprietaire; // Les agents handling peuvent toujours supprimer leurs propres PJ
+            } else {
+                // Les compagnies ne peuvent supprimer leurs PJ que si la demande est encore modifiable (Brouillon, Complément)
+                $pj->peutSupprimer = $estProprietaire && $peutModifierDemande;
+            }
+            return $pj;
+        });
+
         $peutAffecter = $request->user()->can('affecter', $demande);
         $equipementsDisponibles = $peutAffecter ? Equipement::where('statut', 'disponible')->get(['id', 'nom', 'code']) : [];
         $agentsDisponibles = $peutAffecter ? User::role('handling')->get(['id', 'name']) : [];
@@ -223,6 +240,7 @@ class DemandeController extends Controller
             'peutAutoriser' => $request->user()->can('autoriser', $demande),
             'peutSupprimer' => $request->user()->can('supprimer', $demande),
             'peutAffecter' => $peutAffecter,
+            'peutAjouterPieceJointe' => $peutModifierDemande || $estHandling,
         ]);
     }
 
@@ -301,6 +319,11 @@ class DemandeController extends Controller
     {
         $this->authorize('voir', $demande);
 
+        $user = $request->user();
+        if (! $user->hasRole(['handling', 'administrateur']) && ! $user->can('modifier', $demande)) {
+            abort(403, "Vous ne pouvez plus ajouter de pièces jointes à cette demande (elle est probablement déjà soumise ou validée).");
+        }
+
         $request->validate([
             'fichier' => ['required', 'file', 'max:10240'], // 10MB max
         ]);
@@ -321,7 +344,23 @@ class DemandeController extends Controller
 
     public function supprimerPieceJointe(Request $request, Demande $demande, PieceJointe $pieceJointe): RedirectResponse
     {
-        $this->authorize('modifier', $demande);
+        $user = $request->user();
+        $peutModifierDemande = $user->can('modifier', $demande);
+        $estProprietaire = $pieceJointe->utilisateur_id === $user->id;
+        $estHandling = $user->hasRole(['handling', 'administrateur']);
+
+        $peutSupprimer = false;
+        if ($user->hasRole('administrateur')) {
+            $peutSupprimer = true;
+        } elseif ($estHandling) {
+            $peutSupprimer = $estProprietaire;
+        } else {
+            $peutSupprimer = $estProprietaire && $peutModifierDemande;
+        }
+
+        if (! $peutSupprimer) {
+            abort(403, "Vous n'êtes pas autorisé à supprimer cette pièce jointe à ce stade.");
+        }
 
         if ($pieceJointe->demande_id !== $demande->id) {
             abort(404);

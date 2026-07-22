@@ -134,4 +134,16 @@ return [
         // Vols « ambulances » : assistance complète à 50 % du tarif général.
         'ambulance' => 0.50,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Redevance de Fret (Euro HT / Tonne)
+    |--------------------------------------------------------------------------
+    */
+    'fret' => [
+        'import' => 200.00,
+        'export' => 100.00,
+        'export_perissable' => 22.00,
+        'passager_par_kilo' => 0.20,
+    ],
 ];

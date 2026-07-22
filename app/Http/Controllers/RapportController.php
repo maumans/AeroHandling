@@ -50,6 +50,7 @@ class RapportController extends Controller
             'rejetees' => $rejetees,
             'taux_approbation' => $traitees > 0 ? round(($autorisees / $traitees) * 100, 1) : 0,
             'delai_moyen_heures' => $this->delaiMoyenTraitement($periode()),
+            'delai_moyen_heures_ac' => $this->delaiMoyenTraitementAC($periode()),
         ];
 
         $parCompagnie = Compagnie::withCount(['demandes' => fn ($q) => $q->mergeConstraintsFrom($periode())])
@@ -77,6 +78,17 @@ class RapportController extends Controller
             ->get()
             ->map(fn ($ligne) => ['libelle' => $ligne->type_aeronef, 'total' => $ligne->total]);
 
+        $parNatureVol = $periode()
+            ->whereNotNull('nature_vol')
+            ->selectRaw('nature_vol, count(*) as total')
+            ->groupBy('nature_vol')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($ligne) => [
+                'libelle' => $ligne->nature_vol instanceof \App\Enums\NatureVol ? $ligne->nature_vol->libelle() : (\App\Enums\NatureVol::tryFrom($ligne->nature_vol)?->libelle() ?? $ligne->nature_vol),
+                'total' => $ligne->total
+            ]);
+
         $parImmatriculation = $periode()
             ->whereNotNull('immatriculation')
             ->selectRaw('immatriculation, count(*) as total')
@@ -102,6 +114,7 @@ class RapportController extends Controller
             'parCompagnie' => $parCompagnie,
             'parTonnage' => $parTonnage,
             'parTypeAeronef' => $parTypeAeronef,
+            'parNatureVol' => $parNatureVol,
             'parImmatriculation' => $parImmatriculation,
             'registre' => $registre,
             'filtresOptions' => [
@@ -154,6 +167,7 @@ class RapportController extends Controller
                 'rejetees' => $rejetees,
                 'taux_approbation' => $traitees > 0 ? round(($autorisees / $traitees) * 100, 1) : 0,
                 'delai_moyen_heures' => $this->delaiMoyenTraitement($periode()),
+                'delai_moyen_heures_ac' => $this->delaiMoyenTraitementAC($periode()),
             ];
 
             $parCompagnie = Compagnie::withCount(['demandes' => fn ($q) => $q->mergeConstraintsFrom($periode())])
@@ -173,7 +187,26 @@ class RapportController extends Controller
                 'uld_total' => (int) $periode()->sum('nombre_uld'),
             ];
 
-            $pdf = Pdf::loadView('exports.rapport', compact('debut', 'fin', 'indicateurs', 'parCompagnie', 'parTonnage'));
+            $parTypeAeronef = $periode()
+                ->whereNotNull('type_aeronef')
+                ->selectRaw('type_aeronef, count(*) as total')
+                ->groupBy('type_aeronef')
+                ->orderByDesc('total')
+                ->get()
+                ->map(fn ($ligne) => ['libelle' => $ligne->type_aeronef, 'total' => $ligne->total]);
+
+            $parNatureVol = $periode()
+                ->whereNotNull('nature_vol')
+                ->selectRaw('nature_vol, count(*) as total')
+                ->groupBy('nature_vol')
+                ->orderByDesc('total')
+                ->get()
+                ->map(fn ($ligne) => [
+                    'libelle' => $ligne->nature_vol instanceof \App\Enums\NatureVol ? $ligne->nature_vol->libelle() : (\App\Enums\NatureVol::tryFrom($ligne->nature_vol)?->libelle() ?? $ligne->nature_vol),
+                    'total' => $ligne->total
+                ]);
+
+            $pdf = Pdf::loadView('exports.rapport', compact('debut', 'fin', 'indicateurs', 'parCompagnie', 'parTonnage', 'parTypeAeronef', 'parNatureVol'));
 
             return $pdf->download('rapport_aerohandling_'.now()->format('Ymd').'.pdf');
         }
@@ -195,6 +228,24 @@ class RapportController extends Controller
 
         $totalHeures = $demandes->sum(
             fn (Demande $d) => $d->date_soumission->diffInHours($d->date_decision_handling)
+        );
+
+        return round($totalHeures / $demandes->count(), 1);
+    }
+
+    private function delaiMoyenTraitementAC($query): float
+    {
+        $demandes = (clone $query)
+            ->whereNotNull('date_decision_handling')
+            ->whereNotNull('date_autorisation')
+            ->get(['date_decision_handling', 'date_autorisation']);
+
+        if ($demandes->isEmpty()) {
+            return 0;
+        }
+
+        $totalHeures = $demandes->sum(
+            fn (Demande $d) => Carbon::parse($d->date_decision_handling)->diffInHours(Carbon::parse($d->date_autorisation))
         );
 
         return round($totalHeures / $demandes->count(), 1);

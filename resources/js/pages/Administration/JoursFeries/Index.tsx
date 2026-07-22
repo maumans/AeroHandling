@@ -18,9 +18,9 @@ import {
 
 interface JourFerie {
     id: number;
-    nom: string;
+    libelle: string;
     date: string;
-    est_recurrent: boolean;
+    recurrent_annuel: boolean;
 }
 
 interface PaginatedData {
@@ -72,13 +72,13 @@ export default function AdministrationJoursFeriesIndex({ jours }: Props) {
                                             <td className="px-4 py-3 font-medium">
                                                 <div className="flex items-center gap-2">
                                                     <CalendarDays className="size-4 text-muted-foreground" />
-                                                    {j.nom}
+                                                    {j.libelle}
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">{new Date(j.date).toLocaleDateString('fr-FR')}</td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-center">
-                                                    {j.est_recurrent ? (
+                                                    {j.recurrent_annuel ? (
                                                         <Check className="size-4 text-green-600" />
                                                     ) : (
                                                         <X className="size-4 text-muted-foreground" />
@@ -107,7 +107,7 @@ export default function AdministrationJoursFeriesIndex({ jours }: Props) {
                                                             <AlertDialogHeader>
                                                                 <AlertDialogTitle>Supprimer le jour férié</AlertDialogTitle>
                                                                 <AlertDialogDescription>
-                                                                    Voulez-vous vraiment supprimer le jour férié <strong>{j.nom}</strong> ? Cette action est irréversible.
+                                                                    Voulez-vous vraiment supprimer le jour férié <strong>{j.libelle}</strong> ? Cette action est irréversible.
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>

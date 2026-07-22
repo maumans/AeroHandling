@@ -107,6 +107,7 @@ interface PieceJointe {
     nom_fichier: string;
     taille: number;
     created_at: string;
+    peutSupprimer?: boolean;
 }
 
 interface Equipement {
@@ -132,6 +133,7 @@ interface Props {
     peutAutoriser: boolean;
     peutSupprimer: boolean;
     peutAffecter: boolean;
+    peutAjouterPieceJointe: boolean;
     proforma?: {
         total_ht: number;
         tva: number;
@@ -163,6 +165,7 @@ export default function DemandesAfficher({
     peutAutoriser,
     peutSupprimer,
     peutAffecter,
+    peutAjouterPieceJointe,
     proforma,
 }: Props) {
     const [rejetOpen, setRejetOpen] = useState(false);
@@ -788,7 +791,7 @@ export default function DemandesAfficher({
                                                         Ouvrir
                                                     </a>
                                                 </Button>
-                                                {peutModifier && (
+                                                {pj.peutSupprimer && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="icon" 
@@ -805,11 +808,13 @@ export default function DemandesAfficher({
                             ) : (
                                 <p className="text-sm text-muted-foreground">Aucune pièce jointe.</p>
                             )}
-
-                            <Separator />
                             
-                            <form onSubmit={submitPj} className="space-y-3">
-                                <div>
+                            {peutAjouterPieceJointe && (
+                                <>
+                                    <Separator />
+                                    
+                                    <form onSubmit={submitPj} className="space-y-3">
+                                        <div>
                                     <Label htmlFor="fichier">Ajouter un fichier</Label>
                                     <div className="mt-1 flex items-center gap-3">
                                         <input
@@ -827,6 +832,8 @@ export default function DemandesAfficher({
                                     {pjErrors.fichier && <p className="mt-1 text-sm text-destructive">{pjErrors.fichier}</p>}
                                 </div>
                             </form>
+                                </>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

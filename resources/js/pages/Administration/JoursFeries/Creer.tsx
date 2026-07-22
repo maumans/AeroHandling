@@ -10,9 +10,9 @@ import InputError from '@/components/input-error';
 
 export default function AdministrationJoursFeriesCreer() {
     const { data, setData, post, processing, errors } = useForm({
-        nom: '',
+        libelle: '',
         date: '',
-        est_recurrent: true,
+        recurrent_annuel: true,
     });
 
     const soumettre = (e: React.FormEvent) => {
@@ -46,16 +46,16 @@ export default function AdministrationJoursFeriesCreer() {
                         <form onSubmit={soumettre} className="flex flex-col gap-6">
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="nom">Nom du jour férié <span className="text-destructive">*</span></Label>
+                                    <Label htmlFor="libelle">Nom du jour férié <span className="text-destructive">*</span></Label>
                                     <Input
-                                        id="nom"
-                                        value={data.nom}
-                                        onChange={(e) => setData('nom', e.target.value)}
+                                        id="libelle"
+                                        value={data.libelle}
+                                        onChange={(e) => setData('libelle', e.target.value)}
                                         placeholder="Ex: Fête du Travail"
                                         required
                                         autoFocus
                                     />
-                                    <InputError message={errors.nom} />
+                                    <InputError message={errors.libelle} />
                                 </div>
 
                                 <div className="space-y-2">
@@ -73,15 +73,15 @@ export default function AdministrationJoursFeriesCreer() {
 
                             <div className="flex items-center space-x-2">
                                 <Checkbox
-                                    id="est_recurrent"
-                                    checked={data.est_recurrent}
-                                    onCheckedChange={(checked) => setData('est_recurrent', checked as boolean)}
+                                    id="recurrent_annuel"
+                                    checked={data.recurrent_annuel}
+                                    onCheckedChange={(checked) => setData('recurrent_annuel', checked as boolean)}
                                 />
-                                <Label htmlFor="est_recurrent" className="text-sm font-normal">
+                                <Label htmlFor="recurrent_annuel" className="text-sm font-normal">
                                     Ce jour férié se répète-t-il chaque année à la même date ?
                                 </Label>
                             </div>
-                            <InputError message={errors.est_recurrent} />
+                            <InputError message={errors.recurrent_annuel} />
 
                             <div className="flex justify-end gap-3 pt-4">
                                 <Button variant="outline" asChild>

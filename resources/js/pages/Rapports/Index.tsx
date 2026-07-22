@@ -26,6 +26,7 @@ interface Props {
         rejetees: number;
         taux_approbation: number;
         delai_moyen_heures: number;
+        delai_moyen_heures_ac: number;
     };
     parCompagnie: { nom: string; total: number }[];
     parTonnage: {
@@ -34,6 +35,7 @@ interface Props {
         uld_total: number;
     };
     parTypeAeronef: { libelle: string; total: number }[];
+    parNatureVol: { libelle: string; total: number }[];
     parImmatriculation: { libelle: string; total: number }[];
     registre: {
         data: any[];
@@ -56,6 +58,7 @@ export default function RapportsIndex({
     parCompagnie,
     parTonnage,
     parTypeAeronef,
+    parNatureVol,
     parImmatriculation,
     registre,
     filtresOptions,
@@ -106,11 +109,11 @@ export default function RapportsIndex({
                         <p className="text-sm text-muted-foreground">Consultez et générez les documents officiels.</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        <Button onClick={() => exporter('pdf')} variant="outline" className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800">
+                        <Button onClick={() => exporter('pdf')} variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors">
                             <FileText className="mr-2 size-4" />
                             Générer PDF
                         </Button>
-                        <Button onClick={() => exporter('excel')} variant="outline" className="border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
+                        <Button onClick={() => exporter('excel')} variant="outline" className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
                             <FileSpreadsheet className="mr-2 size-4" />
                             Générer Excel
                         </Button>
@@ -206,7 +209,7 @@ export default function RapportsIndex({
                                         <thead className="bg-muted text-muted-foreground uppercase text-xs">
                                             <tr>
                                                 <th className="px-4 py-3 font-medium">Référence</th>
-                                                <th className="px-4 py-3 font-medium">Date du vol</th>
+                                                <th className="px-4 py-3 font-medium">Dates (Arr. / Dép.)</th>
                                                 <th className="px-4 py-3 font-medium">Compagnie</th>
                                                 <th className="px-4 py-3 font-medium">Aéronef</th>
                                                 <th className="px-4 py-3 font-medium">Statut</th>
@@ -218,9 +221,17 @@ export default function RapportsIndex({
                                                 registre.data.map((demande) => (
                                                     <tr key={demande.id} className="hover:bg-muted/50">
                                                         <td className="px-4 py-3 font-medium">{demande.reference}</td>
-                                                        <td className="px-4 py-3">{new Date(demande.date_heure_vol).toLocaleDateString()}</td>
-                                                        <td className="px-4 py-3">{demande.compagnie?.nom || '-'}</td>
-                                                        <td className="px-4 py-3">{demande.aeronef?.immatriculation || demande.aeronef_type || '-'}</td>
+                                                        <td className="px-4 py-3 text-xs">
+                                                            <div className="flex flex-col gap-1">
+                                                                <span><span className="text-muted-foreground">A:</span> {demande.date_arrivee ? new Date(demande.date_arrivee).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '-'}</span>
+                                                                <span><span className="text-muted-foreground">D:</span> {demande.date_depart ? new Date(demande.date_depart).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '-'}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3">{demande.compagnie_libelle || demande.compagnie?.nom || '-'}</td>
+                                                        <td className="px-4 py-3">
+                                                            {demande.type_aeronef || demande.aeronef?.modele || '-'}
+                                                            {demande.immatriculation ? ` (${demande.immatriculation})` : ''}
+                                                        </td>
                                                         <td className="px-4 py-3">
                                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${couleurStatut(demande.statut)}`}>
                                                                 {filtresOptions.statuts.find(s => s.value === demande.statut)?.label || demande.statut}
@@ -239,6 +250,23 @@ export default function RapportsIndex({
                                         </tbody>
                                     </table>
                                 </div>
+                                {registre.links && registre.links.length > 3 && (
+                                    <div className="flex flex-wrap items-center justify-center gap-2 mt-4 pt-4 border-t">
+                                        {registre.links.map((link, i) => (
+                                            <Button
+                                                key={i}
+                                                variant={link.active ? "default" : "outline"}
+                                                size="sm"
+                                                disabled={!link.url}
+                                                onClick={() => {
+                                                    if (link.url) router.get(link.url, {}, { preserveState: true, replace: true });
+                                                }}
+                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                                className="h-8"
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -312,7 +340,41 @@ export default function RapportsIndex({
 
                     {/* RUBRIQUE: STATS VOLS */}
                     <TabsContent value="vols" className="space-y-6">
-                        <div className="grid gap-6 md:grid-cols-2">
+                        <div className="grid gap-6 md:grid-cols-3">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Répartition par nature de vol</CardTitle>
+                                    <CardDescription>Types de missions prises en charge.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="rounded-md border overflow-x-auto">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-muted text-muted-foreground uppercase text-xs">
+                                                <tr>
+                                                    <th className="px-4 py-3 font-medium">Nature du vol</th>
+                                                    <th className="px-4 py-3 font-medium text-right">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {parNatureVol.length > 0 ? (
+                                                    parNatureVol.map((ligne, index) => (
+                                                        <tr key={index} className="hover:bg-muted/50">
+                                                            <td className="px-4 py-3 font-medium">{ligne.libelle}</td>
+                                                            <td className="px-4 py-3 text-right">{ligne.total}</td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan={2} className="px-4 py-8 text-center text-muted-foreground">
+                                                            Aucune donnée trouvée.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </CardContent>
+                            </Card>
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Répartition par type d&apos;appareil</CardTitle>
@@ -421,6 +483,17 @@ export default function RapportsIndex({
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{indicateurs.delai_moyen_heures}h</div>
+                                    <p className="text-xs text-muted-foreground mt-1">Délai opérationnel</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium">Délai moyen AC</CardTitle>
+                                    <Clock className="h-4 w-4 text-blue-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-blue-600">{indicateurs.delai_moyen_heures_ac}h</div>
+                                    <p className="text-xs text-muted-foreground mt-1">Aviation Civile</p>
                                 </CardContent>
                             </Card>
                         </div>

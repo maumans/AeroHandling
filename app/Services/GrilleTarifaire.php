@@ -113,4 +113,30 @@ class GrilleTarifaire
     {
         return (string) config('tarifs.devise', 'EUR');
     }
+
+    public function tarifPushback(int $categorie): float
+    {
+        $tarifs = config("tarifs.repoussage_tractage.{$categorie}");
+        return (float) ($tarifs['repoussage'] ?? 0.0);
+    }
+
+    public function tarifTractage(int $categorie): float
+    {
+        $tarifs = config("tarifs.repoussage_tractage.{$categorie}");
+        return (float) ($tarifs['tractage'] ?? 0.0);
+    }
+
+    public function tarifPasserelleTelescopique(int $categorie): float
+    {
+        // Tarif estimé pour 1 heure (4 quarts d'heure) pour la proforma
+        $tarifQuartHeure = config('tarifs.passerelle_telescopique.0.tarif_quart_heure', 0);
+        return (float) ($tarifQuartHeure * 4);
+    }
+
+    public function tarifManipulationFret(float $tonnes): float
+    {
+        // On utilise le tarif Import (200€) par défaut. 
+        // Si besoin d'être plus granulaire (Export, etc.), cela pourra être ajouté via le type de demande.
+        return (float) config('tarifs.fret.import', 0.0);
+    }
 }
