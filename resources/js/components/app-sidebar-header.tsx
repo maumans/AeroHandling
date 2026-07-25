@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { NotificationsDropdown } from '@/components/notifications-dropdown';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import type { BreadcrumbItem as BreadcrumbItemType, User } from '@/types';
 
 export function AppSidebarHeader({
@@ -27,6 +28,7 @@ export function AppSidebarHeader({
             <div className="flex items-center gap-1">
                 <RechercheGlobale />
                 <NotificationsDropdown />
+                <LanguageSwitcher />
                 <ThemeToggle />
 
                 {auth?.user && (

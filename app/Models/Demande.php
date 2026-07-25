@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\NatureVol;
 use App\Enums\StatutDemande;
 use Database\Factories\DemandeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,17 +25,16 @@ class Demande extends Model
         'type_aeronef',
         'immatriculation',
         'numero_vol',
-        'numero_landing_permit',
         'aeroport_provenance',
         'aeroport_destination',
-        'nature_vol',
+        'nature_vol_id',
         'mtow',
         'tow_bar_a_bord',
         'date_arrivee',
         'date_depart',
         'tonnage_prevu',
         'volume_prevu',
-        'type_marchandise',
+        'type_marchandise_id',
         'nombre_uld',
         'nombre_palettes',
         'manifeste_passager',
@@ -56,7 +54,6 @@ class Demande extends Model
     protected function casts(): array
     {
         return [
-            'nature_vol' => NatureVol::class,
             'statut' => StatutDemande::class,
             'date_arrivee' => 'datetime',
             'date_depart' => 'datetime',
@@ -90,6 +87,18 @@ class Demande extends Model
         return $this->belongsTo(Aeronef::class);
     }
 
+    /** @return BelongsTo<NatureVol, $this> */
+    public function natureVol(): BelongsTo
+    {
+        return $this->belongsTo(NatureVol::class, 'nature_vol_id');
+    }
+
+    /** @return BelongsTo<TypeMarchandise, $this> */
+    public function typeMarchandise(): BelongsTo
+    {
+        return $this->belongsTo(TypeMarchandise::class, 'type_marchandise_id');
+    }
+
     /** @return HasMany<Validation, $this> */
     public function validations(): HasMany
     {
@@ -118,7 +127,7 @@ class Demande extends Model
     public function equipements(): BelongsToMany
     {
         return $this->belongsToMany(Equipement::class, 'demande_equipement')
-            ->withPivot(['type_equipement', 'quantite'])
+            ->withPivot(['type_equipement_id', 'quantite'])
             ->withTimestamps();
     }
 

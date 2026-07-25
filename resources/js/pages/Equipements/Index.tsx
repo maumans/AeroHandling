@@ -1,4 +1,5 @@
 import { Head, router } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
@@ -40,6 +41,7 @@ interface Props {
 
 
 export default function EquipementsIndex({ equipements, types, statuts, filtres, peutModifierStatut }: Props) {
+    const { t } = useLaravelReactI18n();
     const [recherche, setRecherche] = useState(filtres.recherche ?? '');
 
     function changerStatut(equipementId: number, nouveauStatut: string) {
@@ -61,10 +63,10 @@ export default function EquipementsIndex({ equipements, types, statuts, filtres,
     const libelleStatut = (value: string) => statuts.find((s) => s.value === value)?.libelle ?? value;
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Équipements', href: '/equipements' }]}>
-            <Head title="Équipements" />
+        <AppLayout breadcrumbs={[{ title: t('Équipements'), href: '/equipements' }]}>
+            <Head title={t('Équipements')} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
-                <h1 className="text-2xl font-bold">Gestion des équipements</h1>
+                <h1 className="text-2xl font-bold">{t('Gestion des équipements')}</h1>
 
                 <Card>
                     <CardContent className="p-4">
@@ -78,7 +80,7 @@ export default function EquipementsIndex({ equipements, types, statuts, filtres,
                                 <div className="relative">
                                     <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
-                                        placeholder="Rechercher (code, nom)..."
+                                        placeholder={t('Rechercher (code, nom)...')}
                                         value={recherche}
                                         onChange={(e) => setRecherche(e.target.value)}
                                         className="w-64 pl-9"
@@ -91,10 +93,10 @@ export default function EquipementsIndex({ equipements, types, statuts, filtres,
                                 onValueChange={(v) => filtrer('type', v === 'all' ? undefined : v)}
                             >
                                 <SelectTrigger className="w-52">
-                                    <SelectValue placeholder="Tous les types" />
+                                    <SelectValue placeholder={t('Tous les types')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Tous les types</SelectItem>
+                                    <SelectItem value="all">{t('Tous les types')}</SelectItem>
                                     {types.map((t) => (
                                         <SelectItem key={t.value} value={t.value}>
                                             {t.libelle}
@@ -108,10 +110,10 @@ export default function EquipementsIndex({ equipements, types, statuts, filtres,
                                 onValueChange={(v) => filtrer('statut', v === 'all' ? undefined : v)}
                             >
                                 <SelectTrigger className="w-44">
-                                    <SelectValue placeholder="Tous les statuts" />
+                                    <SelectValue placeholder={t('Tous les statuts')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Tous les statuts</SelectItem>
+                                    <SelectItem value="all">{t('Tous les statuts')}</SelectItem>
                                     {statuts.map((s) => (
                                         <SelectItem key={s.value} value={s.value}>
                                             {s.libelle}
@@ -129,11 +131,11 @@ export default function EquipementsIndex({ equipements, types, statuts, filtres,
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left font-medium">Code</th>
-                                        <th className="px-4 py-3 text-left font-medium">Nom</th>
-                                        <th className="px-4 py-3 text-left font-medium">Type</th>
-                                        <th className="px-4 py-3 text-left font-medium">Capacité</th>
-                                        <th className="px-4 py-3 text-left font-medium">Statut</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Code')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Nom')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Type')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Capacité')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Statut')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -184,7 +186,7 @@ export default function EquipementsIndex({ equipements, types, statuts, filtres,
                                     {equipements.data.length === 0 && (
                                         <tr>
                                             <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                                                Aucun équipement trouvé.
+                                                {t('Aucun équipement trouvé.')}
                                             </td>
                                         </tr>
                                     )}

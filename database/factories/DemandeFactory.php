@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Enums\NatureVol;
 use App\Enums\StatutDemande;
 use App\Models\Aeronef;
 use App\Models\Compagnie;
 use App\Models\Demande;
+use App\Models\NatureVol;
+use App\Models\TypeMarchandise;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -29,16 +30,15 @@ class DemandeFactory extends Factory
             'aeronef_id' => Aeronef::factory(),
             'type_aeronef' => fake()->randomElement(['Boeing 737-800', 'Airbus A320', 'Boeing 777F', 'ATR 72', 'Embraer E190', 'Boeing 747-400F']),
             'numero_vol' => strtoupper(fake()->lexify('??')).fake()->numberBetween(100, 9999),
-            'numero_landing_permit' => fake()->optional()->bothify('LP-####/##'),
             'demandeur' => fake()->name(),
             'contact_demandeur' => fake()->phoneNumber(),
-            'nature_vol' => fake()->randomElement(NatureVol::cases()),
+            'nature_vol_id' => NatureVol::inRandomOrder()->first()?->id ?? NatureVol::factory(),
             'mtow' => fake()->randomFloat(2, 5, 400),
             'date_arrivee' => $dateArrivee,
             'date_depart' => $dateDepart,
             'tonnage_prevu' => fake()->optional()->randomFloat(2, 1, 100),
             'volume_prevu' => fake()->optional()->randomFloat(2, 10, 500),
-            'type_marchandise' => fake()->optional()->randomElement(['Général', 'Périssable', 'Dangereux', 'Valeur', 'Animaux vivants']),
+            'type_marchandise_id' => fake()->boolean(70) ? (TypeMarchandise::inRandomOrder()->first()?->id ?? TypeMarchandise::factory()) : null,
             'nombre_uld' => fake()->optional()->numberBetween(1, 30),
             'nombre_palettes' => fake()->optional()->numberBetween(1, 20),
             'exigences_particulieres' => fake()->optional()->sentence(),

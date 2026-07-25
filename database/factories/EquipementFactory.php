@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Enums\StatutEquipement;
-use App\Enums\TypeEquipement;
 use App\Models\Equipement;
+use App\Models\TypeEquipement;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<Equipement> */
@@ -15,14 +15,14 @@ class EquipementFactory extends Factory
     /** @return array<string, mixed> */
     public function definition(): array
     {
-        $type = fake()->randomElement(TypeEquipement::cases());
+        $type = TypeEquipement::inRandomOrder()->first();
 
         return [
-            'code' => strtoupper(fake()->unique()->bothify('EQ-###')),
-            'nom' => $type->libelle().' '.fake()->numberBetween(1, 20),
-            'type' => $type,
+            'code' => fake()->unique()->bothify('??-###'),
+            'nom' => fake()->words(3, true),
+            'type_equipement_id' => $type?->id ?? TypeEquipement::factory(),
             'statut' => fake()->randomElement(StatutEquipement::cases()),
-            'capacite_max' => fake()->optional()->randomFloat(2, 5, 50),
+            'capacite_max' => fake()->optional(0.7)->randomFloat(2, 1, 50),
             'notes' => fake()->optional()->sentence(),
         ];
     }

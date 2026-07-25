@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\StatutEquipement;
-use App\Enums\TypeEquipement;
 use App\Models\Equipement;
+use App\Models\TypeEquipement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,8 +17,8 @@ class EquipementController extends Controller
     {
         $query = Equipement::query();
 
-        if ($request->filled('type')) {
-            $query->where('type', $request->input('type'));
+        if ($request->filled('type_equipement_id')) {
+            $query->where('type_equipement_id', $request->input('type_equipement_id'));
         }
 
         if ($request->filled('statut')) {
@@ -35,9 +35,9 @@ class EquipementController extends Controller
 
         $equipements = $query->orderBy('code')->paginate(config('aerohandling.pagination.equipements', 20))->withQueryString();
 
-        $types = collect(TypeEquipement::cases())->map(fn (TypeEquipement $t) => [
-            'value' => $t->value,
-            'libelle' => $t->libelle(),
+        $types = TypeEquipement::where('actif', true)->get()->map(fn (TypeEquipement $t) => [
+            'value' => $t->id,
+            'libelle' => $t->nom,
         ])->values();
 
         $statuts = collect(StatutEquipement::cases())->map(fn (StatutEquipement $s) => [
@@ -49,7 +49,7 @@ class EquipementController extends Controller
             'equipements' => $equipements,
             'types' => $types,
             'statuts' => $statuts,
-            'filtres' => $request->only(['type', 'statut', 'recherche']),
+            'filtres' => $request->only(['type_equipement_id', 'statut', 'recherche']),
             'peutModifierStatut' => $request->user()->hasRole(['handling', 'administrateur']),
         ]);
     }

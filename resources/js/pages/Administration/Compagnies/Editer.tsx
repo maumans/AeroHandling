@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 interface Compagnie {
     id: number;
@@ -34,6 +35,7 @@ export default function AdministrationCompagniesEditer({ compagnie, pays }: Prop
         contact_telephone: compagnie.contact_telephone ?? '',
         actif: compagnie.actif,
     });
+    const { t } = useLaravelReactI18n();
 
     function soumettre(e: React.FormEvent) {
         e.preventDefault();
@@ -42,11 +44,11 @@ export default function AdministrationCompagniesEditer({ compagnie, pays }: Prop
 
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Compagnies', href: '/administration/compagnies' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Compagnies'), href: '/administration/compagnies' },
             { title: compagnie.nom, href: `/administration/compagnies/${compagnie.id}/editer` },
         ]}>
-            <Head title={`Modifier — ${compagnie.nom}`} />
+            <Head title={`${t('Modifier')} — ${compagnie.nom}`} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" asChild>
@@ -54,7 +56,7 @@ export default function AdministrationCompagniesEditer({ compagnie, pays }: Prop
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
-                    <h1 className="text-2xl font-bold">Modifier la compagnie</h1>
+                    <h1 className="text-2xl font-bold">{t('Modifier la compagnie')}</h1>
                 </div>
 
                 <Card className="max-w-xl">
@@ -65,7 +67,7 @@ export default function AdministrationCompagniesEditer({ compagnie, pays }: Prop
                         <form onSubmit={soumettre} className="flex flex-col gap-4">
                             {/* Nom */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="nom">Nom de la compagnie <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="nom">{t('Nom de la compagnie')} <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="nom"
                                     value={data.nom}
@@ -77,7 +79,7 @@ export default function AdministrationCompagniesEditer({ compagnie, pays }: Prop
                             {/* Codes */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="code_iata">Code IATA</Label>
+                                    <Label htmlFor="code_iata">{t('Code IATA')}</Label>
                                     <Input
                                         id="code_iata"
                                         value={data.code_iata}
@@ -88,7 +90,7 @@ export default function AdministrationCompagniesEditer({ compagnie, pays }: Prop
                                     {errors.code_iata && <p className="text-sm text-destructive">{errors.code_iata}</p>}
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="code_icao">Code ICAO</Label>
+                                    <Label htmlFor="code_icao">{t('Code ICAO')}</Label>
                                     <Input
                                         id="code_icao"
                                         value={data.code_icao}
@@ -102,10 +104,10 @@ export default function AdministrationCompagniesEditer({ compagnie, pays }: Prop
 
                             {/* Pays */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="pays">Pays</Label>
+                                <Label htmlFor="pays">{t('Pays')}</Label>
                                 <Select value={data.pays} onValueChange={(v) => setData('pays', v)}>
                                     <SelectTrigger id="pays">
-                                        <SelectValue placeholder="Sélectionner un pays" />
+                                        <SelectValue placeholder={t("Sélectionner un pays")} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {pays.map((p) => (
@@ -118,7 +120,7 @@ export default function AdministrationCompagniesEditer({ compagnie, pays }: Prop
 
                             {/* Contact email */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="contact_email">E-mail de contact</Label>
+                                <Label htmlFor="contact_email">{t('E-mail de contact')}</Label>
                                 <Input
                                     id="contact_email"
                                     type="email"
@@ -130,7 +132,7 @@ export default function AdministrationCompagniesEditer({ compagnie, pays }: Prop
 
                             {/* Contact téléphone */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="contact_telephone">Téléphone de contact</Label>
+                                <Label htmlFor="contact_telephone">{t('Téléphone de contact')}</Label>
                                 <Input
                                     id="contact_telephone"
                                     value={data.contact_telephone}
@@ -146,15 +148,15 @@ export default function AdministrationCompagniesEditer({ compagnie, pays }: Prop
                                     checked={data.actif}
                                     onCheckedChange={(v) => setData('actif', Boolean(v))}
                                 />
-                                <Label htmlFor="actif" className="cursor-pointer">Compagnie active</Label>
+                                <Label htmlFor="actif" className="cursor-pointer">{t('Compagnie active')}</Label>
                             </div>
 
                             <div className="flex justify-end gap-2 pt-2">
                                 <Button type="button" variant="outline" asChild>
-                                    <Link href="/administration/compagnies">Annuler</Link>
+                                    <Link href="/administration/compagnies">{t('Annuler')}</Link>
                                 </Button>
                                 <Button type="submit" disabled={processing}>
-                                    {processing ? 'Enregistrement...' : 'Enregistrer'}
+                                    {processing ? t('Enregistrement...') : t('Enregistrer')}
                                 </Button>
                             </div>
                         </form>

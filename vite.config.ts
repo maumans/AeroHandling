@@ -1,4 +1,5 @@
 import inertia from '@inertiajs/vite';
+import i18n from 'laravel-react-i18n/vite';
 import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
@@ -17,6 +18,7 @@ export default defineConfig({
                 }),
             ],
         }),
+        i18n(),
         inertia(),
         react({
             babel: {

@@ -15,13 +15,14 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 interface Aeronef {
     id: number;
     code: string;
     modele: string;
-    categorie: string;
-    categorie_libelle: string;
+    type: string;
+    type_libelle: string;
     capacite_passagers: number | null;
     capacite_cargo_tonnes: string | null;
     demandes_count: number;
@@ -40,20 +41,21 @@ interface Props {
 
 export default function AdministrationAeronefsIndex({ aeronefs }: Props) {
     // La suppression est gérée directement dans le composant AlertDialog
+    const { t } = useLaravelReactI18n();
 
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Aéronefs', href: '/administration/aeronefs' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Aéronefs'), href: '/administration/aeronefs' },
         ]}>
-            <Head title="Aéronefs" />
+            <Head title={t('Aéronefs')} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="text-2xl font-bold">Aéronefs</h1>
+                    <h1 className="text-2xl font-bold">{t('Aéronefs')}</h1>
                     <Button asChild>
                         <Link href="/administration/aeronefs/creer">
                             <Plus className="mr-2 size-4" />
-                            Nouvel aéronef
+                            {t('Nouvel aéronef')}
                         </Link>
                     </Button>
                 </div>
@@ -66,13 +68,13 @@ export default function AdministrationAeronefsIndex({ aeronefs }: Props) {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left font-medium">Code</th>
-                                        <th className="px-4 py-3 text-left font-medium">Modèle</th>
-                                        <th className="px-4 py-3 text-left font-medium">Catégorie</th>
-                                        <th className="px-4 py-3 text-left font-medium">Cap. passagers</th>
-                                        <th className="px-4 py-3 text-left font-medium">Cap. cargo (t)</th>
-                                        <th className="px-4 py-3 text-left font-medium">Demandes</th>
-                                        <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Code')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Modèle')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Type')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Cap. passagers')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Cap. cargo (t)')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Demandes')}</th>
+                                        <th className="px-4 py-3 text-right font-medium">{t('Actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -85,7 +87,7 @@ export default function AdministrationAeronefsIndex({ aeronefs }: Props) {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">{a.modele}</td>
-                                            <td className="px-4 py-3">{a.categorie_libelle}</td>
+                                            <td className="px-4 py-3">{a.type_libelle}</td>
                                             <td className="px-4 py-3 text-center">{a.capacite_passagers ?? '—'}</td>
                                             <td className="px-4 py-3 text-center">{a.capacite_cargo_tonnes ?? '—'}</td>
                                             <td className="px-4 py-3 text-center">{a.demandes_count}</td>
@@ -103,25 +105,25 @@ export default function AdministrationAeronefsIndex({ aeronefs }: Props) {
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     className="text-destructive hover:text-destructive"
-                                                                    title="Supprimer"
+                                                                    title={t('Supprimer')}
                                                                 >
                                                                     <Trash2 className="size-4" />
                                                                 </Button>
                                                             </AlertDialogTrigger>
                                                             <AlertDialogContent>
                                                                 <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Supprimer l'aéronef</AlertDialogTitle>
+                                                                    <AlertDialogTitle>{t("Supprimer l'aéronef")}</AlertDialogTitle>
                                                                     <AlertDialogDescription>
-                                                                        Voulez-vous vraiment supprimer l'aéronef <strong>{a.code}</strong> ? Cette action est irréversible.
+                                                                        {t('Voulez-vous vraiment supprimer l\'aéronef')} <strong>{a.code}</strong> ? {t('Cette action est irréversible.')}
                                                                     </AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                                    <AlertDialogCancel>{t('Annuler')}</AlertDialogCancel>
                                                                     <AlertDialogAction 
                                                                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                                                         onClick={() => router.delete(`/administration/aeronefs/${a.id}`)}
                                                                     >
-                                                                        Supprimer
+                                                                        {t('Supprimer')}
                                                                     </AlertDialogAction>
                                                                 </AlertDialogFooter>
                                                             </AlertDialogContent>
@@ -134,7 +136,7 @@ export default function AdministrationAeronefsIndex({ aeronefs }: Props) {
                                     {aeronefs.data.length === 0 && (
                                         <tr>
                                             <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                                                Aucun aéronef enregistré.
+                                                {t('Aucun aéronef enregistré.')}
                                             </td>
                                         </tr>
                                     )}

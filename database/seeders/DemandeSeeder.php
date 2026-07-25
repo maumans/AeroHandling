@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Enums\NatureVol;
 use App\Enums\StatutDemande;
 use App\Models\Aeronef;
 use App\Models\Compagnie;
 use App\Models\Demande;
+use App\Models\NatureVol;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -59,7 +59,7 @@ class DemandeSeeder extends Seeder
                 'utilisateur_id' => $operateur->id,
                 'aeronef_id' => $aeronef->id,
                 'numero_vol' => strtoupper(fake()->lexify('??')).fake()->numberBetween(100, 9999),
-                'nature_vol' => fake()->randomElement(NatureVol::cases()),
+                'nature_vol_id' => NatureVol::inRandomOrder()->first()?->id ?? 1,
                 'date_arrivee' => $dateArrivee,
                 'date_depart' => $dateDepart,
                 'tonnage_prevu' => fake()->optional(0.7)->randomFloat(2, 5, 80),

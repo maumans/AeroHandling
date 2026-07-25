@@ -2,8 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Enums\CategorieAeronef;
 use App\Models\Aeronef;
+use App\Models\CategorieAeronef;
+use App\Models\TypeAeronef;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<Aeronef> */
@@ -14,14 +15,15 @@ class AeronefFactory extends Factory
     /** @return array<string, mixed> */
     public function definition(): array
     {
-        $categorie = fake()->randomElement(CategorieAeronef::cases());
+        $type = TypeAeronef::inRandomOrder()->first();
 
         return [
             'code' => strtoupper(fake()->unique()->bothify('?###')),
             'modele' => fake()->word(),
-            'categorie' => $categorie,
-            'capacite_passagers' => $categorie !== CategorieAeronef::Cargo ? fake()->numberBetween(70, 400) : null,
-            'capacite_cargo_tonnes' => $categorie !== CategorieAeronef::Passager ? fake()->randomFloat(2, 10, 120) : null,
+            'type_aeronef_id' => $type?->id ?? TypeAeronef::factory(),
+            'categorie_aeronef_id' => CategorieAeronef::inRandomOrder()->first()?->id ?? CategorieAeronef::factory(),
+            'capacite_passagers' => fake()->numberBetween(70, 400),
+            'capacite_cargo_tonnes' => fake()->randomFloat(2, 10, 120),
         ];
     }
 }

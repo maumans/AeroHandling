@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\NatureVol;
-use App\Enums\TypeEquipement;
-use App\Enums\TypeMarchandise;
 use App\Http\Requests\AutoriserDemandeRequest;
 use App\Http\Requests\CreerDemandeRequest;
 use App\Http\Requests\RejeterDemandeRequest;
@@ -12,8 +9,11 @@ use App\Http\Requests\UpdateDemandeRequest;
 use App\Models\Compagnie;
 use App\Models\Demande;
 use App\Models\Equipement;
+use App\Models\NatureVol;
 use App\Models\PieceJointe;
 use App\Models\ServiceAssistance;
+use App\Models\TypeEquipement;
+use App\Models\TypeMarchandise;
 use App\Models\User;
 use App\Services\GestionnaireDemande;
 use App\Services\ProformaService;
@@ -47,8 +47,8 @@ class DemandeController extends Controller
             $query->where('statut', $request->input('statut'));
         }
 
-        if ($request->filled('nature_vol')) {
-            $query->where('nature_vol', $request->input('nature_vol'));
+        if ($request->filled('nature_vol_id')) {
+            $query->where('nature_vol_id', $request->input('nature_vol_id'));
         }
 
         if ($request->filled('compagnie_id')) {
@@ -81,7 +81,7 @@ class DemandeController extends Controller
         return Inertia::render('Demandes/Index', [
             'demandes' => $demandes,
             'compagnies' => $compagnies,
-            'filtres' => $request->only(['statut', 'nature_vol', 'compagnie_id', 'recherche']),
+            'filtres' => $request->only(['statut', 'nature_vol_id', 'compagnie_id', 'recherche']),
             'peutAffecterGlobal' => $peutAffecterGlobal,
             'peutCreer' => $user->can('creer', Demande::class),
             'equipementsDisponibles' => $equipementsDisponibles,
@@ -96,12 +96,9 @@ class DemandeController extends Controller
         $user = $request->user();
         $user->load('compagnie');
 
-        $naturesVol = collect(NatureVol::cases())
-            ->map(fn ($n) => ['value' => $n->value, 'libelle' => $n->libelle()]);
-        $typesMarchandise = collect(TypeMarchandise::cases())
-            ->map(fn ($t) => ['value' => $t->value, 'libelle' => $t->libelle()]);
-        $typesEquipement = collect(TypeEquipement::cases())
-            ->map(fn ($t) => ['value' => $t->value, 'libelle' => $t->libelle()]);
+        $naturesVol = NatureVol::where('actif', true)->orderBy('nom')->get()->map(fn ($n) => ['value' => $n->id, 'libelle' => $n->nom]);
+        $typesMarchandise = TypeMarchandise::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]);
+        $typesEquipement = TypeEquipement::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]);
 
         return Inertia::render('Demandes/Creer', [
             'naturesVol' => $naturesVol,
@@ -139,12 +136,9 @@ class DemandeController extends Controller
 
         $demande->load(['equipements', 'servicesAssistance']); // Ensure pivot data is available for equipments
 
-        $naturesVol = collect(NatureVol::cases())
-            ->map(fn ($n) => ['value' => $n->value, 'libelle' => $n->libelle()]);
-        $typesMarchandise = collect(TypeMarchandise::cases())
-            ->map(fn ($t) => ['value' => $t->value, 'libelle' => $t->libelle()]);
-        $typesEquipement = collect(TypeEquipement::cases())
-            ->map(fn ($t) => ['value' => $t->value, 'libelle' => $t->libelle()]);
+        $naturesVol = NatureVol::where('actif', true)->orderBy('nom')->get()->map(fn ($n) => ['value' => $n->id, 'libelle' => $n->nom]);
+        $typesMarchandise = TypeMarchandise::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]);
+        $typesEquipement = TypeEquipement::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]);
 
         return Inertia::render('Demandes/Editer', [
             'demande' => $demande,
@@ -184,14 +178,14 @@ class DemandeController extends Controller
     {
         $this->authorize('voir', $demande);
 
-        $demande->load(['compagnie', 'aeronef', 'utilisateur', 'validations.utilisateur', 'commentaires.utilisateur', 'piecesJointes', 'affectations.equipement', 'affectations.utilisateurAffectation', 'equipements', 'servicesAssistance']);
+        $demande->load(['compagnie', 'aeronef', 'natureVol', 'typeMarchandise', 'utilisateur', 'validations.utilisateur', 'commentaires.utilisateur', 'piecesJointes', 'affectations.equipement', 'affectations.utilisateurAffectation', 'equipements', 'servicesAssistance']);
 
         $peutModifierDemande = $request->user()->can('modifier', $demande);
         $estHandling = $request->user()->hasRole(['handling', 'administrateur']);
 
         $demande->piecesJointes->transform(function ($pj) use ($request, $peutModifierDemande, $estHandling) {
             $estProprietaire = $pj->utilisateur_id === $request->user()->id;
-            
+
             if ($request->user()->hasRole('administrateur')) {
                 $pj->peutSupprimer = true;
             } elseif ($estHandling) {
@@ -200,6 +194,7 @@ class DemandeController extends Controller
                 // Les compagnies ne peuvent supprimer leurs PJ que si la demande est encore modifiable (Brouillon, Complément)
                 $pj->peutSupprimer = $estProprietaire && $peutModifierDemande;
             }
+
             return $pj;
         });
 
@@ -211,13 +206,13 @@ class DemandeController extends Controller
             ->where('demande_id', $demande->id)
             ->get()
             ->map(function ($eq) {
-                $type = TypeEquipement::tryFrom($eq->type_equipement);
+                $type = TypeEquipement::find($eq->type_equipement_id);
 
                 return [
                     'id' => $eq->id,
-                    'nom' => $type ? $type->libelle() : $eq->type_equipement,
+                    'nom' => $type ? $type->nom : 'Type inconnu',
                     'pivot' => [
-                        'type_equipement' => $eq->type_equipement,
+                        'type_equipement_id' => $eq->type_equipement_id,
                         'quantite' => $eq->quantite,
                     ],
                 ];
@@ -321,7 +316,7 @@ class DemandeController extends Controller
 
         $user = $request->user();
         if (! $user->hasRole(['handling', 'administrateur']) && ! $user->can('modifier', $demande)) {
-            abort(403, "Vous ne pouvez plus ajouter de pièces jointes à cette demande (elle est probablement déjà soumise ou validée).");
+            abort(403, 'Vous ne pouvez plus ajouter de pièces jointes à cette demande (elle est probablement déjà soumise ou validée).');
         }
 
         $request->validate([

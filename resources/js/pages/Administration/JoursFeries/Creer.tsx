@@ -7,8 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import InputError from '@/components/input-error';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 export default function AdministrationJoursFeriesCreer() {
+    const { t } = useLaravelReactI18n();
     const { data, setData, post, processing, errors } = useForm({
         libelle: '',
         date: '',
@@ -22,11 +24,11 @@ export default function AdministrationJoursFeriesCreer() {
 
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Jours Fériés', href: '/administration/jours-feries' },
-            { title: 'Nouveau', href: '/administration/jours-feries/creer' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Jours Fériés'), href: '/administration/jours-feries' },
+            { title: t('Nouveau'), href: '/administration/jours-feries/creer' },
         ]}>
-            <Head title="Nouveau jour férié" />
+            <Head title={t("Nouveau jour férié")} />
             
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 md:p-6">
                 <div className="flex items-center gap-4">
@@ -35,23 +37,23 @@ export default function AdministrationJoursFeriesCreer() {
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
-                    <h1 className="text-2xl font-bold">Nouveau jour férié</h1>
+                    <h1 className="text-2xl font-bold">{t('Nouveau jour férié')}</h1>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Informations du jour férié</CardTitle>
+                        <CardTitle>{t('Informations du jour férié')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={soumettre} className="flex flex-col gap-6">
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="libelle">Nom du jour férié <span className="text-destructive">*</span></Label>
+                                    <Label htmlFor="libelle">{t('Nom du jour férié')} <span className="text-destructive">*</span></Label>
                                     <Input
                                         id="libelle"
                                         value={data.libelle}
                                         onChange={(e) => setData('libelle', e.target.value)}
-                                        placeholder="Ex: Fête du Travail"
+                                        placeholder={t("Ex: Fête du Travail")}
                                         required
                                         autoFocus
                                     />
@@ -59,7 +61,7 @@ export default function AdministrationJoursFeriesCreer() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
+                                    <Label htmlFor="date">{t('Date')} <span className="text-destructive">*</span></Label>
                                     <Input
                                         id="date"
                                         type="date"
@@ -78,18 +80,18 @@ export default function AdministrationJoursFeriesCreer() {
                                     onCheckedChange={(checked) => setData('recurrent_annuel', checked as boolean)}
                                 />
                                 <Label htmlFor="recurrent_annuel" className="text-sm font-normal">
-                                    Ce jour férié se répète-t-il chaque année à la même date ?
+                                    {t('Ce jour férié se répète-t-il chaque année à la même date ?')}
                                 </Label>
                             </div>
                             <InputError message={errors.recurrent_annuel} />
 
                             <div className="flex justify-end gap-3 pt-4">
                                 <Button variant="outline" asChild>
-                                    <Link href="/administration/jours-feries">Annuler</Link>
+                                    <Link href="/administration/jours-feries">{t('Annuler')}</Link>
                                 </Button>
                                 <Button type="submit" disabled={processing}>
                                     <Save className="mr-2 size-4" />
-                                    Enregistrer
+                                    {t('Enregistrer')}
                                 </Button>
                             </div>
                         </form>

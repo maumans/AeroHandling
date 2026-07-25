@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { STATUT_EQUIPEMENT_BADGE } from '@/lib/couleurs';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 interface Equipement {
     id: number;
@@ -30,19 +31,21 @@ interface Props {
 }
 
 export default function AdministrationEquipementsIndex({ equipements }: Props) {
+    const { t } = useLaravelReactI18n();
+
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Équipements', href: '/administration/equipements' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Équipements'), href: '/administration/equipements' },
         ]}>
-            <Head title="Gestion équipements" />
+            <Head title={t("Gestion équipements")} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="text-2xl font-bold">Gestion des équipements</h1>
+                    <h1 className="text-2xl font-bold">{t("Gestion des équipements")}</h1>
                     <Button asChild>
                         <Link href="/administration/equipements/creer">
                             <Plus className="mr-2 size-4" />
-                            Nouvel équipement
+                            {t('Nouvel équipement')}
                         </Link>
                     </Button>
                 </div>
@@ -55,12 +58,12 @@ export default function AdministrationEquipementsIndex({ equipements }: Props) {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left font-medium">Code</th>
-                                        <th className="px-4 py-3 text-left font-medium">Nom</th>
-                                        <th className="px-4 py-3 text-left font-medium">Type</th>
-                                        <th className="px-4 py-3 text-left font-medium">Statut</th>
-                                        <th className="px-4 py-3 text-left font-medium">Capacité max</th>
-                                        <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Code')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Nom')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Type')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Statut')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Capacité max')}</th>
+                                        <th className="px-4 py-3 text-right font-medium">{t('Actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -89,7 +92,7 @@ export default function AdministrationEquipementsIndex({ equipements }: Props) {
                                     {equipements.data.length === 0 && (
                                         <tr>
                                             <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                                                Aucun équipement enregistré.
+                                                {t('Aucun équipement enregistré.')}
                                             </td>
                                         </tr>
                                     )}

@@ -10,6 +10,7 @@ import {
     Shield,
 } from 'lucide-react';
 import { useMemo } from 'react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -27,11 +28,12 @@ import type { NavItem, User } from '@/types';
 function useNavigationItems(): NavItem[] {
     const { auth } = usePage<{ auth: { user: User } }>().props;
     const roles = auth.user?.roles ?? [];
+    const { t } = useLaravelReactI18n();
 
     return useMemo(() => {
         const items: NavItem[] = [
             {
-                title: 'Tableau de bord',
+                title: t('Tableau de bord'),
                 href: '/tableau-de-bord',
                 icon: LayoutGrid,
             },
@@ -39,7 +41,7 @@ function useNavigationItems(): NavItem[] {
 
         // Demandes - visible par tous
         items.push({
-            title: 'Demandes',
+            title: t('Demandes'),
             href: '/demandes',
             icon: ClipboardList,
         });
@@ -48,12 +50,12 @@ function useNavigationItems(): NavItem[] {
         if (roles.some((r: string) => ['handling', 'administrateur'].includes(r))) {
             items.push(
                 {
-                    title: 'Planning',
+                    title: t('Planning'),
                     href: '/planning',
                     icon: Calendar,
                 },
                 {
-                    title: 'Capacités',
+                    title: t('Capacités'),
                     href: '/capacites',
                     icon: Gauge,
                 },
@@ -64,7 +66,7 @@ function useNavigationItems(): NavItem[] {
         // Rapports - handling, admin
         if (roles.some((r: string) => ['handling', 'administrateur'].includes(r))) {
             items.push({
-                title: 'Rapports',
+                title: t('Rapports'),
                 href: '/rapports',
                 icon: BarChart3,
             });
@@ -72,7 +74,7 @@ function useNavigationItems(): NavItem[] {
 
         // Notifications - tous
         items.push({
-            title: 'Notifications',
+            title: t('Notifications'),
             href: '/notifications',
             icon: Bell,
         });
@@ -80,7 +82,7 @@ function useNavigationItems(): NavItem[] {
         // Administration - admin uniquement
         if (roles.includes('administrateur')) {
             items.push({
-                title: 'Administration',
+                title: t('Administration'),
                 href: '/administration/utilisateurs',
                 icon: Settings,
                 activeMatch: '/administration',
@@ -88,7 +90,7 @@ function useNavigationItems(): NavItem[] {
         }
 
         return items;
-    }, [roles]);
+    }, [roles, t]);
 }
 
 export function AppSidebar() {

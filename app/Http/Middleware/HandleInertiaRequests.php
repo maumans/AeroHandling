@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Session;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -37,9 +39,25 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
+        // Set the app locale based on session
+        if (Session::has('locale')) {
+            App::setLocale(Session::get('locale'));
+        }
+
+        $configDesign = \Illuminate\Support\Facades\Cache::rememberForever('config_design', function () {
+            $param = \App\Models\Parametre::where('cle', 'config_design')->first();
+            return $param ? $param->valeur : [
+                'couleur_primaire' => '#0B2545',
+                'couleur_secondaire' => '#13315C',
+                'logo_url' => null,
+            ];
+        });
+
         return [
             ...parent::share($request),
+            'locale' => app()->getLocale(),
             'name' => config('app.name'),
+            'configDesign' => $configDesign,
             'auth' => [
                 'user' => $user ? array_merge($user->toArray(), [
                     'roles' => $user->getRoleNames()->toArray(),

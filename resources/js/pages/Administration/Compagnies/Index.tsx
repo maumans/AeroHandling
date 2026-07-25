@@ -17,6 +17,7 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 interface Compagnie {
     id: number;
@@ -42,20 +43,22 @@ interface Props {
 }
 
 export default function AdministrationCompagniesIndex({ compagnies }: Props) {
+    const { t } = useLaravelReactI18n();
+
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Compagnies', href: '/administration/compagnies' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Compagnies'), href: '/administration/compagnies' },
         ]}>
-            <Head title="Administration - Compagnies" />
+            <Head title={t("Administration - Compagnies")} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="text-2xl font-bold">Compagnies aériennes</h1>
+                    <h1 className="text-2xl font-bold">{t('Compagnies aériennes')}</h1>
                     <div className="flex items-center gap-2">
                         <Button asChild>
                             <Link href="/administration/compagnies/creer">
                                 <Plus className="mr-2 size-4" />
-                                Nouvelle compagnie
+                                {t('Nouvelle compagnie')}
                             </Link>
                         </Button>
                     </div>
@@ -69,14 +72,14 @@ export default function AdministrationCompagniesIndex({ compagnies }: Props) {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left font-medium">Nom</th>
-                                        <th className="px-4 py-3 text-left font-medium">IATA</th>
-                                        <th className="px-4 py-3 text-left font-medium">ICAO</th>
-                                        <th className="px-4 py-3 text-left font-medium">Pays</th>
-                                        <th className="px-4 py-3 text-left font-medium">Demandes</th>
-                                        <th className="px-4 py-3 text-left font-medium">Utilisateurs</th>
-                                        <th className="px-4 py-3 text-left font-medium">Statut</th>
-                                        <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Nom')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('IATA')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('ICAO')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Pays')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Demandes')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Utilisateurs')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Statut')}</th>
+                                        <th className="px-4 py-3 text-right font-medium">{t('Actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -107,15 +110,15 @@ export default function AdministrationCompagniesIndex({ compagnies }: Props) {
                                             <td className="px-4 py-3">
                                                 {c.actif ? (
                                                     <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
-                                                        Actif
+                                                        {t('Actif')}
                                                     </Badge>
                                                 ) : enAttente ? (
                                                     <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
-                                                        En attente de validation
+                                                        {t('En attente de validation')}
                                                     </Badge>
                                                 ) : (
                                                     <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                                                        Inactive
+                                                        {t('Inactive')}
                                                     </Badge>
                                                 )}
                                             </td>
@@ -129,7 +132,7 @@ export default function AdministrationCompagniesIndex({ compagnies }: Props) {
                                                                 </Link>
                                                             </Button>
                                                         </TooltipTrigger>
-                                                        <TooltipContent>Éditer la compagnie</TooltipContent>
+                                                        <TooltipContent>{t('Éditer la compagnie')}</TooltipContent>
                                                     </Tooltip>
 
                                                     <AlertDialog>
@@ -145,25 +148,25 @@ export default function AdministrationCompagniesIndex({ compagnies }: Props) {
                                                                     </Button>
                                                                 </AlertDialogTrigger>
                                                             </TooltipTrigger>
-                                                            <TooltipContent>{c.actif ? 'Désactiver la compagnie' : 'Activer la compagnie'}</TooltipContent>
+                                                            <TooltipContent>{c.actif ? t('Désactiver la compagnie') : t('Activer la compagnie')}</TooltipContent>
                                                         </Tooltip>
                                                         <AlertDialogContent>
                                                             <AlertDialogHeader>
-                                                                <AlertDialogTitle>{c.actif ? 'Désactiver la compagnie' : 'Activer la compagnie'}</AlertDialogTitle>
+                                                                <AlertDialogTitle>{c.actif ? t('Désactiver la compagnie') : t('Activer la compagnie')}</AlertDialogTitle>
                                                                 <AlertDialogDescription>
-                                                                    Voulez-vous vraiment {c.actif ? 'désactiver' : 'activer'} <strong>{c.nom}</strong> ?
+                                                                    {t('Voulez-vous vraiment')} {c.actif ? t('désactiver') : t('activer')} <strong>{c.nom}</strong> ?
                                                                     {c.actif
-                                                                        ? ' Elle ne sera plus proposée aux nouveaux utilisateurs qui souhaitent la rejoindre.'
-                                                                        : ' Ses utilisateurs en attente de validation pourront alors être activés.'}
+                                                                        ? ' ' + t('Elle ne sera plus proposée aux nouveaux utilisateurs qui souhaitent la rejoindre.')
+                                                                        : ' ' + t('Ses utilisateurs en attente de validation pourront alors être activés.')}
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
-                                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                                <AlertDialogCancel>{t('Annuler')}</AlertDialogCancel>
                                                                 <AlertDialogAction
                                                                     className={c.actif ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-500 hover:bg-emerald-600'}
                                                                     onClick={() => router.patch(`/administration/compagnies/${c.id}/statut`)}
                                                                 >
-                                                                    Confirmer
+                                                                    {t('Confirmer')}
                                                                 </AlertDialogAction>
                                                             </AlertDialogFooter>
                                                         </AlertDialogContent>
@@ -183,22 +186,22 @@ export default function AdministrationCompagniesIndex({ compagnies }: Props) {
                                                                         </Button>
                                                                     </AlertDialogTrigger>
                                                                 </TooltipTrigger>
-                                                                <TooltipContent>Supprimer la compagnie</TooltipContent>
+                                                                <TooltipContent>{t('Supprimer la compagnie')}</TooltipContent>
                                                             </Tooltip>
                                                             <AlertDialogContent>
                                                                 <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Supprimer la compagnie</AlertDialogTitle>
+                                                                    <AlertDialogTitle>{t('Supprimer la compagnie')}</AlertDialogTitle>
                                                                     <AlertDialogDescription>
-                                                                        Voulez-vous vraiment supprimer <strong>{c.nom}</strong> ? Cette action placera la compagnie dans la corbeille.
+                                                                        {t('Voulez-vous vraiment supprimer')} <strong>{c.nom}</strong> ? {t('Cette action placera la compagnie dans la corbeille.')}
                                                                     </AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                                    <AlertDialogCancel>{t('Annuler')}</AlertDialogCancel>
                                                                     <AlertDialogAction
                                                                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                                                         onClick={() => router.delete(`/administration/compagnies/${c.id}`)}
                                                                     >
-                                                                        Supprimer
+                                                                        {t('Supprimer')}
                                                                     </AlertDialogAction>
                                                                 </AlertDialogFooter>
                                                             </AlertDialogContent>
@@ -212,7 +215,7 @@ export default function AdministrationCompagniesIndex({ compagnies }: Props) {
                                     {compagnies.data.length === 0 && (
                                         <tr>
                                             <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
-                                                Aucune compagnie trouvée.
+                                                {t('Aucune compagnie trouvée.')}
                                             </td>
                                         </tr>
                                     )}

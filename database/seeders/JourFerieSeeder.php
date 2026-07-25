@@ -19,14 +19,14 @@ class JourFerieSeeder extends Seeder
     public function run(): void
     {
         $joursFixes = [
-            ['date' => '2000-01-01', 'libelle' => "Jour de l'An"],
-            ['date' => '2000-04-03', 'libelle' => 'Fête de la Deuxième République'],
-            ['date' => '2000-05-01', 'libelle' => 'Fête du Travail'],
-            ['date' => '2000-05-25', 'libelle' => "Journée de l'Afrique"],
-            ['date' => '2000-08-15', 'libelle' => 'Assomption'],
-            ['date' => '2000-10-02', 'libelle' => "Fête de l'Indépendance"],
-            ['date' => '2000-11-01', 'libelle' => 'Toussaint'],
-            ['date' => '2000-12-25', 'libelle' => 'Noël'],
+            ['date' => '2026-01-01', 'libelle' => "Jour de l'An"],
+            ['date' => '2026-04-03', 'libelle' => 'Fête de la Deuxième République'],
+            ['date' => '2026-05-01', 'libelle' => 'Fête du Travail'],
+            ['date' => '2026-05-25', 'libelle' => "Journée de l'Afrique"],
+            ['date' => '2026-08-15', 'libelle' => 'Assomption'],
+            ['date' => '2026-10-02', 'libelle' => "Fête de l'Indépendance"],
+            ['date' => '2026-11-01', 'libelle' => 'Toussaint'],
+            ['date' => '2026-12-25', 'libelle' => 'Noël'],
         ];
 
         foreach ($joursFixes as $jour) {

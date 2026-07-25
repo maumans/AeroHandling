@@ -1,11 +1,15 @@
 <?php
 
+use App\Http\Controllers\Administration\CategorieAeronefController;
+use App\Http\Controllers\Administration\NatureVolController;
+use App\Http\Controllers\Administration\ServiceAssistanceController;
 use App\Http\Controllers\AdministrationController;
 use App\Http\Controllers\AffectationController;
 use App\Http\Controllers\CapaciteController;
 use App\Http\Controllers\DemandeController;
 use App\Http\Controllers\EquipementController;
 use App\Http\Controllers\InscriptionController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\RapportController;
@@ -22,6 +26,8 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:inscription')
         ->name('inscription.enregistrer');
 });
+
+Route::post('/language/{locale}', [LanguageController::class, 'switch'])->name('language.switch');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', '/tableau-de-bord');
@@ -110,6 +116,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/administration/equipements/{equipement}/editer', [AdministrationController::class, 'editerEquipement'])->name('administration.equipements.editer');
         Route::put('/administration/equipements/{equipement}', [AdministrationController::class, 'mettreAJourEquipement'])->name('administration.equipements.mettre_a_jour');
 
+        // Administration — Services d'Assistance
+        Route::resource('administration/services-assistance', ServiceAssistanceController::class)->except(['show'])->names('administration.services-assistance');
+
+        // Administration — Catégories Aéronefs
+        Route::resource('administration/categories-aeronef', CategorieAeronefController::class)->except(['show'])->names('categories-aeronef');
+
+        // Administration — Natures Vol
+        Route::resource('administration/natures-vol', NatureVolController::class)->except(['show'])->names('administration.natures-vol');
+
         // Administration — Jours Fériés
         Route::get('/administration/jours-feries', [AdministrationController::class, 'joursFeries'])->name('administration.jours_feries.index');
         Route::get('/administration/jours-feries/creer', [AdministrationController::class, 'creerJourFerie'])->name('administration.jours_feries.creer');
@@ -121,6 +136,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Administration — Paramètres
         Route::get('/administration/parametres', [AdministrationController::class, 'parametres'])->name('administration.parametres.index');
         Route::put('/administration/parametres', [AdministrationController::class, 'mettreAJourParametres'])->name('administration.parametres.mettre_a_jour');
+        Route::put('/administration/parametres/grille-tarifaire', [AdministrationController::class, 'mettreAJourGrilleTarifaire'])->name('administration.parametres.mettre_a_jour_grille_tarifaire');
+        Route::put('/administration/parametres/general', [AdministrationController::class, 'mettreAJourConfigGenerale'])->name('administration.parametres.mettre_a_jour_general');
+        Route::post('/administration/parametres/design', [AdministrationController::class, 'mettreAJourConfigDesign'])->name('administration.parametres.mettre_a_jour_design');
     });
 
     // Notifications

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 interface Option { value: string; libelle: string; }
 
@@ -23,6 +24,7 @@ export default function AdministrationEquipementsCreer({ types, statuts }: Props
         capacite_max: '',
         notes: '',
     });
+    const { t } = useLaravelReactI18n();
 
     function soumettre(e: React.FormEvent) {
         e.preventDefault();
@@ -31,26 +33,26 @@ export default function AdministrationEquipementsCreer({ types, statuts }: Props
 
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Équipements', href: '/administration/equipements' },
-            { title: 'Nouvel équipement', href: '/administration/equipements/creer' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Équipements'), href: '/administration/equipements' },
+            { title: t('Nouvel équipement'), href: '/administration/equipements/creer' },
         ]}>
-            <Head title="Nouvel équipement" />
+            <Head title={t("Nouvel équipement")} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/administration/equipements"><ArrowLeft className="size-4" /></Link>
                     </Button>
-                    <h1 className="text-2xl font-bold">Nouvel équipement</h1>
+                    <h1 className="text-2xl font-bold">{t('Nouvel équipement')}</h1>
                 </div>
 
                 <Card className="max-w-xl">
-                    <CardHeader><CardTitle>Informations de l&apos;équipement</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>{t("Informations de l'équipement")}</CardTitle></CardHeader>
                     <CardContent>
                         <form onSubmit={soumettre} className="flex flex-col gap-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="code">Code <span className="text-destructive">*</span></Label>
+                                    <Label htmlFor="code">{t('Code')} <span className="text-destructive">*</span></Label>
                                     <Input
                                         id="code"
                                         value={data.code}
@@ -62,7 +64,7 @@ export default function AdministrationEquipementsCreer({ types, statuts }: Props
                                     {errors.code && <p className="text-sm text-destructive">{errors.code}</p>}
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="nom">Nom <span className="text-destructive">*</span></Label>
+                                    <Label htmlFor="nom">{t('Nom')} <span className="text-destructive">*</span></Label>
                                     <Input
                                         id="nom"
                                         value={data.nom}
@@ -75,10 +77,10 @@ export default function AdministrationEquipementsCreer({ types, statuts }: Props
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
-                                    <Label>Type <span className="text-destructive">*</span></Label>
+                                    <Label>{t('Type')} <span className="text-destructive">*</span></Label>
                                     <Select value={data.type} onValueChange={(v) => setData('type', v)}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Sélectionner un type" />
+                                            <SelectValue placeholder={t("Sélectionner un type")} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {types.map((t) => (
@@ -89,7 +91,7 @@ export default function AdministrationEquipementsCreer({ types, statuts }: Props
                                     {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <Label>Statut <span className="text-destructive">*</span></Label>
+                                    <Label>{t('Statut')} <span className="text-destructive">*</span></Label>
                                     <Select value={data.statut} onValueChange={(v) => setData('statut', v)}>
                                         <SelectTrigger>
                                             <SelectValue />
@@ -105,7 +107,7 @@ export default function AdministrationEquipementsCreer({ types, statuts }: Props
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="capacite_max">Capacité max (tonnes)</Label>
+                                <Label htmlFor="capacite_max">{t('Capacité max (tonnes)')}</Label>
                                 <Input
                                     id="capacite_max"
                                     type="number"
@@ -118,22 +120,22 @@ export default function AdministrationEquipementsCreer({ types, statuts }: Props
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="notes">Notes</Label>
+                                <Label htmlFor="notes">{t('Notes')}</Label>
                                 <textarea
                                     id="notes"
                                     className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                     value={data.notes}
                                     onChange={(e) => setData('notes', e.target.value)}
-                                    placeholder="Informations complémentaires..."
+                                    placeholder={t("Informations complémentaires...")}
                                 />
                             </div>
 
                             <div className="flex justify-end gap-2 pt-2">
                                 <Button type="button" variant="outline" asChild>
-                                    <Link href="/administration/equipements">Annuler</Link>
+                                    <Link href="/administration/equipements">{t('Annuler')}</Link>
                                 </Button>
                                 <Button type="submit" disabled={processing}>
-                                    {processing ? 'Création...' : 'Créer l\'équipement'}
+                                    {processing ? t('Création...') : t("Créer l'équipement")}
                                 </Button>
                             </div>
                         </form>

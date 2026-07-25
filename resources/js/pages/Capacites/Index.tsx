@@ -1,4 +1,5 @@
 import { Head, useForm, router } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { AlertTriangle, Warehouse, Edit2, Check } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +43,7 @@ function couleurJauge(pourcentage: number, enAlerte: boolean): string {
 import { useState, FormEventHandler } from 'react';
 
 export default function CapacitesIndex({ zones, equipementsParStatut, totalEquipements }: Props) {
+    const { t } = useLaravelReactI18n();
     const [zoneEdit, setZoneEdit] = useState<Zone | null>(null);
     const { data, setData, put, processing, reset, errors } = useForm({
         occupation_actuelle_tonnes: '',
@@ -67,10 +69,10 @@ export default function CapacitesIndex({ zones, equipementsParStatut, totalEquip
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Capacités', href: '/capacites' }]}>
-            <Head title="Capacités" />
+        <AppLayout breadcrumbs={[{ title: t('Capacités'), href: '/capacites' }]}>
+            <Head title={t('Capacités')} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
-                <h1 className="text-2xl font-bold">Capacités &amp; Stockage</h1>
+                <h1 className="text-2xl font-bold">{t('Capacités & Stockage')}</h1>
 
                 {/* Zones de stockage */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -79,13 +81,13 @@ export default function CapacitesIndex({ zones, equipementsParStatut, totalEquip
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <CardTitle className="flex items-center gap-2">
                                     <Warehouse className="size-5 text-muted-foreground" />
-                                    Zone {zone.libelle}
+                                    {t('Zone')} {zone.libelle}
                                 </CardTitle>
                                 <div className="flex items-center gap-2">
                                     {zone.en_alerte && (
                                         <Badge variant="destructive" className="gap-1">
                                             <AlertTriangle className="size-3" />
-                                            Seuil dépassé
+                                            {t('Seuil dépassé')}
                                         </Badge>
                                     )}
                                     <Button variant="ghost" size="icon" onClick={() => openEdit(zone)}>
@@ -119,11 +121,11 @@ export default function CapacitesIndex({ zones, equipementsParStatut, totalEquip
                                     <div
                                         className="absolute top-0 h-full w-0.5 bg-foreground/40"
                                         style={{ left: `${zone.seuil_alerte}%` }}
-                                        title={`Seuil d'alerte : ${zone.seuil_alerte}%`}
+                                        title={`${t('Seuil d\'alerte')} : ${zone.seuil_alerte}%`}
                                     />
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                    Seuil d&apos;alerte fixé à {zone.seuil_alerte}%
+                                    {t('Seuil d\'alerte fixé à')} {zone.seuil_alerte}%
                                 </p>
                             </CardContent>
                         </Card>
@@ -133,7 +135,7 @@ export default function CapacitesIndex({ zones, equipementsParStatut, totalEquip
                 {/* État du parc d'équipements */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Parc d&apos;équipements ({totalEquipements})</CardTitle>
+                        <CardTitle>{t('Parc d\'équipements')} ({totalEquipements})</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -161,14 +163,14 @@ export default function CapacitesIndex({ zones, equipementsParStatut, totalEquip
             <Dialog open={!!zoneEdit} onOpenChange={(open) => !open && closeEdit()}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Mettre à jour l'occupation</DialogTitle>
+                        <DialogTitle>{t('Mettre à jour l\'occupation')}</DialogTitle>
                         <DialogDescription>
-                            Modifiez le tonnage actuellement occupé pour la zone {zoneEdit?.libelle}.
+                            {t('Modifiez le tonnage actuellement occupé pour la zone')} {zoneEdit?.libelle}.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={submit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="occupation">Tonnage occupé</Label>
+                            <Label htmlFor="occupation">{t('Tonnage occupé')}</Label>
                             <Input
                                 id="occupation"
                                 type="number"
@@ -184,10 +186,10 @@ export default function CapacitesIndex({ zones, equipementsParStatut, totalEquip
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={closeEdit}>
-                                Annuler
+                                {t('Annuler')}
                             </Button>
                             <Button type="submit" disabled={processing}>
-                                Enregistrer
+                                {t('Enregistrer')}
                             </Button>
                         </DialogFooter>
                     </form>

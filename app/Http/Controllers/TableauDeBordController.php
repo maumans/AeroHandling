@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\NatureVol;
 use App\Enums\StatutDemande;
 use App\Models\Compagnie;
 use App\Models\Demande;
+use App\Models\NatureVol;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -57,10 +57,10 @@ class TableauDeBordController extends Controller
             'total' => $baseQuery()->where('statut', $s)->count(),
         ])->values();
 
-        $repartitionNatures = collect(NatureVol::cases())->map(fn (NatureVol $nature) => [
-            'nature' => $nature->value,
-            'libelle' => $nature->libelle(),
-            'total' => $baseQuery()->where('nature_vol', $nature)->count(),
+        $repartitionNatures = NatureVol::where('actif', true)->get()->map(fn (NatureVol $nature) => [
+            'nature' => $nature->id,
+            'libelle' => $nature->nom,
+            'total' => $baseQuery()->where('nature_vol_id', $nature->id)->count(),
         ])->values();
 
         // Calculate days between debut and fin (up to 30 to avoid huge arrays, or just return all)

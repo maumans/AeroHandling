@@ -319,7 +319,7 @@ Fichier unique exportant **toutes** les mappings couleur et libellé. Ne jamais 
 | `Administration/JoursFeries/Index.tsx` | ✅ | Table paginée jours fériés (libellé, date, badge récurrent), boutons Éditer/Supprimer |
 | `Administration/JoursFeries/Creer.tsx` | ✅ | Formulaire création jour férié |
 | `Administration/JoursFeries/Editer.tsx` | ✅ | Formulaire édition jour férié |
-| `Administration/Parametres.tsx` | ✅ | Paramètres généraux (préfixes, pagination) + capacités stockage par zone (seuils, capacité max). Rendu par `AdministrationController::parametres()` |
+| `Administration/Parametres.tsx` | ✅ | Paramètres généraux (préfixes, pagination) via DB `config_generale` + capacités stockage par zone (seuils, capacité max). Onglets éditables. |
 | `Administration/ParametresStockage.tsx` | 🗑️ | **Fichier orphelin** : aucune route ne le rend (`parametres()` rend `Administration/Parametres`, pas celui-ci) et aucune autre page ne l'importe. À supprimer ou à brancher si une page dédiée stockage était réellement prévue. |
 
 ### Données partagées Inertia
@@ -359,7 +359,7 @@ Type côté front : `resources/js/types/auth.ts` (`User` avec `compagnie_id`, `r
 3. **Planning** : détection de conflits d'affectation (chevauchement de dates pour un même équipement/agent) -> ✅ Terminé.
 4. **Rapports** : export PDF/Excel -> ✅ Terminé.
 5. **Recherche globale ⌘K** -> ✅ Terminé (voir §13).
-6. **Sélecteur de langue dans la topbar** -> ⏳ Reporté, chantier à part (voir §13) : nécessite une refonte i18n complète (aucune infrastructure de traduction côté frontend actuellement, tout le texte est en français en dur).
+6. **Sélecteur de langue dans la topbar** -> ✅ Terminé (ajout du `LanguageSwitcher` dans `app-sidebar-header.tsx`, composants traduits via `useLaravelReactI18n` et `t()`, React fixé à `19.2.7`).
 
 ### Phase 16 — Qualité (à faire)
 - ✅ Compléter les tests PHPUnit : création avec manifeste testée.

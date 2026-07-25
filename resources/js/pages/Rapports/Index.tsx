@@ -1,4 +1,5 @@
 import { Head, router } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import {
     FileText,
     FileSpreadsheet,
@@ -64,6 +65,7 @@ export default function RapportsIndex({
     filtresOptions,
     periode,
 }: Props) {
+    const { t } = useLaravelReactI18n();
     function changerPeriode(key: keyof Props['periode'], value: string) {
         router.get('/rapports', { ...periode, [key]: value }, { preserveState: true, replace: true });
     }
@@ -99,23 +101,23 @@ export default function RapportsIndex({
 
     return (
         <AppLayout>
-            <Head title="Centre de Rapports" />
+            <Head title={t('Centre de Rapports')} />
 
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 {/* En-tête avec boutons d'export */}
                 <div className="flex flex-col gap-4 border-b pb-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold">Centre de Rapports</h1>
-                        <p className="text-sm text-muted-foreground">Consultez et générez les documents officiels.</p>
+                        <h1 className="text-2xl font-bold">{t('Centre de Rapports')}</h1>
+                        <p className="text-sm text-muted-foreground">{t('Consultez et générez les documents officiels.')}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <Button onClick={() => exporter('pdf')} variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors">
                             <FileText className="mr-2 size-4" />
-                            Générer PDF
+                            {t('Générer PDF')}
                         </Button>
                         <Button onClick={() => exporter('excel')} variant="outline" className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
                             <FileSpreadsheet className="mr-2 size-4" />
-                            Générer Excel
+                            {t('Générer Excel')}
                         </Button>
                     </div>
                 </div>
@@ -124,7 +126,7 @@ export default function RapportsIndex({
                 <Card className="bg-muted/30">
                     <CardContent className="p-4 flex flex-wrap items-end gap-4">
                         <div className="space-y-1">
-                            <Label htmlFor="debut" className="text-xs">Du</Label>
+                            <Label htmlFor="debut" className="text-xs">{t('Du')}</Label>
                             <DatePicker
                                 value={periode.debut}
                                 onChange={(val) => changerPeriode('debut', val)}
@@ -132,7 +134,7 @@ export default function RapportsIndex({
                             />
                         </div>
                         <div className="space-y-1">
-                            <Label htmlFor="fin" className="text-xs">Au</Label>
+                            <Label htmlFor="fin" className="text-xs">{t('Au')}</Label>
                             <DatePicker
                                 value={periode.fin}
                                 onChange={(val) => changerPeriode('fin', val)}
@@ -140,16 +142,16 @@ export default function RapportsIndex({
                             />
                         </div>
                         <div className="space-y-1">
-                            <Label className="text-xs">Compagnie</Label>
+                            <Label className="text-xs">{t('Compagnie')}</Label>
                             <Select 
                                 value={periode.compagnie_id?.toString() || "all"} 
                                 onValueChange={(val) => changerPeriode('compagnie_id', val === "all" ? '' : val)}
                             >
                                 <SelectTrigger className="w-[180px] h-9 bg-background">
-                                    <SelectValue placeholder="Toutes" />
+                                    <SelectValue placeholder={t('Toutes')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Toutes</SelectItem>
+                                    <SelectItem value="all">{t('Toutes')}</SelectItem>
                                     {filtresOptions.compagnies.map(c => (
                                         <SelectItem key={c.id} value={c.id.toString()}>{c.nom}</SelectItem>
                                     ))}
@@ -157,16 +159,16 @@ export default function RapportsIndex({
                             </Select>
                         </div>
                         <div className="space-y-1">
-                            <Label className="text-xs">Statut</Label>
+                            <Label className="text-xs">{t('Statut')}</Label>
                             <Select 
                                 value={periode.statut || "all"} 
                                 onValueChange={(val) => changerPeriode('statut', val === "all" ? '' : val)}
                             >
                                 <SelectTrigger className="w-[180px] h-9 bg-background">
-                                    <SelectValue placeholder="Tous" />
+                                    <SelectValue placeholder={t('Tous')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Tous</SelectItem>
+                                    <SelectItem value="all">{t('Tous')}</SelectItem>
                                     {filtresOptions.statuts.map(s => (
                                         <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                                     ))}
@@ -181,7 +183,7 @@ export default function RapportsIndex({
                                 onClick={reinitialiserFiltres}
                             >
                                 <FilterX className="mr-2 size-4" />
-                                Réinitialiser
+                                {t('Réinitialiser')}
                             </Button>
                         )}
                     </CardContent>
@@ -190,30 +192,30 @@ export default function RapportsIndex({
                 {/* Rubriques (Onglets) */}
                 <Tabs defaultValue="registre" className="w-full">
                     <TabsList className="grid w-full grid-cols-4 mb-6 bg-muted">
-                        <TabsTrigger value="registre">Registre des opérations</TabsTrigger>
-                        <TabsTrigger value="tonnage">Facturation & Volumes</TabsTrigger>
-                        <TabsTrigger value="vols">Stats vols</TabsTrigger>
-                        <TabsTrigger value="performances">Performances & Délais</TabsTrigger>
+                        <TabsTrigger value="registre">{t('Registre des opérations')}</TabsTrigger>
+                        <TabsTrigger value="tonnage">{t('Facturation & Volumes')}</TabsTrigger>
+                        <TabsTrigger value="vols">{t('Stats vols')}</TabsTrigger>
+                        <TabsTrigger value="performances">{t('Performances & Délais')}</TabsTrigger>
                     </TabsList>
                     
                     {/* RUBRIQUE: REGISTRE */}
                     <TabsContent value="registre" className="space-y-4">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Registre des demandes</CardTitle>
-                                <CardDescription>Liste tabulaire des demandes pour la période sélectionnée.</CardDescription>
+                                <CardTitle>{t('Registre des demandes')}</CardTitle>
+                                <CardDescription>{t('Liste tabulaire des demandes pour la période sélectionnée.')}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="rounded-md border overflow-x-auto">
                                     <table className="w-full text-sm text-left">
                                         <thead className="bg-muted text-muted-foreground uppercase text-xs">
                                             <tr>
-                                                <th className="px-4 py-3 font-medium">Référence</th>
-                                                <th className="px-4 py-3 font-medium">Dates (Arr. / Dép.)</th>
-                                                <th className="px-4 py-3 font-medium">Compagnie</th>
-                                                <th className="px-4 py-3 font-medium">Aéronef</th>
-                                                <th className="px-4 py-3 font-medium">Statut</th>
-                                                <th className="px-4 py-3 font-medium text-right">Tonnage</th>
+                                                <th className="px-4 py-3 font-medium">{t('Référence')}</th>
+                                                <th className="px-4 py-3 font-medium">{t('Dates (Arr. / Dép.)')}</th>
+                                                <th className="px-4 py-3 font-medium">{t('Compagnie')}</th>
+                                                <th className="px-4 py-3 font-medium">{t('Aéronef')}</th>
+                                                <th className="px-4 py-3 font-medium">{t('Statut')}</th>
+                                                <th className="px-4 py-3 font-medium text-right">{t('Tonnage')}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y">
@@ -243,7 +245,7 @@ export default function RapportsIndex({
                                             ) : (
                                                 <tr>
                                                     <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                                                        Aucune donnée trouvée pour cette période.
+                                                        {t('Aucune donnée trouvée pour cette période.')}
                                                     </td>
                                                 </tr>
                                             )}
@@ -275,8 +277,8 @@ export default function RapportsIndex({
                     <TabsContent value="tonnage" className="space-y-6">
                         <div className="grid gap-4 md:grid-cols-3">
                             <Card>
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium">Tonnage Total</CardTitle>
+                                <CardHeader>
+                                    <CardTitle>{t('Tonnage Total')}</CardTitle>
                                     <ClipboardList className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
@@ -285,7 +287,7 @@ export default function RapportsIndex({
                             </Card>
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium">Volume Total</CardTitle>
+                                    <CardTitle className="text-sm font-medium">{t('Volume Total')}</CardTitle>
                                     <ClipboardList className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
@@ -294,7 +296,7 @@ export default function RapportsIndex({
                             </Card>
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium">Total ULD</CardTitle>
+                                    <CardTitle className="text-sm font-medium">{t('Total ULD')}</CardTitle>
                                     <ClipboardList className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
@@ -304,16 +306,16 @@ export default function RapportsIndex({
                         </div>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Répartition par compagnie</CardTitle>
-                                <CardDescription>Volumes traités selon le nombre de demandes.</CardDescription>
+                                <CardTitle>{t('Répartition par compagnie')}</CardTitle>
+                                <CardDescription>{t('Volumes traités selon le nombre de demandes.')}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="rounded-md border overflow-x-auto">
                                     <table className="w-full text-sm text-left">
                                         <thead className="bg-muted text-muted-foreground uppercase text-xs">
                                             <tr>
-                                                <th className="px-4 py-3 font-medium">Compagnie aérienne</th>
-                                                <th className="px-4 py-3 font-medium text-right">Nombre de demandes</th>
+                                                <th className="px-4 py-3 font-medium">{t('Compagnie aérienne')}</th>
+                                                <th className="px-4 py-3 font-medium text-right">{t('Nombre de demandes')}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y">
@@ -327,7 +329,7 @@ export default function RapportsIndex({
                                             ) : (
                                                 <tr>
                                                     <td colSpan={2} className="px-4 py-8 text-center text-muted-foreground">
-                                                        Aucune donnée trouvée.
+                                                        {t('Aucune donnée trouvée.')}
                                                     </td>
                                                 </tr>
                                             )}
@@ -343,16 +345,16 @@ export default function RapportsIndex({
                         <div className="grid gap-6 md:grid-cols-3">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Répartition par nature de vol</CardTitle>
-                                    <CardDescription>Types de missions prises en charge.</CardDescription>
+                            <CardTitle>{t('Répartition par nature de vol')}</CardTitle>
+                                    <CardDescription>{t('Types de missions prises en charge.')}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="rounded-md border overflow-x-auto">
                                         <table className="w-full text-sm text-left">
                                             <thead className="bg-muted text-muted-foreground uppercase text-xs">
                                                 <tr>
-                                                    <th className="px-4 py-3 font-medium">Nature du vol</th>
-                                                    <th className="px-4 py-3 font-medium text-right">Total</th>
+                                                    <th className="px-4 py-3 font-medium">{t('Nature du vol')}</th>
+                                                    <th className="px-4 py-3 font-medium text-right">{t('Total')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y">
@@ -377,16 +379,16 @@ export default function RapportsIndex({
                             </Card>
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Répartition par type d&apos;appareil</CardTitle>
-                                    <CardDescription>Nombre de demandes reçues par type d&apos;aéronef.</CardDescription>
+                                <CardTitle>{t('Répartition par type d\'appareil')}</CardTitle>
+                                    <CardDescription>{t('Nombre de demandes reçues par type d\'aéronef.')}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="rounded-md border overflow-x-auto">
                                         <table className="w-full text-sm text-left">
                                             <thead className="bg-muted text-muted-foreground uppercase text-xs">
                                                 <tr>
-                                                    <th className="px-4 py-3 font-medium">Type d&apos;appareil</th>
-                                                    <th className="px-4 py-3 font-medium text-right">Nombre de vols</th>
+                                                    <th className="px-4 py-3 font-medium">{t('Type d\'appareil')}</th>
+                                                    <th className="px-4 py-3 font-medium text-right">{t('Nombre de vols')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y">
@@ -411,16 +413,16 @@ export default function RapportsIndex({
                             </Card>
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Répartition par immatriculation</CardTitle>
-                                    <CardDescription>Nombre de demandes reçues par immatriculation d&apos;aéronef.</CardDescription>
+                                    <CardTitle>{t('Répartition par immatriculation')}</CardTitle>
+                                    <CardDescription>{t('Nombre de demandes reçues par immatriculation d\'aéronef.')}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="rounded-md border overflow-x-auto">
                                         <table className="w-full text-sm text-left">
                                             <thead className="bg-muted text-muted-foreground uppercase text-xs">
                                                 <tr>
-                                                    <th className="px-4 py-3 font-medium">Immatriculation</th>
-                                                    <th className="px-4 py-3 font-medium text-right">Nombre de vols</th>
+                                                    <th className="px-4 py-3 font-medium">{t('Immatriculation')}</th>
+                                                    <th className="px-4 py-3 font-medium text-right">{t('Nombre de vols')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y">
@@ -451,7 +453,7 @@ export default function RapportsIndex({
                         <div className="grid gap-4 md:grid-cols-4">
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium">Demandes totales</CardTitle>
+                                    <CardTitle className="text-sm font-medium">{t('Demandes totales')}</CardTitle>
                                     <ClipboardList className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
@@ -460,7 +462,7 @@ export default function RapportsIndex({
                             </Card>
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium">Autorisées</CardTitle>
+                                    <CardTitle className="text-sm font-medium">{t('Autorisées')}</CardTitle>
                                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                 </CardHeader>
                                 <CardContent>
@@ -469,7 +471,7 @@ export default function RapportsIndex({
                             </Card>
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium">Taux d'approbation</CardTitle>
+                                    <CardTitle className="text-sm font-medium">{t('Taux d\'approbation')}</CardTitle>
                                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
@@ -478,22 +480,22 @@ export default function RapportsIndex({
                             </Card>
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium">Délai moyen</CardTitle>
+                                    <CardTitle className="text-sm font-medium">{t('Délai moyen')}</CardTitle>
                                     <Clock className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{indicateurs.delai_moyen_heures}h</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Délai opérationnel</p>
+                                    <p className="text-xs text-muted-foreground mt-1">{t('Délai opérationnel')}</p>
                                 </CardContent>
                             </Card>
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium">Délai moyen AC</CardTitle>
+                                    <CardTitle className="text-sm font-medium">{t('Délai moyen AC')}</CardTitle>
                                     <Clock className="h-4 w-4 text-blue-500" />
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold text-blue-600">{indicateurs.delai_moyen_heures_ac}h</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Aviation Civile</p>
+                                    <p className="text-xs text-muted-foreground mt-1">{t('Aviation Civile')}</p>
                                 </CardContent>
                             </Card>
                         </div>

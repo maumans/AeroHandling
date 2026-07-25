@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Enums\CategorieAeronef;
 use Database\Factories\AeronefFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Aeronef extends Model
@@ -18,7 +18,8 @@ class Aeronef extends Model
     protected $fillable = [
         'code',
         'modele',
-        'categorie',
+        'type_aeronef_id',
+        'categorie_aeronef_id',
         'capacite_passagers',
         'capacite_cargo_tonnes',
     ];
@@ -26,10 +27,20 @@ class Aeronef extends Model
     protected function casts(): array
     {
         return [
-            'categorie' => CategorieAeronef::class,
+
             'capacite_passagers' => 'integer',
             'capacite_cargo_tonnes' => 'decimal:2',
         ];
+    }
+
+    public function typeAeronef(): BelongsTo
+    {
+        return $this->belongsTo(TypeAeronef::class, 'type_aeronef_id');
+    }
+
+    public function categorieAeronef(): BelongsTo
+    {
+        return $this->belongsTo(CategorieAeronef::class, 'categorie_aeronef_id');
     }
 
     /** @return HasMany<Demande, $this> */

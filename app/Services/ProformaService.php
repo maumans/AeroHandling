@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\NatureVol;
 use App\Models\Demande;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
@@ -33,14 +32,14 @@ class ProformaService
     {
         $mtow = (float) $demande->mtow;
         $categorie = $this->grilleTarifaire->categoriePourMtow($mtow);
-        $estCargo = $demande->nature_vol === NatureVol::Freighter;
+        $estCargo = $demande->natureVol?->est_cargo ?? false;
 
         $lignes = [];
         $sousTotalHt = 0.0;
 
         // 1. Forfait de base
         $forfait = $this->grilleTarifaire->forfaitBase($categorie, $estCargo);
-        
+
         $lignes[] = [
             'designation' => "Forfait d'assistance en escale (Cat. $categorie)",
             'quantite' => 1,
@@ -123,7 +122,7 @@ class ProformaService
 
         // 5. Réduction Ambulance / Humanitaire (-50%)
         // Le Guide stipule "Les assistances complètes pour des vols ambulances seront facturées 50% du tarif général"
-        if ($demande->nature_vol === NatureVol::VolEvacuationMedicale) {
+        if ($demande->natureVol?->code === 'vol_evacuation_medicale') {
             $reduction = $totalHt * 0.5;
             $lignes[] = [
                 'designation' => "Réduction Ambulance / Évacuation Sanitaire (-50% sur l'assistance complète)",
@@ -133,7 +132,7 @@ class ProformaService
             ];
             $totalHt -= $reduction;
             // On met à jour le sous-total affiché dans la facture pour que les totaux balancent
-            $sousTotalHt -= $reduction; 
+            $sousTotalHt -= $reduction;
         }
 
         // TVA Guinéenne standard 18%

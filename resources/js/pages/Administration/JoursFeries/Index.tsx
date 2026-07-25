@@ -15,6 +15,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 interface JourFerie {
     id: number;
@@ -35,19 +36,21 @@ interface Props {
 }
 
 export default function AdministrationJoursFeriesIndex({ jours }: Props) {
+    const { t } = useLaravelReactI18n();
+
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Jours Fériés', href: '/administration/jours-feries' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Jours Fériés'), href: '/administration/jours-feries' },
         ]}>
-            <Head title="Jours Fériés" />
+            <Head title={t("Jours Fériés")} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="text-2xl font-bold">Jours Fériés</h1>
+                    <h1 className="text-2xl font-bold">{t('Jours Fériés')}</h1>
                     <Button asChild>
                         <Link href="/administration/jours-feries/creer">
                             <Plus className="mr-2 size-4" />
-                            Nouveau jour férié
+                            {t('Nouveau jour férié')}
                         </Link>
                     </Button>
                 </div>
@@ -60,10 +63,10 @@ export default function AdministrationJoursFeriesIndex({ jours }: Props) {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left font-medium">Nom</th>
-                                        <th className="px-4 py-3 text-left font-medium">Date</th>
-                                        <th className="px-4 py-3 text-center font-medium">Récurrent (Annuel)</th>
-                                        <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Nom')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Date')}</th>
+                                        <th className="px-4 py-3 text-center font-medium">{t('Récurrent (Annuel)')}</th>
+                                        <th className="px-4 py-3 text-right font-medium">{t('Actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -98,25 +101,25 @@ export default function AdministrationJoursFeriesIndex({ jours }: Props) {
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 className="text-destructive hover:text-destructive"
-                                                                title="Supprimer"
+                                                                title={t('Supprimer')}
                                                             >
                                                                 <Trash2 className="size-4" />
                                                             </Button>
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent>
                                                             <AlertDialogHeader>
-                                                                <AlertDialogTitle>Supprimer le jour férié</AlertDialogTitle>
+                                                                <AlertDialogTitle>{t('Supprimer le jour férié')}</AlertDialogTitle>
                                                                 <AlertDialogDescription>
-                                                                    Voulez-vous vraiment supprimer le jour férié <strong>{j.libelle}</strong> ? Cette action est irréversible.
+                                                                    {t('Voulez-vous vraiment supprimer le jour férié')} <strong>{j.libelle}</strong> ? {t('Cette action est irréversible.')}
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
-                                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                                <AlertDialogCancel>{t('Annuler')}</AlertDialogCancel>
                                                                 <AlertDialogAction 
                                                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                                                     onClick={() => router.delete(`/administration/jours-feries/${j.id}`)}
                                                                 >
-                                                                    Supprimer
+                                                                    {t('Supprimer')}
                                                                 </AlertDialogAction>
                                                             </AlertDialogFooter>
                                                         </AlertDialogContent>
@@ -128,7 +131,7 @@ export default function AdministrationJoursFeriesIndex({ jours }: Props) {
                                     {jours.data.length === 0 && (
                                         <tr>
                                             <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                                                Aucun jour férié enregistré.
+                                                {t('Aucun jour férié enregistré.')}
                                             </td>
                                         </tr>
                                     )}

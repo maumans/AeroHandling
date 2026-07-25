@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { STATUT_DEMANDE_COULEUR_HEX, NATURE_VOL_COULEURS_HEX } from '@/lib/couleurs';
 import {
     ArrowRight,
@@ -96,6 +97,8 @@ export default function TableauDeBordIndex({
     filtresOptions,
     periode,
 }: Props) {
+    const { t } = useLaravelReactI18n();
+
     function changerPeriode(key: keyof Props['periode'], value: string) {
         router.get('/tableau-de-bord', { ...periode, [key]: value }, { preserveState: true, replace: true });
     }
@@ -117,28 +120,28 @@ export default function TableauDeBordIndex({
 
     const kpis = [
         {
-            titre: 'Total demandes',
+            titre: t('Total demandes'),
             valeur: statistiques.total_demandes,
             icone: ClipboardList,
             couleur: 'text-white',
             bg: 'bg-indigo-500',
         },
         {
-            titre: 'En attente',
+            titre: t('En attente'),
             valeur: statistiques.demandes_en_attente,
             icone: Clock,
             couleur: 'text-white',
             bg: 'bg-amber-500',
         },
         {
-            titre: 'Approuvées',
+            titre: t('Approuvées'),
             valeur: statistiques.demandes_approuvees,
             icone: CheckCircle2,
             couleur: 'text-white',
             bg: 'bg-emerald-500',
         },
         {
-            titre: 'Autorisées',
+            titre: t('Autorisées'),
             valeur: statistiques.demandes_autorisees,
             icone: ShieldCheck,
             couleur: 'text-white',
@@ -152,20 +155,20 @@ export default function TableauDeBordIndex({
     const aDesActions = aEvaluer > 0 || aAutoriser > 0 || aValider > 0;
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Tableau de bord', href: '/tableau-de-bord' }]}>
-            <Head title="Tableau de bord" />
+        <AppLayout breadcrumbs={[{ title: t('Tableau de bord'), href: '/tableau-de-bord' }]}>
+            <Head title={t('Tableau de bord')} />
 
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 {/* En-tête */}
                 <div>
-                    <h1 className="text-2xl font-bold">Tableau de bord</h1>
-                    <p className="text-sm text-muted-foreground">Vue d'ensemble de l'activité sur la période sélectionnée.</p>
+                    <h1 className="text-2xl font-bold">{t('Tableau de bord')}</h1>
+                    <p className="text-sm text-muted-foreground">{t("Vue d'ensemble de l'activité sur la période sélectionnée.")}</p>
                 </div>
 
                 {/* Filtres */}
                 <div className="flex flex-wrap items-end gap-3 border-b pb-4">
                         <div className="space-y-1">
-                            <Label htmlFor="debut" className="text-xs">Du</Label>
+                            <Label htmlFor="debut" className="text-xs">{t('Du')}</Label>
                             <DatePicker
                                 value={periode.debut}
                                 onChange={(val) => changerPeriode('debut', val)}
@@ -173,7 +176,7 @@ export default function TableauDeBordIndex({
                             />
                         </div>
                         <div className="space-y-1">
-                            <Label htmlFor="fin" className="text-xs">Au</Label>
+                            <Label htmlFor="fin" className="text-xs">{t('Au')}</Label>
                             <DatePicker
                                 value={periode.fin}
                                 onChange={(val) => changerPeriode('fin', val)}
@@ -181,7 +184,7 @@ export default function TableauDeBordIndex({
                             />
                         </div>
                         <div className="space-y-1">
-                            <Label className="text-xs">Compagnie</Label>
+                            <Label className="text-xs">{t('Compagnie')}</Label>
                             <Select 
                                 value={periode.compagnie_id?.toString() || "all"} 
                                 onValueChange={(val) => changerPeriode('compagnie_id', val === "all" ? '' : val)}
@@ -190,7 +193,7 @@ export default function TableauDeBordIndex({
                                     <SelectValue placeholder="Toutes" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Toutes</SelectItem>
+                                    <SelectItem value="all">{t('Toutes')}</SelectItem>
                                     {filtresOptions.compagnies.map(c => (
                                         <SelectItem key={c.id} value={c.id.toString()}>{c.nom}</SelectItem>
                                     ))}
@@ -198,7 +201,7 @@ export default function TableauDeBordIndex({
                             </Select>
                         </div>
                         <div className="space-y-1">
-                            <Label className="text-xs">Statut</Label>
+                            <Label className="text-xs">{t('Statut')}</Label>
                             <Select 
                                 value={periode.statut || "all"} 
                                 onValueChange={(val) => changerPeriode('statut', val === "all" ? '' : val)}
@@ -207,7 +210,7 @@ export default function TableauDeBordIndex({
                                     <SelectValue placeholder="Tous" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Tous</SelectItem>
+                                    <SelectItem value="all">{t('Tous')}</SelectItem>
                                     {filtresOptions.statuts.map(s => (
                                         <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                                     ))}
@@ -222,7 +225,7 @@ export default function TableauDeBordIndex({
                                 onClick={reinitialiserFiltres}
                             >
                                 <FilterX className="mr-2 size-4" />
-                                Réinitialiser
+                                {t('Réinitialiser')}
                             </Button>
                         )}
                 </div>
@@ -241,10 +244,10 @@ export default function TableauDeBordIndex({
                                     </div>
                                     <div>
                                         <p className="font-medium text-amber-900 dark:text-amber-200">
-                                            {aEvaluer} demande{aEvaluer > 1 ? 's' : ''} à évaluer
+                                            {aEvaluer} {t(aEvaluer > 1 ? ':count demandes à évaluer' : ':count demande à évaluer', { count: aEvaluer })}
                                         </p>
                                         <p className="text-sm text-amber-700 dark:text-amber-400">
-                                            En attente de décision Handling
+                                            {t('En attente de décision Handling')}
                                         </p>
                                     </div>
                                 </div>
@@ -262,10 +265,10 @@ export default function TableauDeBordIndex({
                                     </div>
                                     <div>
                                         <p className="font-medium text-sky-900 dark:text-sky-200">
-                                            {aAutoriser} demande{aAutoriser > 1 ? 's' : ''} à autoriser
+                                            {aAutoriser} {t(aAutoriser > 1 ? ':count demandes à autoriser' : ':count demande à autoriser', { count: aAutoriser })}
                                         </p>
                                         <p className="text-sm text-sky-700 dark:text-sky-400">
-                                            En attente d'autorisation Aviation Civile
+                                            {t("En attente d'autorisation Aviation Civile")}
                                         </p>
                                     </div>
                                 </div>
@@ -283,10 +286,10 @@ export default function TableauDeBordIndex({
                                     </div>
                                     <div>
                                         <p className="font-medium text-violet-900 dark:text-violet-200">
-                                            {aValider} compte{aValider > 1 ? 's' : ''} à valider
+                                            {aValider} {t(aValider > 1 ? ':count comptes à valider' : ':count compte à valider', { count: aValider })}
                                         </p>
                                         <p className="text-sm text-violet-700 dark:text-violet-400">
-                                            Inscriptions en attente de validation
+                                            {t('Inscriptions en attente de validation')}
                                         </p>
                                     </div>
                                 </div>
@@ -317,7 +320,7 @@ export default function TableauDeBordIndex({
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                     <Card className="lg:col-span-3">
                         <CardHeader>
-                            <CardTitle>Demandes sur la période</CardTitle>
+                            <CardTitle>{t('Demandes sur la période')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <GraphiqueBarres
@@ -332,7 +335,7 @@ export default function TableauDeBordIndex({
 
                     <Card className="lg:col-span-2">
                         <CardHeader>
-                            <CardTitle>Répartition par statut</CardTitle>
+                            <CardTitle>{t('Répartition par statut')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <GraphiqueDonut segments={segmentsStatuts} />
@@ -344,12 +347,12 @@ export default function TableauDeBordIndex({
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                     <Card className="lg:col-span-3">
                         <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Demandes récentes</CardTitle>
+                            <CardTitle>{t('Demandes récentes')}</CardTitle>
                             <Link
                                 href="/demandes"
                                 className="flex items-center gap-1 text-sm text-[#1B98E0] hover:underline"
                             >
-                                Tout voir
+                                {t('Tout voir')}
                                 <ArrowRight className="size-4" />
                             </Link>
                         </CardHeader>
@@ -396,7 +399,7 @@ export default function TableauDeBordIndex({
                                 ))}
                                 {demandesRecentes.length === 0 && (
                                     <p className="py-8 text-center text-sm text-muted-foreground">
-                                        Aucune demande pour le moment.
+                                        {t('Aucune demande pour le moment.')}
                                     </p>
                                 )}
                             </div>
@@ -405,7 +408,7 @@ export default function TableauDeBordIndex({
 
                     <Card className="lg:col-span-2">
                         <CardHeader>
-                            <CardTitle>Par nature de vol</CardTitle>
+                            <CardTitle>{t('Par nature de vol')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <GraphiqueDonut segments={segmentsNatures} />

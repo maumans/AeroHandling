@@ -21,6 +21,7 @@ class ServiceAssistanceFactory extends Factory
 
         return [
             'code' => str_replace(' ', '_', strtolower($nom)),
+            'categorie' => fake()->randomElement(['Service', 'Matériel', 'Personnel', 'Autre']),
             'nom' => ucfirst($nom),
             'description' => fake()->optional()->sentence(),
             'actif' => true,

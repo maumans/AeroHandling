@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\CategorieAeronef;
 use App\Enums\StatutEquipement;
-use App\Enums\TypeEquipement;
 use App\Http\Requests\StoreAeronefRequest;
 use App\Http\Requests\StoreCompagnieRequest;
 use App\Http\Requests\StoreEquipementRequest;
@@ -18,9 +16,13 @@ use App\Http\Requests\UpdateParametresStockageRequest;
 use App\Http\Requests\UpdateUtilisateurRequest;
 use App\Models\Aeronef;
 use App\Models\CapaciteStockage;
+use App\Models\CategorieAeronef;
 use App\Models\Compagnie;
 use App\Models\Equipement;
 use App\Models\JourFerie;
+use App\Models\Parametre;
+use App\Models\TypeAeronef;
+use App\Models\TypeEquipement;
 use App\Models\User;
 use App\Notifications\AccountActivated;
 use Illuminate\Http\RedirectResponse;
@@ -345,15 +347,15 @@ class AdministrationController extends Controller
     {
         $this->authorizeAdmin($request);
 
-        $aeronefs = Aeronef::withCount('demandes')
+        $aeronefs = Aeronef::with(['typeAeronef'])->withCount('demandes')
             ->orderBy('code')
             ->paginate(config('aerohandling.pagination.compagnies', 20))
             ->through(fn (Aeronef $a) => [
                 'id' => $a->id,
                 'code' => $a->code,
                 'modele' => $a->modele,
-                'categorie' => $a->getRawOriginal('categorie'),
-                'categorie_libelle' => $a->categorie->libelle(),
+                'type' => $a->type_aeronef_id,
+                'type_libelle' => $a->typeAeronef ? $a->typeAeronef->nom : 'N/A',
                 'capacite_passagers' => $a->capacite_passagers,
                 'capacite_cargo_tonnes' => $a->capacite_cargo_tonnes,
                 'demandes_count' => $a->demandes_count,
@@ -369,8 +371,8 @@ class AdministrationController extends Controller
         $this->authorizeAdmin($request);
 
         return Inertia::render('Administration/Aeronefs/Creer', [
-            'categories' => collect(CategorieAeronef::cases())
-                ->map(fn ($c) => ['value' => $c->value, 'libelle' => $c->libelle()]),
+            'types' => TypeAeronef::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]),
+            'categories' => CategorieAeronef::orderBy('code')->get(['id', 'code', 'nom']),
         ]);
     }
 
@@ -393,12 +395,13 @@ class AdministrationController extends Controller
                 'id' => $a->id,
                 'code' => $a->code,
                 'modele' => $a->modele,
-                'categorie' => $a->getRawOriginal('categorie'),
+                'type_aeronef_id' => $a->type_aeronef_id,
                 'capacite_passagers' => $a->capacite_passagers,
                 'capacite_cargo_tonnes' => $a->capacite_cargo_tonnes,
+                'categorie_aeronef_id' => $a->categorie_aeronef_id,
             ],
-            'categories' => collect(CategorieAeronef::cases())
-                ->map(fn ($c) => ['value' => $c->value, 'libelle' => $c->libelle()]),
+            'types' => TypeAeronef::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]),
+            'categories' => CategorieAeronef::orderBy('code')->get(['id', 'code', 'nom']),
         ]);
     }
 
@@ -430,14 +433,15 @@ class AdministrationController extends Controller
     {
         $this->authorizeAdmin($request);
 
-        $equipements = Equipement::orderBy('code')
+        $equipements = Equipement::with('typeEquipement')
+            ->orderBy('code')
             ->paginate(config('aerohandling.pagination.equipements', 20))
             ->through(fn (Equipement $e) => [
                 'id' => $e->id,
                 'code' => $e->code,
                 'nom' => $e->nom,
-                'type' => $e->getRawOriginal('type'),
-                'type_libelle' => $e->type->libelle(),
+                'type' => $e->type_equipement_id,
+                'type_libelle' => $e->typeEquipement?->nom ?? '—',
                 'statut' => $e->getRawOriginal('statut'),
                 'statut_libelle' => $e->statut->libelle(),
                 'capacite_max' => $e->capacite_max,
@@ -453,8 +457,7 @@ class AdministrationController extends Controller
         $this->authorizeAdmin($request);
 
         return Inertia::render('Administration/Equipements/Creer', [
-            'types' => collect(TypeEquipement::cases())
-                ->map(fn ($t) => ['value' => $t->value, 'libelle' => $t->libelle()]),
+            'types' => TypeEquipement::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]),
             'statuts' => collect(StatutEquipement::cases())
                 ->map(fn ($s) => ['value' => $s->value, 'libelle' => $s->libelle()]),
         ]);
@@ -479,13 +482,12 @@ class AdministrationController extends Controller
                 'id' => $e->id,
                 'code' => $e->code,
                 'nom' => $e->nom,
-                'type' => $e->getRawOriginal('type'),
+                'type_equipement_id' => $e->type_equipement_id,
                 'statut' => $e->getRawOriginal('statut'),
                 'capacite_max' => $e->capacite_max,
                 'notes' => $e->notes,
             ],
-            'types' => collect(TypeEquipement::cases())
-                ->map(fn ($t) => ['value' => $t->value, 'libelle' => $t->libelle()]),
+            'types' => TypeEquipement::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]),
             'statuts' => collect(StatutEquipement::cases())
                 ->map(fn ($s) => ['value' => $s->value, 'libelle' => $s->libelle()]),
         ]);
@@ -578,14 +580,30 @@ class AdministrationController extends Controller
             'seuil_alerte_pourcent' => $c->seuil_alerte_pourcent,
         ]);
 
+        $tarifsConfig = config('tarifs');
+        $parametresBase = Parametre::all()->pluck('valeur', 'cle')->toArray();
+        $grilleTarifaire = array_replace_recursive($tarifsConfig, $parametresBase);
+
+        $configGeneraleDb = Parametre::where('cle', 'config_generale')->first();
+        $configOverrides = $configGeneraleDb ? $configGeneraleDb->valeur : [];
+
+        $configDesignDb = Parametre::where('cle', 'config_design')->first();
+        $configDesign = $configDesignDb ? $configDesignDb->valeur : [];
+
         return Inertia::render('Administration/Parametres', [
             'capacites' => $capacites,
             'configGenerale' => [
-                'prefixe_demande' => config('aerohandling.references.prefixe_demande'),
-                'prefixe_autorisation' => config('aerohandling.references.prefixe_autorisation'),
-                'pagination_demandes' => config('aerohandling.pagination.demandes'),
-                'pagination_utilisateurs' => config('aerohandling.pagination.utilisateurs'),
+                'prefixe_demande' => $configOverrides['prefixe_demande'] ?? config('aerohandling.references.prefixe_demande'),
+                'prefixe_autorisation' => $configOverrides['prefixe_autorisation'] ?? config('aerohandling.references.prefixe_autorisation'),
+                'pagination_demandes' => (int) ($configOverrides['pagination_demandes'] ?? config('aerohandling.pagination.demandes')),
+                'pagination_utilisateurs' => (int) ($configOverrides['pagination_utilisateurs'] ?? config('aerohandling.pagination.utilisateurs')),
             ],
+            'configDesign' => [
+                'couleur_primaire' => $configDesign['couleur_primaire'] ?? '#0B2545',
+                'couleur_secondaire' => $configDesign['couleur_secondaire'] ?? '#13315C',
+                'logo_url' => $configDesign['logo_url'] ?? null,
+            ],
+            'grilleTarifaire' => $grilleTarifaire,
             'onglet' => $request->input('onglet', 'stockage'),
         ]);
     }
@@ -601,6 +619,87 @@ class AdministrationController extends Controller
 
         return redirect()->route('administration.parametres.index')
             ->with('success', 'Paramètres mis à jour.');
+    }
+
+    public function mettreAJourGrilleTarifaire(Request $request): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $donnees = $request->validate([
+            'forfait_base' => ['required', 'array'],
+            'repoussage_tractage' => ['required', 'array'],
+            'passerelle_telescopique' => ['required', 'array'],
+            'majorations' => ['required', 'array'],
+            'fret' => ['required', 'array'],
+        ]);
+
+        foreach ($donnees as $cle => $valeur) {
+            Parametre::updateOrCreate(
+                ['cle' => $cle],
+                ['valeur' => $valeur]
+            );
+        }
+
+        return redirect()->route('administration.parametres.index', ['onglet' => 'tarifs'])
+            ->with('success', 'Grille tarifaire mise à jour.');
+    }
+
+    public function mettreAJourConfigGenerale(Request $request): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $donnees = $request->validate([
+            'prefixe_demande' => ['required', 'string', 'max:10'],
+            'prefixe_autorisation' => ['required', 'string', 'max:10'],
+            'pagination_demandes' => ['required', 'integer', 'min:5', 'max:100'],
+            'pagination_utilisateurs' => ['required', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        Parametre::updateOrCreate(
+            ['cle' => 'config_generale'],
+            ['valeur' => $donnees]
+        );
+
+        return redirect()->route('administration.parametres.index', ['onglet' => 'general'])
+            ->with('success', 'Configuration générale mise à jour.');
+    }
+
+    public function mettreAJourConfigDesign(Request $request): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $donnees = $request->validate([
+            'couleur_primaire' => ['required', 'string', 'max:20'],
+            'couleur_secondaire' => ['required', 'string', 'max:20'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,svg', 'max:2048'],
+            'remove_logo' => ['nullable', 'boolean'],
+        ]);
+
+        $configDesignDb = Parametre::where('cle', 'config_design')->first();
+        $configDesign = $configDesignDb ? $configDesignDb->valeur : [];
+
+        if (isset($donnees['remove_logo']) && $donnees['remove_logo']) {
+            if (isset($configDesign['logo_url']) && \Illuminate\Support\Facades\Storage::disk('public')->exists(str_replace('/storage/', '', $configDesign['logo_url']))) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete(str_replace('/storage/', '', $configDesign['logo_url']));
+            }
+            $configDesign['logo_url'] = null;
+        } elseif ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('logos', 'public');
+            $configDesign['logo_url'] = '/storage/' . $path;
+        }
+
+        $configDesign['couleur_primaire'] = $donnees['couleur_primaire'];
+        $configDesign['couleur_secondaire'] = $donnees['couleur_secondaire'];
+
+        Parametre::updateOrCreate(
+            ['cle' => 'config_design'],
+            ['valeur' => $configDesign]
+        );
+        
+        \Illuminate\Support\Facades\Cache::forget('config_design');
+
+        return redirect()->route('administration.parametres.index', ['onglet' => 'design'])
+            ->with('success', 'Configuration de marque et design mise à jour.');
     }
 
     /** @return string[] */

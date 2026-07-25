@@ -1,4 +1,5 @@
 import { Head, router } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { BellOff, Check, CheckCheck, ChevronRight } from 'lucide-react';
 import { NotificationIcon } from '@/components/notification-icon';
 import AppLayout from '@/layouts/app-layout';
@@ -60,6 +61,7 @@ function groupByDate(notifications: Notification[]): Record<string, Notification
 }
 
 export default function NotificationsIndex({ notifications, nonLues }: Props) {
+    const { t } = useLaravelReactI18n();
     const grouped = groupByDate(notifications.data);
 
     function marquerLue(id: string) {
@@ -84,23 +86,23 @@ export default function NotificationsIndex({ notifications, nonLues }: Props) {
     }
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Notifications', href: '/notifications' }]}>
-            <Head title="Notifications" />
+        <AppLayout breadcrumbs={[{ title: t('Notifications'), href: '/notifications' }]}>
+            <Head title={t('Notifications')} />
             <div className="flex flex-col gap-6 p-6">
                 {/* En-tête */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold">Notifications</h1>
+                        <h1 className="text-2xl font-bold">{t('Notifications')}</h1>
                         {nonLues > 0 && (
                             <p className="mt-1 text-sm text-muted-foreground">
-                                {nonLues} notification{nonLues > 1 ? 's' : ''} non lue{nonLues > 1 ? 's' : ''}
+                                {nonLues} {t('notification(s) non lue(s)')}
                             </p>
                         )}
                     </div>
                     {nonLues > 0 && (
                         <Button variant="outline" size="sm" onClick={marquerToutesLues}>
                             <CheckCheck className="mr-2 size-4" />
-                            Tout marquer comme lu
+                            {t('Tout marquer comme lu')}
                         </Button>
                     )}
                 </div>
@@ -110,7 +112,7 @@ export default function NotificationsIndex({ notifications, nonLues }: Props) {
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-16">
                             <BellOff className="size-12 text-muted-foreground" />
-                            <p className="mt-4 text-muted-foreground">Aucune notification pour le moment.</p>
+                            <p className="mt-4 text-muted-foreground">{t('Aucune notification pour le moment.')}</p>
                         </CardContent>
                     </Card>
                 )}
@@ -178,7 +180,7 @@ export default function NotificationsIndex({ notifications, nonLues }: Props) {
                                                                 e.stopPropagation();
                                                                 marquerLue(notif.id);
                                                             }}
-                                                            title="Marquer comme lu"
+                                                            title={t('Marquer comme lu')}
                                                             className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                                                         >
                                                             <Check className="size-4" />

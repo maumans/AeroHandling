@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { Eye, Pencil, Plus, Search, CalendarPlus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import ModalAffectation from '@/components/ModalAffectation';
@@ -68,6 +69,7 @@ function formatDate(dateStr: string): string {
 
 export default function DemandesIndex({ demandes, compagnies, filtres, peutAffecterGlobal, peutCreer, equipementsDisponibles, agentsDisponibles }: Props) {
     const [recherche, setRecherche] = useState(filtres.recherche ?? '');
+    const { t } = useLaravelReactI18n();
 
     function filtrer(key: string, value: string | undefined) {
         router.get(
@@ -83,18 +85,18 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
     }
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Demandes', href: '/demandes' }]}>
-            <Head title="Demandes" />
+        <AppLayout breadcrumbs={[{ title: t('Demandes'), href: '/demandes' }]}>
+            <Head title={t('Demandes')} />
 
             <div className="flex flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Demandes d&apos;assistance</h1>
+                    <h1 className="text-2xl font-bold">{t("Demandes d'assistance")}</h1>
                     {peutCreer && (
                         <Button asChild>
                             <Link href="/demandes/creer">
                                 <Plus className="mr-2 size-4" />
-                                Nouvelle demande
+                                {t('Nouvelle demande')}
                             </Link>
                         </Button>
                     )}
@@ -108,7 +110,7 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                 <div className="relative">
                                     <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
-                                        placeholder="Rechercher (réf., vol)..."
+                                        placeholder={t('Rechercher (réf., vol)...')}
                                         value={recherche}
                                         onChange={(e) => setRecherche(e.target.value)}
                                         className="w-64 pl-9"
@@ -120,9 +122,9 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                 className="w-48"
                                 value={filtres.statut ?? 'all'}
                                 onChange={(v) => filtrer('statut', v === 'all' ? undefined : v)}
-                                placeholder="Tous les statuts"
+                                placeholder={t('Tous les statuts')}
                                 options={[
-                                    { label: "Tous les statuts", value: "all" },
+                                    { label: t('Tous les statuts'), value: "all" },
                                     ...Object.entries(STATUT_DEMANDE_LIBELLE).map(([key, label]) => ({
                                         label: label,
                                         value: key,
@@ -134,9 +136,9 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                 className="w-52"
                                 value={filtres.compagnie_id ?? 'all'}
                                 onChange={(v) => filtrer('compagnie_id', v === 'all' ? undefined : v)}
-                                placeholder="Toutes les compagnies"
+                                placeholder={t('Toutes les compagnies')}
                                 options={[
-                                    { label: "Toutes les compagnies", value: "all" },
+                                    { label: t('Toutes les compagnies'), value: "all" },
                                     ...compagnies.map((c) => ({
                                         label: c.nom,
                                         value: String(c.id),
@@ -154,13 +156,13 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left font-medium">Référence</th>
-                                        <th className="px-4 py-3 text-left font-medium">Vol</th>
-                                        <th className="px-4 py-3 text-left font-medium">Compagnie</th>
-                                        <th className="px-4 py-3 text-left font-medium">Nature</th>
-                                        <th className="px-4 py-3 text-left font-medium">Arrivée</th>
-                                        <th className="px-4 py-3 text-left font-medium">Statut</th>
-                                        <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Référence')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Vol')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Compagnie')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Nature')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Arrivée')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Statut')}</th>
+                                        <th className="px-4 py-3 text-right font-medium">{t('Actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -210,7 +212,7 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                                                 variant="outline"
                                                                 size="icon"
                                                                 className="h-8 w-8"
-                                                                title="Planifier"
+                                                                title={t('Planifier')}
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
                                                                 <CalendarPlus className="size-4 text-primary" />
@@ -222,7 +224,7 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                                             variant="outline" 
                                                             size="icon" 
                                                             className="h-8 w-8 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary" 
-                                                            title="Modifier"
+                                                            title={t('Modifier')}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 router.visit(`/demandes/${demande.id}/editer`);
@@ -235,7 +237,7 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                                         variant="outline" 
                                                         size="icon" 
                                                         className="h-8 w-8" 
-                                                        title="Détails"
+                                                        title={t('Détails')}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             router.visit(`/demandes/${demande.id}`);
@@ -248,10 +250,10 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                                             variant="outline" 
                                                             size="icon" 
                                                             className="h-8 w-8 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive" 
-                                                            title="Supprimer"
+                                                            title={t('Supprimer')}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                if (window.confirm('Êtes-vous sûr de vouloir supprimer cette demande ?')) {
+                                                                if (window.confirm(t('Êtes-vous sûr de vouloir supprimer cette demande ?'))) {
                                                                     router.delete(`/demandes/${demande.id}`);
                                                                 }
                                                             }}
@@ -266,7 +268,7 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                     {demandes.data.length === 0 && (
                                         <tr>
                                             <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
-                                                Aucune demande trouvée.
+                                                {t('Aucune demande trouvée.')}
                                             </td>
                                         </tr>
                                     )}
@@ -278,7 +280,7 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                         {demandes.last_page > 1 && (
                             <div className="flex items-center justify-between border-t px-4 py-3">
                                 <span className="text-sm text-muted-foreground">
-                                    {demandes.total} résultat{demandes.total > 1 ? 's' : ''}
+                                    {demandes.total} {t(demandes.total > 1 ? ':count résultats' : ':count résultat', { count: demandes.total })}
                                 </span>
                                 <div className="flex gap-1">
                                     {demandes.links.map((link, i) => (

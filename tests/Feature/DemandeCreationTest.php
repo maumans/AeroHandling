@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Enums\NatureVol;
 use App\Enums\StatutDemande;
 use App\Models\Demande;
+use App\Models\NatureVol;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,18 +36,21 @@ class DemandeCreationTest extends TestCase
             'type_aeronef' => 'B737',
             'immatriculation' => 'CN-TEST',
             'numero_vol' => 'AT1234',
-            'numero_landing_permit' => 'LP-2026-999',
             'aeroport_provenance' => 'Paris CDG',
             'aeroport_destination' => 'Casablanca',
             'demandeur' => 'Jean Dupont',
             'contact_demandeur' => 'jean.dupont@airtest.com',
-            'nature_vol' => NatureVol::Passager->value,
+            'nature_vol_id' => NatureVol::factory()->create([
+                'code' => 'passager',
+                'est_vol_special' => false,
+                'est_cargo' => false,
+            ])->id,
             'mtow' => 78.5,
             'date_arrivee' => now()->addDays(2)->format('Y-m-d H:i:s'),
             'date_depart' => now()->addDays(2)->addHours(4)->format('Y-m-d H:i:s'),
             'tonnage_prevu' => null,
             'volume_prevu' => null,
-            'type_marchandise' => null,
+            'type_marchandise_id' => null,
             'nombre_uld' => null,
             'nombre_palettes' => null,
             'exigences_particulieres' => 'Pas d\'exigences.',
@@ -94,7 +97,11 @@ class DemandeCreationTest extends TestCase
             'aeroport_destination' => 'Casablanca',
             'demandeur' => 'Jean Dupont',
             'contact_demandeur' => 'jean.dupont@airtest.com',
-            'nature_vol' => NatureVol::Passager->value,
+            'nature_vol_id' => NatureVol::factory()->create([
+                'code' => 'passager',
+                'est_vol_special' => false,
+                'est_cargo' => false,
+            ])->id,
             'date_arrivee' => now()->addDays(2)->format('Y-m-d H:i:s'),
             'date_depart' => now()->addDays(2)->addHours(4)->format('Y-m-d H:i:s'),
         ]);
@@ -109,6 +116,11 @@ class DemandeCreationTest extends TestCase
 
         $utilisateur = User::factory()->create();
         $utilisateur->assignRole('compagnie');
+        $natureHumanitaire = NatureVol::factory()->create([
+            'code' => 'vol_rapatriement_humanitaire',
+            'est_vol_special' => true,
+        ]);
+
         $this->actingAs($utilisateur);
 
         $donnees = [
@@ -121,7 +133,7 @@ class DemandeCreationTest extends TestCase
             'aeroport_destination' => 'Casablanca',
             'demandeur' => 'Jean Dupont',
             'contact_demandeur' => 'jean.dupont@airtest.com',
-            'nature_vol' => NatureVol::VolRapatriementHumanitaire->value,
+            'nature_vol_id' => $natureHumanitaire->id,
             'mtow' => 120,
             'date_arrivee' => now()->addDays(2)->format('Y-m-d H:i:s'),
             'date_depart' => now()->addDays(2)->addHours(4)->format('Y-m-d H:i:s'),
@@ -137,7 +149,7 @@ class DemandeCreationTest extends TestCase
 
         $this->assertDatabaseHas('demandes', [
             'numero_vol' => 'AT7777',
-            'nature_vol' => NatureVol::VolRapatriementHumanitaire->value,
+            'nature_vol_id' => $natureHumanitaire->id,
             'tow_bar_a_bord' => true,
         ]);
     }

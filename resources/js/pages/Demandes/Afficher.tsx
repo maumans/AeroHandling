@@ -1,4 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { CheckCircle2, XCircle, MessageSquarePlus, ShieldCheck, Send, CalendarPlus, Paperclip, Download } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import ModalAffectation from '@/components/ModalAffectation';
@@ -54,7 +55,6 @@ interface Demande {
     compagnie_libelle: string | null;
     type_aeronef: string | null;
     immatriculation: string | null;
-    numero_landing_permit: string | null;
     aeroport_provenance: string | null;
     aeroport_destination: string | null;
     tow_bar_a_bord: boolean;
@@ -68,7 +68,8 @@ interface Demande {
     date_depart: string;
     tonnage_prevu: string | null;
     volume_prevu: string | null;
-    type_marchandise: string | null;
+    type_marchandise_id: number | null;
+    typeMarchandise?: { nom: string; code: string; necessite_stockage_special: boolean };
     nombre_uld: number | null;
     nombre_palettes: number | null;
     exigences_particulieres: string | null;
@@ -94,7 +95,7 @@ interface Demande {
         id: number;
         nom: string;
         pivot: {
-            type_equipement: string;
+            type_equipement_id: number;
             quantite: number;
         };
     }[];
@@ -168,6 +169,7 @@ export default function DemandesAfficher({
     peutAjouterPieceJointe,
     proforma,
 }: Props) {
+    const { t } = useLaravelReactI18n();
     const [rejetOpen, setRejetOpen] = useState(false);
     const { data: rejetData, setData: setRejetData, post: postRejet, processing: processingRejet, reset: resetRejet } = useForm({ motif_rejet: '' });
 
@@ -234,10 +236,10 @@ export default function DemandesAfficher({
     };
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Demandes', href: '/demandes' },
+            { title: t('Demandes'), href: '/demandes' },
             { title: demande.reference, href: `/demandes/${demande.id}` },
         ]}>
-            <Head title={`Demande ${demande.reference}`} />
+            <Head title={`${t('Demande')} ${demande.reference}`} />
 
             <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-3">
                 {/* Détail principal */}
@@ -245,7 +247,7 @@ export default function DemandesAfficher({
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold">{demande.reference}</h1>
-                            <p className="text-muted-foreground">Vol {demande.numero_vol}</p>
+                            <p className="text-muted-foreground">{t('Vol')} {demande.numero_vol}</p>
                         </div>
                         <Badge
                             className={STATUT_DEMANDE_BADGE[demande.statut] ?? ''}
@@ -263,7 +265,7 @@ export default function DemandesAfficher({
                                 variant="outline"
                                 onClick={() => router.get(`/demandes/${demande.id}/editer`)}
                             >
-                                Modifier
+                                {t('Modifier')}
                             </Button>
                         )}
                         {peutSupprimer && (
@@ -271,13 +273,12 @@ export default function DemandesAfficher({
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => {
-                                    if (confirm('Voulez-vous vraiment supprimer cette demande ? Cette action est irréversible.')) {
+                                    if (confirm(t('Voulez-vous vraiment supprimer cette demande ?'))) {
                                         router.delete(`/demandes/${demande.id}`);
                                     }
                                 }}
                             >
-                                <XCircle className="mr-1 size-4" />
-                                Supprimer
+                                {t('Supprimer')}
                             </Button>
                         )}
                         {peutSoumettre && demande.statut === 'complement_demande' && (
@@ -286,7 +287,7 @@ export default function DemandesAfficher({
                                 onClick={() => router.post(`/demandes/${demande.id}/soumettre`)}
                             >
                                 <Send className="mr-1 size-4" />
-                                Re-soumettre
+                                {t('Re-soumettre')}
                             </Button>
                         )}
                         {peutSoumettre && demande.statut === 'brouillon' && (
@@ -295,7 +296,7 @@ export default function DemandesAfficher({
                                 onClick={() => router.post(`/demandes/${demande.id}/soumettre`)}
                             >
                                 <Send className="mr-1 size-4" />
-                                Soumettre
+                                {t('Soumettre')}
                             </Button>
                         )}
                         {peutApprouver && (
@@ -306,7 +307,7 @@ export default function DemandesAfficher({
                                 onClick={() => router.post(`/demandes/${demande.id}/approuver`)}
                             >
                                 <CheckCircle2 className="mr-1 size-4" />
-                                Approuver
+                                {t('Approuver')}
                             </Button>
                         )}
                         {peutRejeter && (
@@ -314,30 +315,30 @@ export default function DemandesAfficher({
                                 <DialogTrigger asChild>
                                     <Button size="sm" variant="destructive">
                                         <XCircle className="mr-1 size-4" />
-                                        Rejeter
+                                        {t('Rejeter')}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                     <form onSubmit={submitRejet}>
                                         <DialogHeader>
-                                            <DialogTitle>Rejeter la demande</DialogTitle>
+                                            <DialogTitle>{t('Rejeter la demande')}</DialogTitle>
                                             <DialogDescription>
-                                                Veuillez indiquer le motif du rejet de cette demande.
+                                                {t('Veuillez indiquer le motif du rejet de cette demande.')}
                                             </DialogDescription>
                                         </DialogHeader>
                                         <div className="py-4">
-                                            <Label htmlFor="motif_rejet" className="sr-only">Motif de rejet</Label>
+                                            <Label htmlFor="motif_rejet" className="sr-only">{t('Motif de rejet')}</Label>
                                             <Textarea
                                                 id="motif_rejet"
                                                 value={rejetData.motif_rejet}
                                                 onChange={(e) => setRejetData('motif_rejet', e.target.value)}
-                                                placeholder="Motif détaillé du rejet..."
+                                                placeholder={t("Motif détaillé du rejet...")}
                                                 required
                                             />
                                         </div>
                                         <DialogFooter>
-                                            <Button type="button" variant="outline" onClick={() => setRejetOpen(false)}>Annuler</Button>
-                                            <Button type="submit" variant="destructive" disabled={processingRejet}>Confirmer le rejet</Button>
+                                            <Button type="button" variant="outline" onClick={() => setRejetOpen(false)}>{t('Annuler')}</Button>
+                                            <Button type="submit" variant="destructive" disabled={processingRejet}>{t('Confirmer le rejet')}</Button>
                                         </DialogFooter>
                                     </form>
                                 </DialogContent>
@@ -348,30 +349,30 @@ export default function DemandesAfficher({
                                 <DialogTrigger asChild>
                                     <Button size="sm" variant="outline">
                                         <MessageSquarePlus className="mr-1 size-4" />
-                                        Demander complément
+                                        {t('Demander complément')}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                     <form onSubmit={submitComplement}>
                                         <DialogHeader>
-                                            <DialogTitle>Demander un complément</DialogTitle>
+                                            <DialogTitle>{t('Demander un complément')}</DialogTitle>
                                             <DialogDescription>
-                                                Précisez quelles informations ou documents manquent pour traiter cette demande.
+                                                {t('Précisez quelles informations ou documents manquent pour traiter cette demande.')}
                                             </DialogDescription>
                                         </DialogHeader>
                                         <div className="py-4">
-                                            <Label htmlFor="commentaire" className="sr-only">Détails</Label>
+                                            <Label htmlFor="commentaire" className="sr-only">{t('Détails')}</Label>
                                             <Textarea
                                                 id="commentaire"
                                                 value={complementData.commentaire}
                                                 onChange={(e) => setComplementData('commentaire', e.target.value)}
-                                                placeholder="Précisez le complément demandé..."
+                                                placeholder={t("Précisez le complément demandé...")}
                                                 required
                                             />
                                         </div>
                                         <DialogFooter>
-                                            <Button type="button" variant="outline" onClick={() => setComplementOpen(false)}>Annuler</Button>
-                                            <Button type="submit" disabled={processingComplement}>Envoyer la demande</Button>
+                                            <Button type="button" variant="outline" onClick={() => setComplementOpen(false)}>{t('Annuler')}</Button>
+                                            <Button type="submit" disabled={processingComplement}>{t('Envoyer la demande')}</Button>
                                         </DialogFooter>
                                     </form>
                                 </DialogContent>
@@ -382,20 +383,20 @@ export default function DemandesAfficher({
                                 <DialogTrigger asChild>
                                     <Button size="sm" className="bg-[#1B98E0] hover:bg-[#1580c0]">
                                         <ShieldCheck className="mr-1 size-4" />
-                                        Saisir le code d&apos;autorisation
+                                        {t("Saisir le code d'autorisation")}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                     <form onSubmit={submitAutoriser}>
                                         <DialogHeader>
-                                            <DialogTitle>Autorisation Aviation Civile</DialogTitle>
+                                            <DialogTitle>{t('Autorisation Aviation Civile')}</DialogTitle>
                                             <DialogDescription>
-                                                Saisissez le code d&apos;autorisation fourni par l&apos;Aviation Civile. Ce code est obligatoire et conservé à titre informatif.
+                                                {t("Saisissez le code d'autorisation fourni par l'Aviation Civile. Ce code est obligatoire et conservé à titre informatif.")}
                                             </DialogDescription>
                                         </DialogHeader>
                                         <div className="space-y-4 py-4">
                                             <div className="space-y-2">
-                                                <Label htmlFor="code_autorisation">Code d&apos;autorisation</Label>
+                                                <Label htmlFor="code_autorisation">{t("Code d'autorisation")}</Label>
                                                 <Input
                                                     id="code_autorisation"
                                                     value={autoriserData.code_autorisation}
@@ -408,19 +409,19 @@ export default function DemandesAfficher({
                                                 )}
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="commentaire_autorisation">Commentaire (optionnel)</Label>
+                                                <Label htmlFor="commentaire_autorisation">{t('Commentaire (optionnel)')}</Label>
                                                 <Textarea
                                                     id="commentaire_autorisation"
                                                     value={autoriserData.commentaire}
                                                     onChange={(e) => setAutoriserData('commentaire', e.target.value)}
-                                                    placeholder="Remarque éventuelle..."
+                                                    placeholder={t("Remarque éventuelle...")}
                                                 />
                                             </div>
                                         </div>
                                         <DialogFooter>
-                                            <Button type="button" variant="outline" onClick={() => setAutoriserOpen(false)}>Annuler</Button>
+                                            <Button type="button" variant="outline" onClick={() => setAutoriserOpen(false)}>{t('Annuler')}</Button>
                                             <Button type="submit" className="bg-[#1B98E0] hover:bg-[#1580c0]" disabled={processingAutoriser}>
-                                                Valider l&apos;autorisation
+                                                {t("Valider l'autorisation")}
                                             </Button>
                                         </DialogFooter>
                                     </form>
@@ -431,12 +432,12 @@ export default function DemandesAfficher({
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Informations du vol</CardTitle>
+                            <CardTitle>{t('Informations du vol')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Compagnie / Opérateur</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Compagnie / Opérateur')}</dt>
                                     <dd className="font-medium">
                                         {demande.compagnie_libelle
                                             ?? (demande.compagnie
@@ -445,82 +446,78 @@ export default function DemandesAfficher({
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Type d&apos;aéronef</dt>
+                                    <dt className="text-sm text-muted-foreground">{t("Type d'aéronef")}</dt>
                                     <dd className="font-medium">
                                         {demande.type_aeronef
                                             ?? (demande.aeronef ? `${demande.aeronef.code} (${demande.aeronef.modele})` : '—')}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Immatriculation</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Immatriculation')}</dt>
                                     <dd className="font-medium">{demande.immatriculation ?? '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Aéroport de provenance</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Aéroport de provenance')}</dt>
                                     <dd className="font-medium">{demande.aeroport_provenance ?? '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Aéroport de destination</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Aéroport de destination')}</dt>
                                     <dd className="font-medium">{demande.aeroport_destination ?? '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">N° de landing permit</dt>
-                                    <dd className="font-medium">{demande.numero_landing_permit ?? '—'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-sm text-muted-foreground">Payeur (PE)</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Payeur (PE)')}</dt>
                                     <dd className="font-medium">{demande.payeur ?? '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Tow bar à bord</dt>
-                                    <dd className="font-medium">{demande.tow_bar_a_bord ? 'Oui' : 'Non'}</dd>
+                                    <dt className="text-sm text-muted-foreground">{t('Tow bar à bord')}</dt>
+                                    <dd className="font-medium">{demande.tow_bar_a_bord ? t('Oui') : t('Non')}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Demandeur</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Demandeur')}</dt>
                                     <dd className="font-medium">{demande.demandeur ?? '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Contact demandeur</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Contact demandeur')}</dt>
                                     <dd className="font-medium">{demande.contact_demandeur ?? '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Numéro de vol</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Numéro de vol')}</dt>
                                     <dd className="font-medium">{demande.numero_vol}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Nature du vol</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Nature du vol')}</dt>
                                     <dd className="font-medium">{demande.nature_vol ? (NATURE_VOL_LIBELLE[demande.nature_vol] ?? demande.nature_vol) : '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">MTOW</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('MTOW')}</dt>
                                     <dd className="font-medium">{demande.mtow ? `${demande.mtow} t` : '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Arrivée</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Arrivée')}</dt>
                                     <dd className="font-medium">{formatDate(demande.date_arrivee)}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Départ</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Départ')}</dt>
                                     <dd className="font-medium">{formatDate(demande.date_depart)}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Tonnage prévu</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Tonnage prévu')}</dt>
                                     <dd className="font-medium">{demande.tonnage_prevu ? `${demande.tonnage_prevu} t` : '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Volume cargo prévu</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Volume cargo prévu')}</dt>
                                     <dd className="font-medium">{demande.volume_prevu ? `${demande.volume_prevu} m³` : '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Type marchandise</dt>
-                                    <dd className="font-medium">{demande.type_marchandise ? (TYPE_MARCHANDISE_LIBELLE[demande.type_marchandise] ?? demande.type_marchandise) : '—'}</dd>
+                                    <dt className="text-sm text-muted-foreground">{t('Type marchandise')}</dt>
+                                    <dd className="font-medium">{demande.typeMarchandise ? demande.typeMarchandise.nom : '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Nombre ULD</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Nombre ULD')}</dt>
                                     <dd className="font-medium">{demande.nombre_uld ?? '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm text-muted-foreground">Nombre de palettes</dt>
+                                    <dt className="text-sm text-muted-foreground">{t('Nombre de palettes')}</dt>
                                     <dd className="font-medium">{demande.nombre_palettes ?? '—'}</dd>
                                 </div>
                             </dl>
@@ -529,7 +526,7 @@ export default function DemandesAfficher({
                                 <>
                                     <Separator className="my-4" />
                                     <div>
-                                        <dt className="text-sm text-muted-foreground">Exigences particulières</dt>
+                                        <dt className="text-sm text-muted-foreground">{t('Exigences particulières')}</dt>
                                         <dd className="mt-1">{demande.exigences_particulieres}</dd>
                                     </div>
                                 </>
@@ -539,7 +536,7 @@ export default function DemandesAfficher({
                                 <>
                                     <Separator className="my-4" />
                                     <div>
-                                        <dt className="text-sm text-muted-foreground mb-2">Matériel d&apos;assistance demandé</dt>
+                                        <dt className="text-sm text-muted-foreground mb-2">{t("Matériel d'assistance demandé")}</dt>
                                         <dd className="mt-1">
                                             <ul className="list-inside list-disc text-sm">
                                                 {demande.equipements_demandes.map((eq) => (
@@ -557,7 +554,7 @@ export default function DemandesAfficher({
                                 <>
                                     <Separator className="my-4" />
                                     <div>
-                                        <dt className="text-sm text-muted-foreground mb-2">Services d&apos;assistance demandés</dt>
+                                        <dt className="text-sm text-muted-foreground mb-2">{t("Services d'assistance demandés")}</dt>
                                         <dd className="mt-1">
                                             <ul className="list-inside list-disc text-sm">
                                                 {demande.services_assistance.map((service) => (
@@ -573,7 +570,7 @@ export default function DemandesAfficher({
                                 <>
                                     <Separator className="my-4" />
                                     <div>
-                                        <dt className="text-sm text-muted-foreground">Manifeste passager (saisi manuellement)</dt>
+                                        <dt className="text-sm text-muted-foreground">{t('Manifeste passager (saisi manuellement)')}</dt>
                                         <dd className="mt-1 whitespace-pre-wrap text-sm">{demande.manifeste_passager_texte}</dd>
                                     </div>
                                 </>
@@ -583,7 +580,7 @@ export default function DemandesAfficher({
                                 <>
                                     <Separator className="my-4" />
                                     <div className="rounded-md bg-red-50 p-3 dark:bg-red-900/20">
-                                        <dt className="text-sm font-medium text-red-800 dark:text-red-200">Motif de rejet</dt>
+                                        <dt className="text-sm font-medium text-red-800 dark:text-red-200">{t('Motif de rejet')}</dt>
                                         <dd className="mt-1 text-sm text-red-700 dark:text-red-300">{demande.motif_rejet}</dd>
                                     </div>
                                 </>
@@ -593,7 +590,7 @@ export default function DemandesAfficher({
                                 <>
                                     <Separator className="my-4" />
                                     <div className="rounded-md bg-emerald-50 p-3 dark:bg-emerald-900/20">
-                                        <dt className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Code d&apos;autorisation (Aviation Civile)</dt>
+                                        <dt className="text-sm font-medium text-emerald-800 dark:text-emerald-200">{t("Code d'autorisation (Aviation Civile)")}</dt>
                                         <dd className="mt-1 font-mono text-sm text-emerald-700 dark:text-emerald-300">{demande.reference_autorisation}</dd>
                                     </div>
                                 </>
@@ -603,12 +600,12 @@ export default function DemandesAfficher({
                                 <>
                                     <Separator className="my-4" />
                                     <div>
-                                        <dt className="text-sm text-muted-foreground">Manifeste passager</dt>
+                                        <dt className="text-sm text-muted-foreground">{t('Manifeste passager')}</dt>
                                         <dd className="mt-1">
                                             <Button variant="outline" size="sm" asChild>
                                                 <a href={`/demandes/${demande.id}/manifeste`} target="_blank" rel="noreferrer">
                                                     <Download className="mr-2 size-4" />
-                                                    Ouvrir le manifeste
+                                                    {t('Ouvrir le manifeste')}
                                                 </a>
                                             </Button>
                                         </dd>
@@ -621,26 +618,26 @@ export default function DemandesAfficher({
                     {/* Section Facture Proforma */}
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle>Facture Proforma</CardTitle>
+                            <CardTitle>{t('Facture Proforma')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-4">
                             {proforma ? (
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Sous-total HT</span>
+                                        <span className="text-muted-foreground">{t('Sous-total HT')}</span>
                                         <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.total_ht - proforma.total_majorations)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Majorations (Nuit/Férié)</span>
+                                        <span className="text-muted-foreground">{t('Majorations (Nuit/Férié)')}</span>
                                         <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.total_majorations)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">TVA (18%)</span>
+                                        <span className="text-muted-foreground">{t('TVA (18%)')}</span>
                                         <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.tva)}</span>
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between font-bold">
-                                        <span>Total TTC</span>
+                                        <span>{t('Total TTC')}</span>
                                         <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.total_ttc)}</span>
                                     </div>
 
@@ -648,13 +645,13 @@ export default function DemandesAfficher({
                                         <Button className="w-full" asChild>
                                             <a href={`/demandes/${demande.id}/proforma`} target="_blank" rel="noreferrer">
                                                 <Download className="mr-2 size-4" />
-                                                Télécharger la facture proforma
+                                                {t('Télécharger la facture proforma')}
                                             </a>
                                         </Button>
                                     </div>
                                 </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground">Calcul en cours ou non disponible.</p>
+                                <p className="text-sm text-muted-foreground">{t('Calcul en cours ou non disponible.')}</p>
                             )}
                         </CardContent>
                     </Card>
@@ -662,7 +659,7 @@ export default function DemandesAfficher({
                     {/* Section Affectations */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Affectations (Planning)</CardTitle>
+                            <CardTitle>{t('Affectations (Planning)')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {demande.affectations?.length > 0 ? (
@@ -675,16 +672,16 @@ export default function DemandesAfficher({
                                                         {affectation.equipement ? `${affectation.equipement.code} - ${affectation.equipement.nom}` : '—'}
                                                     </span>
                                                     <span className="text-muted-foreground">
-                                                        {formatDate(affectation.date_debut)} à {formatDate(affectation.date_fin)}
+                                                        {formatDate(affectation.date_debut)} {t('à')} {formatDate(affectation.date_fin)}
                                                     </span>
                                                 </div>
                                                 <div className="text-sm">
-                                                    <span className="text-muted-foreground">Agent assigné : </span>
-                                                    <span className="font-medium">{affectation.utilisateur_affectation?.name ?? 'Aucun'}</span>
+                                                    <span className="text-muted-foreground">{t('Agent assigné :')} </span>
+                                                    <span className="font-medium">{affectation.utilisateur_affectation?.name ?? t('Aucun')}</span>
                                                 </div>
                                                 {affectation.notes && (
                                                     <p className="mt-1 text-sm italic text-muted-foreground">
-                                                        Notes : {affectation.notes}
+                                                        {t('Notes :')} {affectation.notes}
                                                     </p>
                                                 )}
                                             </div>
@@ -702,7 +699,7 @@ export default function DemandesAfficher({
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground">Aucune ressource affectée pour le moment.</p>
+                                <p className="text-sm text-muted-foreground">{t('Aucune ressource affectée pour le moment.')}</p>
                             )}
 
                             {peutAffecter && (
@@ -714,7 +711,7 @@ export default function DemandesAfficher({
                                     >
                                         <Button>
                                             <CalendarPlus className="mr-2 size-4" />
-                                            Planifier une affectation
+                                            {t('Planifier une affectation')}
                                         </Button>
                                     </ModalAffectation>
                                 </div>
@@ -725,7 +722,7 @@ export default function DemandesAfficher({
                     {/* Commentaires */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Commentaires</CardTitle>
+                            <CardTitle>{t('Commentaires')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {demande.commentaires.length > 0 ? (
@@ -741,24 +738,24 @@ export default function DemandesAfficher({
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground">Aucun commentaire pour le moment.</p>
+                                <p className="text-sm text-muted-foreground">{t('Aucun commentaire pour le moment.')}</p>
                             )}
 
                             <Separator />
                             
                             <form onSubmit={submitComment} className="space-y-3">
-                                <Label htmlFor="contenu" className="sr-only">Nouveau commentaire</Label>
+                                <Label htmlFor="contenu" className="sr-only">{t('Nouveau commentaire')}</Label>
                                 <Textarea
                                     id="contenu"
                                     value={commentData.contenu}
                                     onChange={(e) => setCommentData('contenu', e.target.value)}
-                                    placeholder="Ajouter un commentaire..."
+                                    placeholder={t("Ajouter un commentaire...")}
                                     required
                                 />
                                 <div className="flex justify-end">
                                     <Button type="submit" size="sm" disabled={processingComment}>
                                         <Send className="mr-2 size-4" />
-                                        Envoyer
+                                        {t('Envoyer')}
                                     </Button>
                                 </div>
                             </form>
@@ -768,7 +765,7 @@ export default function DemandesAfficher({
                     {/* Pièces jointes */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Pièces jointes</CardTitle>
+                            <CardTitle>{t('Pièces jointes')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {demande.pieces_jointes?.length > 0 ? (
@@ -788,7 +785,7 @@ export default function DemandesAfficher({
                                                 <Button variant="ghost" size="sm" asChild>
                                                     <a href={`/demandes/${demande.id}/pieces-jointes/${pj.id}`} target="_blank" rel="noreferrer">
                                                         <Download className="mr-2 size-4" />
-                                                        Ouvrir
+                                                        {t('Ouvrir')}
                                                     </a>
                                                 </Button>
                                                 {pj.peutSupprimer && (
@@ -806,7 +803,7 @@ export default function DemandesAfficher({
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground">Aucune pièce jointe.</p>
+                                <p className="text-sm text-muted-foreground">{t('Aucune pièce jointe.')}</p>
                             )}
                             
                             {peutAjouterPieceJointe && (
@@ -815,7 +812,7 @@ export default function DemandesAfficher({
                                     
                                     <form onSubmit={submitPj} className="space-y-3">
                                         <div>
-                                    <Label htmlFor="fichier">Ajouter un fichier</Label>
+                                    <Label htmlFor="fichier">{t('Ajouter un fichier')}</Label>
                                     <div className="mt-1 flex items-center gap-3">
                                         <input
                                             type="file"
@@ -826,7 +823,7 @@ export default function DemandesAfficher({
                                         />
                                         <Button type="submit" size="sm" disabled={processingPj || !pjData.fichier}>
                                             <Send className="mr-2 size-4" />
-                                            Envoyer
+                                            {t('Envoyer')}
                                         </Button>
                                     </div>
                                     {pjErrors.fichier && <p className="mt-1 text-sm text-destructive">{pjErrors.fichier}</p>}
@@ -842,7 +839,7 @@ export default function DemandesAfficher({
                 <div className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Chronologie</CardTitle>
+                            <CardTitle>{t('Chronologie')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
@@ -868,7 +865,7 @@ export default function DemandesAfficher({
                                     </div>
                                 ))}
                                 {demande.validations.length === 0 && (
-                                    <p className="text-sm text-muted-foreground">Aucune action enregistrée.</p>
+                                    <p className="text-sm text-muted-foreground">{t('Aucune action enregistrée.')}</p>
                                 )}
                             </div>
                         </CardContent>
@@ -876,28 +873,28 @@ export default function DemandesAfficher({
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Informations</CardTitle>
+                            <CardTitle>{t('Informations')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Créée par</span>
+                                <span className="text-muted-foreground">{t('Créée par')}</span>
                                 <span>{demande.utilisateur?.name}</span>
                             </div>
                             {demande.date_soumission && (
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Soumise le</span>
+                                    <span className="text-muted-foreground">{t('Soumise le')}</span>
                                     <span>{formatDate(demande.date_soumission)}</span>
                                 </div>
                             )}
                             {demande.date_decision_handling && (
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Décision handling le</span>
+                                    <span className="text-muted-foreground">{t('Décision handling le')}</span>
                                     <span>{formatDate(demande.date_decision_handling)}</span>
                                 </div>
                             )}
                             {demande.date_autorisation && (
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Autorisée le</span>
+                                    <span className="text-muted-foreground">{t('Autorisée le')}</span>
                                     <span>{formatDate(demande.date_autorisation)}</span>
                                 </div>
                             )}

@@ -15,6 +15,11 @@ declare module '@inertiajs/core' {
             sidebarOpen: boolean;
             flash: { success?: string; error?: string; warning?: string; info?: string };
             notificationsNonLues: number;
+            configDesign: {
+                couleur_primaire: string;
+                couleur_secondaire: string;
+                logo_url: string | null;
+            };
             [key: string]: unknown;
         };
     }

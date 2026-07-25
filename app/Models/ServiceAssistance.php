@@ -17,6 +17,7 @@ class ServiceAssistance extends Model
 
     protected $fillable = [
         'code',
+        'categorie',
         'nom',
         'description',
         'tarif_unitaire',

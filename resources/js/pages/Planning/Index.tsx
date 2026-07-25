@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { ChevronLeft, ChevronRight, Plane, Plus } from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
@@ -58,6 +59,7 @@ export default function PlanningIndex({
     agentsDisponibles,
     peutAffecter,
 }: Props) {
+    const { t } = useLaravelReactI18n();
     const [demandeSelectionnee, setDemandeSelectionnee] = useState<number | null>(null);
 
     const demandeObj = demandeSelectionnee 
@@ -65,17 +67,17 @@ export default function PlanningIndex({
         : null;
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Planning', href: '/planning' }]}>
-            <Head title="Planning" />
+        <AppLayout breadcrumbs={[{ title: t('Planning'), href: '/planning' }]}>
+            <Head title={t('Planning')} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="text-2xl font-bold">Planning des opérations</h1>
+                    <h1 className="text-2xl font-bold">{t('Planning des opérations')}</h1>
                     <div className="flex items-center gap-2">
                         <Button
                             variant="outline"
                             size="icon"
                             onClick={() => router.get('/planning', { semaine: semainePrecedente })}
-                            aria-label="Semaine précédente"
+                            aria-label={t('Semaine précédente')}
                         >
                             <ChevronLeft className="size-4" />
                         </Button>
@@ -86,7 +88,7 @@ export default function PlanningIndex({
                             variant="outline"
                             size="icon"
                             onClick={() => router.get('/planning', { semaine: semaineSuivante })}
-                            aria-label="Semaine suivante"
+                            aria-label={t('Semaine suivante')}
                         >
                             <ChevronRight className="size-4" />
                         </Button>
@@ -132,7 +134,7 @@ export default function PlanningIndex({
                                                     variant="secondary"
                                                     size="icon"
                                                     className="absolute bottom-1 right-1 size-6 shadow-sm z-10"
-                                                    title="Affecter une ressource"
+                                                    title={t('Affecter une ressource')}
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
@@ -159,7 +161,7 @@ export default function PlanningIndex({
             <Dialog open={demandeSelectionnee !== null} onOpenChange={(open) => !open && setDemandeSelectionnee(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Affecter une ressource</DialogTitle>
+                        <DialogTitle>{t('Affecter une ressource')}</DialogTitle>
                         <DialogDescription>
                             {demandeObj ? `Vol ${demandeObj.numero_vol} - ${demandeObj.compagnie}` : ''}
                         </DialogDescription>

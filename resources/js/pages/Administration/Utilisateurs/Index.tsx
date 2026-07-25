@@ -21,6 +21,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 interface Utilisateur {
     id: number;
@@ -56,20 +57,22 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, compagni
         router.get('/administration/utilisateurs', { ...filtres, recherche: recherche || undefined, ...patch }, { preserveState: true, replace: true });
     }
 
+    const { t } = useLaravelReactI18n();
+
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Utilisateurs', href: '/administration/utilisateurs' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Utilisateurs'), href: '/administration/utilisateurs' },
         ]}>
-            <Head title="Administration - Utilisateurs" />
+            <Head title={t("Administration - Utilisateurs")} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="text-2xl font-bold">Gestion des utilisateurs</h1>
+                    <h1 className="text-2xl font-bold">{t('Gestion des utilisateurs')}</h1>
                     <div className="flex flex-wrap items-center gap-2">
                         <Button asChild>
                             <Link href="/administration/utilisateurs/creer">
                                 <Plus className="mr-2 size-4" />
-                                Nouvel utilisateur
+                                {t('Nouvel utilisateur')}
                             </Link>
                         </Button>
                     </div>
@@ -89,7 +92,7 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, compagni
                             <div className="relative w-full max-w-sm">
                                 <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
-                                    placeholder="Rechercher (nom, email)..."
+                                    placeholder={t("Rechercher (nom, email)...")}
                                     value={recherche}
                                     onChange={(e) => setRecherche(e.target.value)}
                                     className="pl-9"
@@ -102,13 +105,13 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, compagni
                             onValueChange={(val) => appliquerFiltres({ statut: val === 'all' ? undefined : val })}
                         >
                             <SelectTrigger className="w-[200px] bg-background">
-                                <SelectValue placeholder="Statut" />
+                                <SelectValue placeholder={t("Statut")} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Tous les statuts</SelectItem>
-                                <SelectItem value="actif">Actif</SelectItem>
-                                <SelectItem value="en_attente">En attente de validation</SelectItem>
-                                <SelectItem value="suspendu">Suspendu</SelectItem>
+                                <SelectItem value="all">{t('Tous les statuts')}</SelectItem>
+                                <SelectItem value="actif">{t('Actif')}</SelectItem>
+                                <SelectItem value="en_attente">{t('En attente de validation')}</SelectItem>
+                                <SelectItem value="suspendu">{t('Suspendu')}</SelectItem>
                             </SelectContent>
                         </Select>
 
@@ -117,10 +120,10 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, compagni
                             onValueChange={(val) => appliquerFiltres({ compagnie_id: val === 'all' ? undefined : val })}
                         >
                             <SelectTrigger className="w-[220px] bg-background">
-                                <SelectValue placeholder="Compagnie" />
+                                <SelectValue placeholder={t("Compagnie")} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Toutes les compagnies</SelectItem>
+                                <SelectItem value="all">{t('Toutes les compagnies')}</SelectItem>
                                 {compagnies.map((c) => (
                                     <SelectItem key={c.id} value={String(c.id)}>{c.nom}</SelectItem>
                                 ))}
@@ -135,12 +138,12 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, compagni
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left font-medium">Nom</th>
-                                        <th className="px-4 py-3 text-left font-medium">Email</th>
-                                        <th className="px-4 py-3 text-left font-medium">Compagnie</th>
-                                        <th className="px-4 py-3 text-left font-medium">Rôles</th>
-                                        <th className="px-4 py-3 text-left font-medium">Statut</th>
-                                        <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Nom')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Email')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Compagnie')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Rôles')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Statut')}</th>
+                                        <th className="px-4 py-3 text-right font-medium">{t('Actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -177,17 +180,17 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, compagni
                                                         </Badge>
                                                     ))}
                                                     {u.roles.length === 0 && (
-                                                        <span className="text-xs text-muted-foreground">Aucun</span>
+                                                        <span className="text-xs text-muted-foreground">{t('Aucun')}</span>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 {u.actif ? (
-                                                    <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">Actif</Badge>
+                                                    <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">{t('Actif')}</Badge>
                                                 ) : enAttente ? (
-                                                    <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">En attente de validation</Badge>
+                                                    <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">{t('En attente de validation')}</Badge>
                                                 ) : (
-                                                    <Badge variant="destructive">Suspendu</Badge>
+                                                    <Badge variant="destructive">{t('Suspendu')}</Badge>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-right">
@@ -200,7 +203,7 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, compagni
                                                                 </Link>
                                                             </Button>
                                                         </TooltipTrigger>
-                                                        <TooltipContent>Éditer l'utilisateur</TooltipContent>
+                                                        <TooltipContent>{t("Éditer l'utilisateur")}</TooltipContent>
                                                     </Tooltip>
 
                                                     <AlertDialog>
@@ -216,27 +219,27 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, compagni
                                                                     </Button>
                                                                 </AlertDialogTrigger>
                                                             </TooltipTrigger>
-                                                            <TooltipContent>{u.actif ? 'Suspendre le compte' : 'Activer le compte'}</TooltipContent>
+                                                            <TooltipContent>{u.actif ? t('Suspendre le compte') : t('Activer le compte')}</TooltipContent>
                                                         </Tooltip>
                                                         <AlertDialogContent>
                                                             <AlertDialogHeader>
-                                                                <AlertDialogTitle>{u.actif ? 'Suspendre le compte' : 'Activer le compte'}</AlertDialogTitle>
+                                                                <AlertDialogTitle>{u.actif ? t('Suspendre le compte') : t('Activer le compte')}</AlertDialogTitle>
                                                                 <AlertDialogDescription>
-                                                                    Voulez-vous vraiment {u.actif ? 'suspendre' : 'activer'} le compte de <strong>{u.name}</strong> ?
+                                                                    {t('Voulez-vous vraiment')} {u.actif ? t('suspendre') : t('activer')} {t('le compte de')} <strong>{u.name}</strong> ?
                                                                     {u.actif
-                                                                        ? " Il ne pourra plus se connecter à l'application."
+                                                                        ? " " + t("Il ne pourra plus se connecter à l'application.")
                                                                         : u.compagnie
-                                                                            ? ` Sa compagnie « ${u.compagnie} » sera également activée si elle est encore en attente.`
-                                                                            : ' Il pourra alors se connecter à l\'application.'}
+                                                                            ? ` ${t("Sa compagnie «")} ${u.compagnie} ${t("» sera également activée si elle est encore en attente.")}`
+                                                                            : ` ${t("Il pourra alors se connecter à l'application.")}`}
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
-                                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                                <AlertDialogCancel>{t('Annuler')}</AlertDialogCancel>
                                                                 <AlertDialogAction
                                                                     className={u.actif ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-500 hover:bg-emerald-600'}
                                                                     onClick={() => router.patch(`/administration/utilisateurs/${u.id}/statut`)}
                                                                 >
-                                                                    Confirmer
+                                                                    {t('Confirmer')}
                                                                 </AlertDialogAction>
                                                             </AlertDialogFooter>
                                                         </AlertDialogContent>
@@ -255,22 +258,22 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, compagni
                                                                     </Button>
                                                                 </AlertDialogTrigger>
                                                             </TooltipTrigger>
-                                                            <TooltipContent>Supprimer le compte</TooltipContent>
+                                                            <TooltipContent>{t('Supprimer le compte')}</TooltipContent>
                                                         </Tooltip>
                                                         <AlertDialogContent>
                                                             <AlertDialogHeader>
-                                                                <AlertDialogTitle>Supprimer le compte</AlertDialogTitle>
+                                                                <AlertDialogTitle>{t('Supprimer le compte')}</AlertDialogTitle>
                                                                 <AlertDialogDescription>
-                                                                    Voulez-vous vraiment supprimer cet utilisateur ? Cette action placera le compte dans la corbeille.
+                                                                    {t('Voulez-vous vraiment supprimer cet utilisateur ? Cette action placera le compte dans la corbeille.')}
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
-                                                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                                                <AlertDialogCancel>{t('Annuler')}</AlertDialogCancel>
                                                                 <AlertDialogAction
                                                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                                                     onClick={() => router.delete(`/administration/utilisateurs/${u.id}`)}
                                                                 >
-                                                                    Supprimer
+                                                                    {t('Supprimer')}
                                                                 </AlertDialogAction>
                                                             </AlertDialogFooter>
                                                         </AlertDialogContent>
@@ -283,7 +286,7 @@ export default function AdministrationUtilisateursIndex({ utilisateurs, compagni
                                     {utilisateurs.data.length === 0 && (
                                         <tr>
                                             <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
-                                                Aucun utilisateur trouvé.
+                                                {t('Aucun utilisateur trouvé.')}
                                             </td>
                                         </tr>
                                     )}

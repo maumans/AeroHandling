@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use App\Enums\NatureVol;
 use App\Models\Demande;
+use App\Models\NatureVol;
 use App\Models\ServiceAssistance;
 use App\Services\GrilleTarifaire;
 use App\Services\ProformaService;
@@ -19,7 +19,7 @@ class ProformaServiceTest extends TestCase
     {
         $demande = Demande::factory()->create([
             'mtow' => 50,
-            'nature_vol' => NatureVol::Passager,
+            'nature_vol_id' => NatureVol::factory()->create(['nom' => 'Passager', 'code' => 'passager', 'est_cargo' => false])->id,
             'date_arrivee' => Carbon::parse('2026-07-08 10:00:00'), // Mercredi, pas un jour férié, pas de nuit
         ]);
 
@@ -28,7 +28,7 @@ class ProformaServiceTest extends TestCase
         ]);
         $demande->servicesAssistance()->attach($serviceAssistance);
 
-        $grille = new GrilleTarifaire();
+        $grille = new GrilleTarifaire;
         $proformaService = new ProformaService($grille);
 
         $resultat = $proformaService->calculer($demande);

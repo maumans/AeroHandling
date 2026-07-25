@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\JourFerie;
+use App\Models\Parametre;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 
 /**
@@ -14,12 +16,34 @@ use Illuminate\Support\Carbon;
  */
 class GrilleTarifaire
 {
+    private ?array $parametresBase = null;
+
+    private function getParametre(string $cle, $default = null)
+    {
+        if ($this->parametresBase === null) {
+            $this->parametresBase = Parametre::all()->pluck('valeur', 'cle')->toArray();
+        }
+
+        if (array_key_exists($cle, $this->parametresBase)) {
+            return $this->parametresBase[$cle];
+        }
+
+        $segments = explode('.', $cle);
+        $rootKey = array_shift($segments);
+
+        if (array_key_exists($rootKey, $this->parametresBase)) {
+            return Arr::get($this->parametresBase[$rootKey], implode('.', $segments), $default);
+        }
+
+        return config("tarifs.{$cle}", $default);
+    }
+
     /**
      * Détermine la catégorie tarifaire (1 à 10) correspondant au MTOW (tonnes).
      */
     public function categoriePourMtow(float $mtow): int
     {
-        $categories = config('tarifs.categories_mtow', []);
+        $categories = $this->getParametre('categories_mtow', []);
 
         foreach ($categories as $palier) {
             if ($palier['max'] === null || $mtow <= (float) $palier['max']) {
@@ -36,7 +60,7 @@ class GrilleTarifaire
      */
     public function forfaitBase(int $categorie, bool $estCargo): float
     {
-        $forfaits = config('tarifs.forfait_base', []);
+        $forfaits = $this->getParametre('forfait_base', []);
         $ligne = $forfaits[$categorie] ?? null;
 
         if ($ligne === null) {
@@ -60,8 +84,8 @@ class GrilleTarifaire
      */
     public function estServiceDeNuit(CarbonInterface $date): bool
     {
-        $config = config('tarifs.majorations.nuit');
-        $fuseau = config('tarifs.fuseau_horaire', config('app.timezone'));
+        $config = $this->getParametre('majorations.nuit');
+        $fuseau = $this->getParametre('fuseau_horaire', config('app.timezone'));
 
         $locale = Carbon::instance($date instanceof Carbon ? $date : Carbon::parse($date))->setTimezone($fuseau);
         $heure = $locale->format('H:i');
@@ -80,7 +104,7 @@ class GrilleTarifaire
      */
     public function estJourFerie(CarbonInterface $date): bool
     {
-        $fuseau = config('tarifs.fuseau_horaire', config('app.timezone'));
+        $fuseau = $this->getParametre('fuseau_horaire', config('app.timezone'));
         $locale = Carbon::instance($date instanceof Carbon ? $date : Carbon::parse($date))->setTimezone($fuseau);
 
         $dateExacte = $locale->toDateString();
@@ -101,42 +125,45 @@ class GrilleTarifaire
 
     public function tauxMajorationNuit(): float
     {
-        return (float) config('tarifs.majorations.nuit.taux', 0);
+        return (float) $this->getParametre('majorations.nuit.taux', 0);
     }
 
     public function tauxMajorationJourFerie(): float
     {
-        return (float) config('tarifs.majorations.jour_ferie.taux', 0);
+        return (float) $this->getParametre('majorations.jour_ferie.taux', 0);
     }
 
     public function devise(): string
     {
-        return (string) config('tarifs.devise', 'EUR');
+        return (string) $this->getParametre('devise', 'EUR');
     }
 
     public function tarifPushback(int $categorie): float
     {
-        $tarifs = config("tarifs.repoussage_tractage.{$categorie}");
+        $tarifs = $this->getParametre("repoussage_tractage.{$categorie}");
+
         return (float) ($tarifs['repoussage'] ?? 0.0);
     }
 
     public function tarifTractage(int $categorie): float
     {
-        $tarifs = config("tarifs.repoussage_tractage.{$categorie}");
+        $tarifs = $this->getParametre("repoussage_tractage.{$categorie}");
+
         return (float) ($tarifs['tractage'] ?? 0.0);
     }
 
     public function tarifPasserelleTelescopique(int $categorie): float
     {
         // Tarif estimé pour 1 heure (4 quarts d'heure) pour la proforma
-        $tarifQuartHeure = config('tarifs.passerelle_telescopique.0.tarif_quart_heure', 0);
+        $tarifQuartHeure = $this->getParametre('passerelle_telescopique.0.tarif_quart_heure', 0);
+
         return (float) ($tarifQuartHeure * 4);
     }
 
     public function tarifManipulationFret(float $tonnes): float
     {
-        // On utilise le tarif Import (200€) par défaut. 
+        // On utilise le tarif Import (200€) par défaut.
         // Si besoin d'être plus granulaire (Export, etc.), cela pourra être ajouté via le type de demande.
-        return (float) config('tarifs.fret.import', 0.0);
+        return (float) $this->getParametre('fret.import', 0.0);
     }
 }

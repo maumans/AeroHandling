@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ROLE_LIBELLE } from '@/lib/couleurs';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 interface Compagnie {
     id: number;
@@ -28,6 +29,7 @@ export default function AdministrationUtilisateursCreer({ roles, compagnies }: P
         role: '',
         compagnie_id: '',
     });
+    const { t } = useLaravelReactI18n();
 
     function soumettre(e: React.FormEvent) {
         e.preventDefault();
@@ -36,11 +38,11 @@ export default function AdministrationUtilisateursCreer({ roles, compagnies }: P
 
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Utilisateurs', href: '/administration/utilisateurs' },
-            { title: 'Nouvel utilisateur', href: '/administration/utilisateurs/creer' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Utilisateurs'), href: '/administration/utilisateurs' },
+            { title: t('Nouvel utilisateur'), href: '/administration/utilisateurs/creer' },
         ]}>
-            <Head title="Nouvel utilisateur" />
+            <Head title={t("Nouvel utilisateur")} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" asChild>
@@ -48,23 +50,23 @@ export default function AdministrationUtilisateursCreer({ roles, compagnies }: P
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
-                    <h1 className="text-2xl font-bold">Nouvel utilisateur</h1>
+                    <h1 className="text-2xl font-bold">{t('Nouvel utilisateur')}</h1>
                 </div>
 
                 <Card className="max-w-xl">
                     <CardHeader>
-                        <CardTitle>Informations du compte</CardTitle>
+                        <CardTitle>{t('Informations du compte')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={soumettre} className="flex flex-col gap-4">
                             {/* Nom */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="name">Nom complet <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="name">{t('Nom complet')} <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="name"
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="Prénom Nom"
+                                    placeholder={t("Prénom Nom")}
                                     autoFocus
                                 />
                                 {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
@@ -72,7 +74,7 @@ export default function AdministrationUtilisateursCreer({ roles, compagnies }: P
 
                             {/* Email */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="email">Adresse e-mail <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="email">{t('Adresse e-mail')} <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -85,35 +87,35 @@ export default function AdministrationUtilisateursCreer({ roles, compagnies }: P
 
                             {/* Mot de passe */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="password">Mot de passe <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="password">{t('Mot de passe')} <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="password"
                                     type="password"
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
-                                    placeholder="Minimum 8 caractères"
+                                    placeholder={t("Minimum 8 caractères")}
                                 />
                                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                             </div>
 
                             {/* Confirmation mot de passe */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="password_confirmation">Confirmer le mot de passe <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="password_confirmation">{t('Confirmer le mot de passe')} <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="password_confirmation"
                                     type="password"
                                     value={data.password_confirmation}
                                     onChange={(e) => setData('password_confirmation', e.target.value)}
-                                    placeholder="Répéter le mot de passe"
+                                    placeholder={t("Répéter le mot de passe")}
                                 />
                             </div>
 
                             {/* Rôle */}
                             <div className="flex flex-col gap-1.5">
-                                <Label>Rôle <span className="text-destructive">*</span></Label>
+                                <Label>{t('Rôle')} <span className="text-destructive">*</span></Label>
                                 <Select value={data.role} onValueChange={(v) => setData('role', v)}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Sélectionner un rôle" />
+                                        <SelectValue placeholder={t("Sélectionner un rôle")} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {roles.map((role) => (
@@ -128,16 +130,16 @@ export default function AdministrationUtilisateursCreer({ roles, compagnies }: P
 
                             {/* Compagnie */}
                             <div className="flex flex-col gap-1.5">
-                                <Label>Compagnie <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
+                                <Label>{t('Compagnie')} <span className="text-muted-foreground text-xs">({t('optionnel')})</span></Label>
                                 <Select
                                     value={data.compagnie_id}
                                     onValueChange={(v) => setData('compagnie_id', v === 'aucune' ? '' : v)}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Aucune compagnie associée" />
+                                        <SelectValue placeholder={t("Aucune compagnie associée")} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="aucune">— Aucune —</SelectItem>
+                                        <SelectItem value="aucune">— {t('Aucune')} —</SelectItem>
                                         {compagnies.map((c) => (
                                             <SelectItem key={c.id} value={String(c.id)}>
                                                 {c.nom}
@@ -150,10 +152,10 @@ export default function AdministrationUtilisateursCreer({ roles, compagnies }: P
 
                             <div className="flex justify-end gap-2 pt-2">
                                 <Button type="button" variant="outline" asChild>
-                                    <Link href="/administration/utilisateurs">Annuler</Link>
+                                    <Link href="/administration/utilisateurs">{t('Annuler')}</Link>
                                 </Button>
                                 <Button type="submit" disabled={processing}>
-                                    {processing ? 'Création...' : 'Créer l\'utilisateur'}
+                                    {processing ? t('Création...') : t("Créer l'utilisateur")}
                                 </Button>
                             </div>
                         </form>

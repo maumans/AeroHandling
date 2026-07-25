@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 interface CapaciteStockage {
     id: number;
@@ -24,6 +25,7 @@ export default function ParametresStockage({ capacites }: Props) {
         capacites.map((c) => ({ ...c }))
     );
     const [processing, setProcessing] = useState(false);
+    const { t } = useLaravelReactI18n();
 
     const handleChange = (id: number, field: keyof CapaciteStockage, value: string | number) => {
         setFormData((prev) =>
@@ -41,16 +43,16 @@ export default function ParametresStockage({ capacites }: Props) {
 
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Paramètres de Stockage', href: '/administration/parametres-stockage' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Paramètres de Stockage'), href: '/administration/parametres-stockage' },
         ]}>
-            <Head title="Paramètres de Stockage" />
+            <Head title={t("Paramètres de Stockage")} />
 
             <div className="p-6">
                 <div className="mb-6 flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold">Paramètres de Stockage</h1>
-                        <p className="text-muted-foreground">Configurer les capacités maximales et les seuils d'alerte par zone.</p>
+                        <h1 className="text-2xl font-bold">{t('Paramètres de Stockage')}</h1>
+                        <p className="text-muted-foreground">{t("Configurer les capacités maximales et les seuils d'alerte par zone.")}</p>
                     </div>
                 </div>
 
@@ -58,12 +60,12 @@ export default function ParametresStockage({ capacites }: Props) {
                     {formData.map((capacite) => (
                         <Card key={capacite.id}>
                             <CardHeader>
-                                <CardTitle>Zone : {capacite.zone_libelle}</CardTitle>
-                                <CardDescription>Identifiant interne : {capacite.zone}</CardDescription>
+                                <CardTitle>{t('Zone :')} {capacite.zone_libelle}</CardTitle>
+                                <CardDescription>{t('Identifiant interne :')} {capacite.zone}</CardDescription>
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor={`capacite_max_${capacite.id}`}>Capacité Maximale (Tonnes)</Label>
+                                    <Label htmlFor={`capacite_max_${capacite.id}`}>{t('Capacité Maximale (Tonnes)')}</Label>
                                     <Input
                                         id={`capacite_max_${capacite.id}`}
                                         type="number"
@@ -75,7 +77,7 @@ export default function ParametresStockage({ capacites }: Props) {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor={`seuil_${capacite.id}`}>Seuil d'alerte (%)</Label>
+                                    <Label htmlFor={`seuil_${capacite.id}`}>{t("Seuil d'alerte (%)")}</Label>
                                     <Input
                                         id={`seuil_${capacite.id}`}
                                         type="number"
@@ -93,7 +95,7 @@ export default function ParametresStockage({ capacites }: Props) {
                     <div className="flex justify-end">
                         <Button type="submit" disabled={processing}>
                             <Save className="mr-2 size-4" />
-                            Enregistrer les paramètres
+                            {t('Enregistrer les paramètres')}
                         </Button>
                     </div>
                 </form>

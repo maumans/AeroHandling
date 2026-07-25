@@ -79,14 +79,15 @@ class RapportController extends Controller
             ->map(fn ($ligne) => ['libelle' => $ligne->type_aeronef, 'total' => $ligne->total]);
 
         $parNatureVol = $periode()
-            ->whereNotNull('nature_vol')
-            ->selectRaw('nature_vol, count(*) as total')
-            ->groupBy('nature_vol')
+            ->whereNotNull('nature_vol_id')
+            ->selectRaw('nature_vol_id, count(*) as total')
+            ->groupBy('nature_vol_id')
             ->orderByDesc('total')
+            ->with('natureVol')
             ->get()
             ->map(fn ($ligne) => [
-                'libelle' => $ligne->nature_vol instanceof \App\Enums\NatureVol ? $ligne->nature_vol->libelle() : (\App\Enums\NatureVol::tryFrom($ligne->nature_vol)?->libelle() ?? $ligne->nature_vol),
-                'total' => $ligne->total
+                'libelle' => $ligne->natureVol ? $ligne->natureVol->nom : 'N/A',
+                'total' => $ligne->total,
             ]);
 
         $parImmatriculation = $periode()
@@ -196,14 +197,15 @@ class RapportController extends Controller
                 ->map(fn ($ligne) => ['libelle' => $ligne->type_aeronef, 'total' => $ligne->total]);
 
             $parNatureVol = $periode()
-                ->whereNotNull('nature_vol')
-                ->selectRaw('nature_vol, count(*) as total')
-                ->groupBy('nature_vol')
+                ->whereNotNull('nature_vol_id')
+                ->selectRaw('nature_vol_id, count(*) as total')
+                ->groupBy('nature_vol_id')
                 ->orderByDesc('total')
+                ->with('natureVol')
                 ->get()
                 ->map(fn ($ligne) => [
-                    'libelle' => $ligne->nature_vol instanceof \App\Enums\NatureVol ? $ligne->nature_vol->libelle() : (\App\Enums\NatureVol::tryFrom($ligne->nature_vol)?->libelle() ?? $ligne->nature_vol),
-                    'total' => $ligne->total
+                    'libelle' => $ligne->natureVol ? $ligne->natureVol->nom : 'N/A',
+                    'total' => $ligne->total,
                 ]);
 
             $pdf = Pdf::loadView('exports.rapport', compact('debut', 'fin', 'indicateurs', 'parCompagnie', 'parTonnage', 'parTypeAeronef', 'parNatureVol'));

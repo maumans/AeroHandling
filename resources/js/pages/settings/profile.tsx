@@ -1,4 +1,5 @@
 import { Form, Head, usePage } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -14,18 +15,19 @@ type PageProps = {
 
 export default function Profile() {
     const { auth } = usePage<PageProps>().props;
+    const { t } = useLaravelReactI18n();
 
     return (
         <>
-            <Head title="Paramètres du profil" />
+            <Head title={t('Paramètres du profil')} />
 
-            <h1 className="sr-only">Paramètres du profil</h1>
+            <h1 className="sr-only">{t('Paramètres du profil')}</h1>
 
             <div className="space-y-6">
                 <Heading
                     variant="small"
-                    title="Profil"
-                    description="Mettez à jour votre nom et votre adresse e-mail"
+                    title={t('Profil')}
+                    description={t('Mettez à jour votre nom et votre adresse e-mail')}
                 />
 
                 <Form
@@ -38,7 +40,7 @@ export default function Profile() {
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Nom</Label>
+                                <Label htmlFor="name">{t('Nom')}</Label>
 
                                 <Input
                                     id="name"
@@ -47,7 +49,7 @@ export default function Profile() {
                                     name="name"
                                     required
                                     autoComplete="name"
-                                    placeholder="Nom complet"
+                                    placeholder={t('Nom complet')}
                                 />
 
                                 <InputError
@@ -57,7 +59,7 @@ export default function Profile() {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Adresse e-mail</Label>
+                                <Label htmlFor="email">{t('Adresse e-mail')}</Label>
 
                                 <Input
                                     id="email"
@@ -67,7 +69,7 @@ export default function Profile() {
                                     name="email"
                                     required
                                     autoComplete="username"
-                                    placeholder="Adresse e-mail"
+                                    placeholder={t('Adresse e-mail')}
                                 />
 
                                 <InputError
@@ -81,7 +83,7 @@ export default function Profile() {
                                     disabled={processing}
                                     data-test="update-profile-button"
                                 >
-                                    Enregistrer
+                                    {t('Enregistrer')}
                                 </Button>
                             </div>
                         </>

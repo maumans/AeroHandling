@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ROLE_LIBELLE } from '@/lib/couleurs';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 
 interface Compagnie {
     id: number;
@@ -37,6 +38,7 @@ export default function AdministrationUtilisateursEditer({ utilisateur, roles, c
         role: utilisateur.role ?? '',
         compagnie_id: utilisateur.compagnie_id ? String(utilisateur.compagnie_id) : '',
     });
+    const { t } = useLaravelReactI18n();
 
     function soumettre(e: React.FormEvent) {
         e.preventDefault();
@@ -45,11 +47,11 @@ export default function AdministrationUtilisateursEditer({ utilisateur, roles, c
 
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Administration', href: '/administration/utilisateurs' },
-            { title: 'Utilisateurs', href: '/administration/utilisateurs' },
+            { title: t('Administration'), href: '/administration/utilisateurs' },
+            { title: t('Utilisateurs'), href: '/administration/utilisateurs' },
             { title: utilisateur.name, href: `/administration/utilisateurs/${utilisateur.id}/editer` },
         ]}>
-            <Head title={`Modifier — ${utilisateur.name}`} />
+            <Head title={`${t('Modifier')} — ${utilisateur.name}`} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" asChild>
@@ -57,7 +59,7 @@ export default function AdministrationUtilisateursEditer({ utilisateur, roles, c
                             <ArrowLeft className="size-4" />
                         </Link>
                     </Button>
-                    <h1 className="text-2xl font-bold">Modifier l'utilisateur</h1>
+                    <h1 className="text-2xl font-bold">{t("Modifier l'utilisateur")}</h1>
                 </div>
 
                 <Card className="max-w-xl">
@@ -68,7 +70,7 @@ export default function AdministrationUtilisateursEditer({ utilisateur, roles, c
                         <form onSubmit={soumettre} className="flex flex-col gap-4">
                             {/* Nom */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="name">Nom complet <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="name">{t('Nom complet')} <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="name"
                                     value={data.name}
@@ -79,7 +81,7 @@ export default function AdministrationUtilisateursEditer({ utilisateur, roles, c
 
                             {/* Email */}
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="email">Adresse e-mail <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="email">{t('Adresse e-mail')} <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -92,22 +94,22 @@ export default function AdministrationUtilisateursEditer({ utilisateur, roles, c
                             {/* Nouveau mot de passe */}
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="password">
-                                    Nouveau mot de passe{' '}
-                                    <span className="text-muted-foreground text-xs">(laisser vide pour ne pas modifier)</span>
+                                    {t('Nouveau mot de passe')}{' '}
+                                    <span className="text-muted-foreground text-xs">({t('laisser vide pour ne pas modifier')})</span>
                                 </Label>
                                 <Input
                                     id="password"
                                     type="password"
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
-                                    placeholder="Minimum 8 caractères"
+                                    placeholder={t("Minimum 8 caractères")}
                                 />
                                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                             </div>
 
                             {data.password && (
                                 <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="password_confirmation">Confirmer le nouveau mot de passe</Label>
+                                    <Label htmlFor="password_confirmation">{t('Confirmer le nouveau mot de passe')}</Label>
                                     <Input
                                         id="password_confirmation"
                                         type="password"
@@ -119,10 +121,10 @@ export default function AdministrationUtilisateursEditer({ utilisateur, roles, c
 
                             {/* Rôle */}
                             <div className="flex flex-col gap-1.5">
-                                <Label>Rôle <span className="text-destructive">*</span></Label>
+                                <Label>{t('Rôle')} <span className="text-destructive">*</span></Label>
                                 <Select value={data.role} onValueChange={(v) => setData('role', v)}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Sélectionner un rôle" />
+                                        <SelectValue placeholder={t("Sélectionner un rôle")} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {roles.map((role) => (
@@ -137,16 +139,16 @@ export default function AdministrationUtilisateursEditer({ utilisateur, roles, c
 
                             {/* Compagnie */}
                             <div className="flex flex-col gap-1.5">
-                                <Label>Compagnie <span className="text-muted-foreground text-xs">(optionnel)</span></Label>
+                                <Label>{t('Compagnie')} <span className="text-muted-foreground text-xs">({t('optionnel')})</span></Label>
                                 <Select
                                     value={data.compagnie_id || 'aucune'}
                                     onValueChange={(v) => setData('compagnie_id', v === 'aucune' ? '' : v)}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Aucune compagnie associée" />
+                                        <SelectValue placeholder={t("Aucune compagnie associée")} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="aucune">— Aucune —</SelectItem>
+                                        <SelectItem value="aucune">— {t('Aucune')} —</SelectItem>
                                         {compagnies.map((c) => (
                                             <SelectItem key={c.id} value={String(c.id)}>
                                                 {c.nom}
@@ -159,10 +161,10 @@ export default function AdministrationUtilisateursEditer({ utilisateur, roles, c
 
                             <div className="flex justify-end gap-2 pt-2">
                                 <Button type="button" variant="outline" asChild>
-                                    <Link href="/administration/utilisateurs">Annuler</Link>
+                                    <Link href="/administration/utilisateurs">{t('Annuler')}</Link>
                                 </Button>
                                 <Button type="submit" disabled={processing}>
-                                    {processing ? 'Enregistrement...' : 'Enregistrer'}
+                                    {processing ? t('Enregistrement...') : t('Enregistrer')}
                                 </Button>
                             </div>
                         </form>

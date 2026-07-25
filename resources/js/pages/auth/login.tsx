@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Form, Head } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -19,9 +20,10 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
+    const { t } = useLaravelReactI18n();
     useEffect(() => {
         if (status) {
-            toast.success('Inscription réussie', {
+            toast.success(t('Inscription réussie'), {
                 description: status,
                 position: 'top-right',
                 duration: 6000,
@@ -31,7 +33,7 @@ export default function Login({ status, canResetPassword }: Props) {
 
     return (
         <>
-            <Head title="Connexion" />
+            <Head title={t('Connexion')} />
 
             <Form
                 {...store.form()}
@@ -42,7 +44,7 @@ export default function Login({ status, canResetPassword }: Props) {
                     <>
                         <div className="grid gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Adresse email</Label>
+                                <Label htmlFor="email">{t('Adresse email')}</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -58,14 +60,14 @@ export default function Login({ status, canResetPassword }: Props) {
 
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password">Mot de passe</Label>
+                                    <Label htmlFor="password">{t('Mot de passe')}</Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
                                             className="ml-auto text-sm"
                                             tabIndex={5}
                                         >
-                                            Mot de passe oublié ?
+                                            {t('Mot de passe oublié ?')}
                                         </TextLink>
                                     )}
                                 </div>
@@ -86,7 +88,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                     name="remember"
                                     tabIndex={3}
                                 />
-                                <Label htmlFor="remember">Se souvenir de moi</Label>
+                                <Label htmlFor="remember">{t('Se souvenir de moi')}</Label>
                             </div>
 
                             <Button
@@ -97,16 +99,16 @@ export default function Login({ status, canResetPassword }: Props) {
                                 data-test="login-button"
                             >
                                 {processing && <Spinner />}
-                                Se connecter
+                                {t('Se connecter')}
                             </Button>
                         </div>
 
                         <p className="text-center text-xs text-muted-foreground">
-                            Vous représentez une compagnie ?{' '}
-                            <TextLink href={afficher()}>Créer un compte</TextLink>
+                            {t('Vous représentez une compagnie ?')}{' '}
+                            <TextLink href={afficher()}>{t('Créer un compte')}</TextLink>
                         </p>
                         <p className="text-center text-xs text-muted-foreground">
-                            Comptes internes (Handling, Aviation Civile, Administration) créés par un administrateur.
+                            {t('Comptes internes (Handling, Aviation Civile, Administration) créés par un administrateur.')}
                         </p>
                     </>
                 )}

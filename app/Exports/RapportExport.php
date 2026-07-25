@@ -2,21 +2,20 @@
 
 namespace App\Exports;
 
-use App\Enums\NatureVol;
 use App\Enums\StatutDemande;
 use App\Models\Demande;
 use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class RapportExport implements FromQuery, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
+class RapportExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
     use Exportable;
 
@@ -64,9 +63,7 @@ class RapportExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
 
     public function map($demande): array
     {
-        $nature = $demande->nature_vol instanceof NatureVol
-            ? $demande->nature_vol->libelle()
-            : (is_string($demande->nature_vol) ? NatureVol::tryFrom($demande->nature_vol)?->libelle() ?? $demande->nature_vol : '');
+        $nature = $demande->natureVol ? $demande->natureVol->nom : 'N/A';
 
         $statut = $demande->statut instanceof StatutDemande
             ? $demande->statut->libelle()
@@ -104,7 +101,7 @@ class RapportExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
             ],
             'A:L' => [
                 'alignment' => [
-                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
                 ],
             ],
         ];
