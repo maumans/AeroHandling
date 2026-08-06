@@ -2,6 +2,7 @@ import * as React from "react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { Calendar as CalendarIcon } from "lucide-react"
+import { useLaravelReactI18n } from "laravel-react-i18n"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -19,9 +20,11 @@ export interface DatePickerProps {
   className?: string
 }
 
-export function DatePicker({ value, onChange, placeholder = "Sélectionner une date", className }: DatePickerProps) {
+export function DatePicker({ value, onChange, placeholder, className }: DatePickerProps) {
+  const { t } = useLaravelReactI18n()
   const [open, setOpen] = React.useState(false)
   const date = value ? new Date(value) : undefined
+  const resolvedPlaceholder = placeholder ?? t("Sélectionner une date")
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -35,7 +38,7 @@ export function DatePicker({ value, onChange, placeholder = "Sélectionner une d
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "P", { locale: fr }) : <span>{placeholder}</span>}
+          {date ? format(date, "P", { locale: fr }) : <span>{resolvedPlaceholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 bg-background border shadow-md rounded-md z-50">

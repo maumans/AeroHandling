@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useLaravelReactI18n } from 'laravel-react-i18n';
-import { Eye, Pencil, Plus, Search, CalendarPlus, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, Search, CalendarPlus, Trash2, FileText, Clock } from 'lucide-react';
 import { useState } from 'react';
 import ModalAffectation from '@/components/ModalAffectation';
 import AppLayout from '@/layouts/app-layout';
@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/ui/combobox';
-import { STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LIBELLE, NATURE_VOL_LIBELLE } from '@/lib/couleurs';
+import { STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LIBELLE } from '@/lib/couleurs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Compagnie {
     id: number;
@@ -20,7 +21,7 @@ interface Demande {
     id: number;
     reference: string;
     numero_vol: string;
-    nature_vol: string;
+    natureVol?: { nom: string; nom_localise: string; code: string };
     statut: string;
     date_arrivee: string;
     date_depart: string;
@@ -28,6 +29,7 @@ interface Demande {
     compagnie?: { nom: string };
     aeronef?: { code: string; modele: string };
     utilisateur?: { name: string };
+    proforma?: { id: number; statut: string };
     peutModifier?: boolean;
     peutSupprimer?: boolean;
 }
@@ -187,21 +189,43 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                                 {demande.compagnie_libelle ?? demande.compagnie?.nom ?? '—'}
                                             </td>
                                             <td className="px-4 py-3">
-                                                {NATURE_VOL_LIBELLE[demande.nature_vol] ?? demande.nature_vol}
+                                                {demande.natureVol?.nom_localise ?? '—'}
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground">
                                                 {formatDate(demande.date_arrivee)}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <Badge
-                                                    className={STATUT_DEMANDE_BADGE[demande.statut] ?? ''}
-                                                    variant="secondary"
-                                                >
-                                                    {STATUT_DEMANDE_LIBELLE[demande.statut] ?? demande.statut}
-                                                </Badge>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge
+                                                        className={STATUT_DEMANDE_BADGE[demande.statut] ?? ''}
+                                                        variant="secondary"
+                                                    >
+                                                        {STATUT_DEMANDE_LIBELLE[demande.statut] ?? demande.statut}
+                                                    </Badge>
+                                                    
+                                                    {demande.proforma && (
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <div className={`flex items-center justify-center rounded-full p-1 border ${demande.proforma.statut === 'validee' ? 'bg-green-50 border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800' : 'bg-amber-50 border-amber-200 text-amber-500 dark:bg-amber-900/20 dark:border-amber-800'}`}>
+                                                                        {demande.proforma.statut === 'validee' ? (
+                                                                            <FileText className="size-3.5" />
+                                                                        ) : (
+                                                                            <Clock className="size-3.5 animate-pulse" />
+                                                                        )}
+                                                                    </div>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>{demande.proforma.statut === 'validee' ? t('Facture proforma validée et disponible') : t('Facture proforma en cours de traitement')}</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <div className="flex items-center justify-end gap-2">
+                                                    {/* Temporairement désactivé à la demande du client
                                                     {peutAffecterGlobal && ['approuvee_handling', 'en_attente_aviation_civile', 'autorisee'].includes(demande.statut) && (
                                                         <ModalAffectation
                                                             demandeId={demande.id}
@@ -219,6 +243,7 @@ export default function DemandesIndex({ demandes, compagnies, filtres, peutAffec
                                                             </Button>
                                                         </ModalAffectation>
                                                     )}
+                                                    */}
                                                     {demande.peutModifier && (
                                                         <Button 
                                                             variant="outline" 

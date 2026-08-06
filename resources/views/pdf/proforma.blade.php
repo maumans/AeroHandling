@@ -150,7 +150,7 @@
                 <div class="info-title">DÉTAILS DU VOL</div>
                 <strong>N° Vol :</strong> {{ $demande->numero_vol }}<br>
                 <strong>Date Prévue :</strong> {{ \Carbon\Carbon::parse($demande->date_arrivee)->format('d/m/Y H:i') }}<br>
-                <strong>Aéronef :</strong> {{ $demande->type_aeronef }} (Catégorie {{ $calculs['categorie'] }})<br>
+                <strong>Aéronef :</strong> {{ $demande->type_aeronef }} (Catégorie {{ $proforma->categorie }})<br>
                 <strong>MTOW :</strong> {{ number_format($demande->mtow, 2, ',', ' ') }} Tonnes<br>
                 <strong>Nature :</strong> {{ $demande->natureVol ? $demande->natureVol->nom : 'N/A' }}
             </td>
@@ -167,25 +167,25 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($calculs['lignes'] as $ligne)
+            @foreach($proforma->lignes->where('type', 'standard') as $ligne)
             <tr>
-                <td>{{ $ligne['designation'] }}</td>
-                <td class="right">{{ is_float($ligne['quantite']) ? number_format($ligne['quantite'], 2, ',', ' ') : $ligne['quantite'] }}</td>
-                <td class="right">{{ number_format($ligne['prix_unitaire'], 2, ',', ' ') }}</td>
-                <td class="right">{{ number_format($ligne['total'], 2, ',', ' ') }}</td>
+                <td>{{ $ligne->designation }}</td>
+                <td class="right">{{ number_format($ligne->quantite, 2, ',', ' ') }}</td>
+                <td class="right">{{ number_format($ligne->prix_unitaire, 2, ',', ' ') }}</td>
+                <td class="right">{{ number_format($ligne->total, 2, ',', ' ') }}</td>
             </tr>
             @endforeach
 
-            @if(count($calculs['majorations']) > 0)
+            @if($proforma->lignes->where('type', 'majoration')->count() > 0)
                 <tr>
                     <td colspan="4" style="background: #f8fafc; font-weight: bold; font-size: 10px; color: #475569;">MAJORATIONS APPLICABLES</td>
                 </tr>
-                @foreach($calculs['majorations'] as $majoration)
+                @foreach($proforma->lignes->where('type', 'majoration') as $majoration)
                 <tr>
-                    <td>{{ $majoration['designation'] }}</td>
+                    <td>{{ $majoration->designation }}</td>
                     <td class="right">-</td>
                     <td class="right">-</td>
-                    <td class="right">{{ number_format($majoration['montant'], 2, ',', ' ') }}</td>
+                    <td class="right">{{ number_format($majoration->total, 2, ',', ' ') }}</td>
                 </tr>
                 @endforeach
             @endif
@@ -195,23 +195,23 @@
     <table class="totals">
         <tr>
             <td class="label">SOUS-TOTAL HT (€)</td>
-            <td class="value">{{ number_format($calculs['sous_total_ht'], 2, ',', ' ') }}</td>
+            <td class="value">{{ number_format($proforma->sous_total_ht, 2, ',', ' ') }}</td>
         </tr>
         <tr>
             <td class="label">TOTAL MAJORATIONS (€)</td>
-            <td class="value">{{ number_format($calculs['total_majorations'], 2, ',', ' ') }}</td>
+            <td class="value">{{ number_format($proforma->total_majorations, 2, ',', ' ') }}</td>
         </tr>
         <tr>
             <td class="label">TOTAL HT (€)</td>
-            <td class="value">{{ number_format($calculs['total_ht'], 2, ',', ' ') }}</td>
+            <td class="value">{{ number_format($proforma->total_ht, 2, ',', ' ') }}</td>
         </tr>
         <tr>
             <td class="label">TVA (18%) (€)</td>
-            <td class="value">{{ number_format($calculs['tva'], 2, ',', ' ') }}</td>
+            <td class="value">{{ number_format($proforma->tva, 2, ',', ' ') }}</td>
         </tr>
         <tr class="grand-total">
             <td class="label">TOTAL TTC (€)</td>
-            <td class="value">{{ number_format($calculs['total_ttc'], 2, ',', ' ') }}</td>
+            <td class="value">{{ number_format($proforma->total_ttc, 2, ',', ' ') }}</td>
         </tr>
     </table>
 

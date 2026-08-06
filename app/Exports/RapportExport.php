@@ -29,7 +29,7 @@ class RapportExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapp
     public function query()
     {
         $query = Demande::query()
-            ->with(['compagnie', 'aeronef'])
+            ->with(['compagnie', 'aeronef', 'natureVol', 'typeMarchandise'])
             ->whereBetween('created_at', [$this->debut, $this->fin]);
 
         if ($this->compagnieId) {
@@ -63,7 +63,7 @@ class RapportExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapp
 
     public function map($demande): array
     {
-        $nature = $demande->natureVol ? $demande->natureVol->nom : 'N/A';
+        $nature = $demande->natureVol ? $demande->natureVol->nomLocalise() : 'N/A';
 
         $statut = $demande->statut instanceof StatutDemande
             ? $demande->statut->libelle()
@@ -77,7 +77,7 @@ class RapportExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapp
             $nature,
             Carbon::parse($demande->date_arrivee)->format('d/m/Y H:i'),
             Carbon::parse($demande->date_depart)->format('d/m/Y H:i'),
-            $demande->type_marchandise,
+            $demande->typeMarchandise?->nomLocalise() ?? '-',
             $demande->tonnage_prevu,
             $demande->volume_prevu,
             $statut,

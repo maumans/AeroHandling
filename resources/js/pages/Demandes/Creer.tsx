@@ -325,7 +325,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             id="compagnie_libelle"
                                             value={data.compagnie_libelle}
                                             onChange={(e) => setData('compagnie_libelle', e.target.value)}
-                                            placeholder="Ex: Royal Air Maroc"
+                                            placeholder={t('Ex: Royal Air Maroc')}
                                             readOnly={!!compagniePredefinie}
                                             className={compagniePredefinie ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : ""}
                                         />
@@ -338,7 +338,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             id="numero_vol"
                                             value={data.numero_vol}
                                             onChange={(e) => setData('numero_vol', e.target.value)}
-                                            placeholder="Ex: AT500"
+                                            placeholder={t('Ex: AT500')}
                                         />
                                         {errors.numero_vol && <p className="text-sm text-destructive">{errors.numero_vol}</p>}
                                     </div>
@@ -363,7 +363,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             min="0"
                                             value={data.mtow}
                                             onChange={(e) => setData('mtow', e.target.value)}
-                                            placeholder="Ex: 78.5"
+                                            placeholder={t('Ex: 78.5')}
                                         />
                                         {errors.mtow && <p className="text-sm text-destructive">{errors.mtow}</p>}
                                     </div>
@@ -374,7 +374,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             id="type_aeronef"
                                             value={data.type_aeronef}
                                             onChange={(e) => setData('type_aeronef', e.target.value)}
-                                            placeholder="Ex: Boeing 737-800"
+                                            placeholder={t('Ex: Boeing 737-800')}
                                         />
                                         {errors.type_aeronef && <p className="text-sm text-destructive">{errors.type_aeronef}</p>}
                                     </div>
@@ -385,7 +385,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             id="immatriculation"
                                             value={data.immatriculation}
                                             onChange={(e) => setData('immatriculation', e.target.value.toUpperCase())}
-                                            placeholder="Ex: CN-ROM"
+                                            placeholder={t('Ex: CN-ROM')}
                                         />
                                         {errors.immatriculation && <p className="text-sm text-destructive">{errors.immatriculation}</p>}
                                     </div>
@@ -396,7 +396,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             id="aeroport_provenance"
                                             value={data.aeroport_provenance}
                                             onChange={(e) => setData('aeroport_provenance', e.target.value)}
-                                            placeholder="Ex: Paris CDG"
+                                            placeholder={t('Ex: Paris CDG')}
                                         />
                                         {errors.aeroport_provenance && <p className="text-sm text-destructive">{errors.aeroport_provenance}</p>}
                                     </div>
@@ -407,7 +407,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             id="aeroport_destination"
                                             value={data.aeroport_destination}
                                             onChange={(e) => setData('aeroport_destination', e.target.value)}
-                                            placeholder="Ex: Casablanca"
+                                            placeholder={t('Ex: Casablanca')}
                                         />
                                         {errors.aeroport_destination && <p className="text-sm text-destructive">{errors.aeroport_destination}</p>}
                                     </div>
@@ -530,7 +530,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                                     step="0.01"
                                                     value={data.tonnage_prevu}
                                                     onChange={(e) => setData('tonnage_prevu', e.target.value)}
-                                                    placeholder="Ex: 25.5"
+                                                    placeholder={t('Ex: 25.5')}
                                                 />
                                             </div>
 
@@ -542,7 +542,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                                     step="0.01"
                                                     value={data.volume_prevu}
                                                     onChange={(e) => setData('volume_prevu', e.target.value)}
-                                                    placeholder="Ex: 120"
+                                                    placeholder={t('Ex: 120')}
                                                 />
                                             </div>
 
@@ -554,7 +554,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                                     min="0"
                                                     value={data.nombre_palettes}
                                                     onChange={(e) => setData('nombre_palettes', e.target.value)}
-                                                    placeholder="Ex: 8"
+                                                    placeholder={t('Ex: 8')}
                                                 />
                                                 {errors.nombre_palettes && <p className="text-sm text-destructive">{errors.nombre_palettes}</p>}
                                             </div>
@@ -577,7 +577,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                                     type="number"
                                                     value={data.nombre_uld}
                                                     onChange={(e) => setData('nombre_uld', e.target.value)}
-                                                    placeholder="Ex: 12"
+                                                    placeholder={t('Ex: 12')}
                                                 />
                                             </div>
                                         </div>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasNomLocalise;
 use Database\Factories\ServiceAssistanceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ServiceAssistance extends Model
 {
     /** @use HasFactory<ServiceAssistanceFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasNomLocalise, SoftDeletes;
 
     protected $table = 'services_assistance';
 
@@ -19,6 +20,7 @@ class ServiceAssistance extends Model
         'code',
         'categorie',
         'nom',
+        'nom_en',
         'description',
         'tarif_unitaire',
         'unite_facturation',

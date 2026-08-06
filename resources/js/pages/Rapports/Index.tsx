@@ -368,7 +368,7 @@ export default function RapportsIndex({
                                                 ) : (
                                                     <tr>
                                                         <td colSpan={2} className="px-4 py-8 text-center text-muted-foreground">
-                                                            Aucune donnée trouvée.
+                                                            {t('Aucune donnée trouvée.')}
                                                         </td>
                                                     </tr>
                                                 )}
@@ -402,7 +402,7 @@ export default function RapportsIndex({
                                                 ) : (
                                                     <tr>
                                                         <td colSpan={2} className="px-4 py-8 text-center text-muted-foreground">
-                                                            Aucune donnée trouvée.
+                                                            {t('Aucune donnée trouvée.')}
                                                         </td>
                                                     </tr>
                                                 )}
@@ -436,7 +436,7 @@ export default function RapportsIndex({
                                                 ) : (
                                                     <tr>
                                                         <td colSpan={2} className="px-4 py-8 text-center text-muted-foreground">
-                                                            Aucune donnée trouvée.
+                                                            {t('Aucune donnée trouvée.')}
                                                         </td>
                                                     </tr>
                                                 )}

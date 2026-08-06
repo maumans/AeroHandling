@@ -12,6 +12,7 @@ export default function AdministrationCategoriesAeronefCreer() {
     const { data, setData, post, processing, errors } = useForm({
         code: '',
         nom: '',
+        nom_en: '',
         tonnage_min: '',
         tonnage_max: '',
         tarif_atterrissage_passager: '0.00',
@@ -68,6 +69,16 @@ export default function AdministrationCategoriesAeronefCreer() {
                                         placeholder={t("Jusqu'à 15 tonnes")}
                                     />
                                     {errors.nom && <p className="text-sm text-destructive">{errors.nom}</p>}
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="nom_en">{t('Nom (English)')}</Label>
+                                    <Input
+                                        id="nom_en"
+                                        value={data.nom_en}
+                                        onChange={(e) => setData('nom_en', e.target.value)}
+                                        placeholder="Up to 15 tonnes"
+                                    />
+                                    {errors.nom_en && <p className="text-sm text-destructive">{errors.nom_en}</p>}
                                 </div>
                             </div>
 

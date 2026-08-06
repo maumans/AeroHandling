@@ -1,6 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useLaravelReactI18n } from 'laravel-react-i18n';
-import { CheckCircle2, XCircle, MessageSquarePlus, ShieldCheck, Send, CalendarPlus, Paperclip, Download } from 'lucide-react';
+import { CheckCircle2, XCircle, MessageSquarePlus, ShieldCheck, Send, CalendarPlus, Paperclip, Download, Clock } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import ModalAffectation from '@/components/ModalAffectation';
 import { FormEventHandler, useState } from 'react';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { ACTION_VALIDATION_LIBELLE, STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LIBELLE, NATURE_VOL_LIBELLE, TYPE_MARCHANDISE_LIBELLE } from '@/lib/couleurs';
+import { ACTION_VALIDATION_LIBELLE, STATUT_DEMANDE_BADGE, STATUT_DEMANDE_LIBELLE } from '@/lib/couleurs';
 
 interface Validation {
     id: number;
@@ -49,7 +49,6 @@ interface Demande {
     id: number;
     reference: string;
     numero_vol: string;
-    nature_vol: string;
     mtow: string | null;
     statut: string;
     compagnie_libelle: string | null;
@@ -69,7 +68,9 @@ interface Demande {
     tonnage_prevu: string | null;
     volume_prevu: string | null;
     type_marchandise_id: number | null;
-    typeMarchandise?: { nom: string; code: string; necessite_stockage_special: boolean };
+    typeMarchandise?: { nom: string; nom_localise: string; code: string; necessite_stockage_special: boolean };
+    nature_vol_id: number | null;
+    natureVol?: { nom: string; nom_localise: string; code: string };
     nombre_uld: number | null;
     nombre_palettes: number | null;
     exigences_particulieres: string | null;
@@ -101,6 +102,14 @@ interface Demande {
     }[];
     date_decision_handling: string | null;
     date_autorisation: string | null;
+    proforma?: {
+        id: number;
+        statut: string;
+        total_ht: number;
+        tva: number;
+        total_ttc: number;
+        total_majorations: number;
+    } | null;
 }
 
 interface PieceJointe {
@@ -135,12 +144,7 @@ interface Props {
     peutSupprimer: boolean;
     peutAffecter: boolean;
     peutAjouterPieceJointe: boolean;
-    proforma?: {
-        total_ht: number;
-        tva: number;
-        total_ttc: number;
-        total_majorations: number;
-    };
+    estHandling: boolean;
 }
 
 
@@ -167,7 +171,7 @@ export default function DemandesAfficher({
     peutSupprimer,
     peutAffecter,
     peutAjouterPieceJointe,
-    proforma,
+    estHandling,
 }: Props) {
     const { t } = useLaravelReactI18n();
     const [rejetOpen, setRejetOpen] = useState(false);
@@ -234,6 +238,7 @@ export default function DemandesAfficher({
             },
         });
     };
+
     return (
         <AppLayout breadcrumbs={[
             { title: t('Demandes'), href: '/demandes' },
@@ -401,7 +406,7 @@ export default function DemandesAfficher({
                                                     id="code_autorisation"
                                                     value={autoriserData.code_autorisation}
                                                     onChange={(e) => setAutoriserData('code_autorisation', e.target.value)}
-                                                    placeholder="Ex: AC-2026-0457"
+                                                    placeholder={t('Ex: AC-2026-0457')}
                                                     required
                                                 />
                                                 {autoriserErrors.code_autorisation && (
@@ -486,7 +491,7 @@ export default function DemandesAfficher({
                                 </div>
                                 <div>
                                     <dt className="text-sm text-muted-foreground">{t('Nature du vol')}</dt>
-                                    <dd className="font-medium">{demande.nature_vol ? (NATURE_VOL_LIBELLE[demande.nature_vol] ?? demande.nature_vol) : '—'}</dd>
+                                    <dd className="font-medium">{demande.natureVol ? demande.natureVol.nom_localise : '—'}</dd>
                                 </div>
                                 <div>
                                     <dt className="text-sm text-muted-foreground">{t('MTOW')}</dt>
@@ -510,7 +515,7 @@ export default function DemandesAfficher({
                                 </div>
                                 <div>
                                     <dt className="text-sm text-muted-foreground">{t('Type marchandise')}</dt>
-                                    <dd className="font-medium">{demande.typeMarchandise ? demande.typeMarchandise.nom : '—'}</dd>
+                                    <dd className="font-medium">{demande.typeMarchandise ? demande.typeMarchandise.nom_localise : '—'}</dd>
                                 </div>
                                 <div>
                                     <dt className="text-sm text-muted-foreground">{t('Nombre ULD')}</dt>
@@ -621,42 +626,73 @@ export default function DemandesAfficher({
                             <CardTitle>{t('Facture Proforma')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-4">
-                            {proforma ? (
+                            {!demande.proforma ? (
+                                <div className="text-center py-4">
+                                    <p className="text-muted-foreground mb-4">{t("Aucune facture proforma n'a encore été générée pour cette demande.")}</p>
+                                    {!estHandling && (
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={() => router.post(`/demandes/${demande.id}/proforma/demander`)}
+                                        >
+                                            <Send className="mr-2 size-4" />
+                                            {t('Demander une Pro Forma')}
+                                        </Button>
+                                    )}
+                                </div>
+                            ) : demande.proforma.statut === 'brouillon' && !estHandling ? (
+                                <div className="text-center py-6">
+                                    <Clock className="mx-auto h-12 w-12 text-amber-500 mb-4 animate-pulse" />
+                                    <p className="text-lg font-medium text-foreground mb-2">{t("Demande de facture envoyée")}</p>
+                                    <p className="text-muted-foreground">{t("Votre demande de facture proforma est en cours de traitement par nos équipes.")}</p>
+                                    <p className="text-sm text-muted-foreground mt-1">{t("Elle sera disponible au téléchargement dès qu'elle aura été validée.")}</p>
+                                </div>
+                            ) : (
                                 <div className="space-y-3">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-sm font-medium">{t('Statut')}</span>
+                                        <Badge variant={demande.proforma.statut === 'validee' ? 'success' : 'secondary'}>
+                                            {demande.proforma.statut === 'validee' ? t('Validée') : t('Brouillon')}
+                                        </Badge>
+                                    </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">{t('Sous-total HT')}</span>
-                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.total_ht - proforma.total_majorations)}</span>
+                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(demande.proforma.total_ht - demande.proforma.total_majorations)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">{t('Majorations (Nuit/Férié)')}</span>
-                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.total_majorations)}</span>
+                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(demande.proforma.total_majorations)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">{t('TVA (18%)')}</span>
-                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.tva)}</span>
+                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(demande.proforma.tva)}</span>
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between font-bold">
                                         <span>{t('Total TTC')}</span>
-                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(proforma.total_ttc)}</span>
+                                        <span>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(demande.proforma.total_ttc)}</span>
                                     </div>
 
-                                    <div className="pt-4">
-                                        <Button className="w-full" asChild>
-                                            <a href={`/demandes/${demande.id}/proforma`} target="_blank" rel="noreferrer">
-                                                <Download className="mr-2 size-4" />
-                                                {t('Télécharger la facture proforma')}
-                                            </a>
-                                        </Button>
+                                    <div className="pt-4 flex flex-col gap-2">
+                                        {(demande.proforma.statut === 'validee' || estHandling) && (
+                                            <Button className="w-full" asChild>
+                                                <a href={`/demandes/${demande.id}/proforma/${demande.proforma.id}/telecharger`} target="_blank" rel="noreferrer">
+                                                    <Download className="mr-2 size-4" />
+                                                    {demande.proforma.statut === 'validee' ? t('Télécharger la facture proforma') : t('Prévisualiser le brouillon')}
+                                                </a>
+                                            </Button>
+                                        )}
+                                        {estHandling && demande.proforma.statut === 'brouillon' && (
+                                            <Button className="w-full" variant="outline" onClick={() => router.get(`/demandes/${demande.id}/proforma/${demande.proforma!.id}/editer`)}>
+                                                {t('Éditer la proforma')}
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">{t('Calcul en cours ou non disponible.')}</p>
                             )}
                         </CardContent>
                     </Card>
 
-                    {/* Section Affectations */}
+                    {/* Section Affectations - Temporairement désactivée à la demande du client
                     <Card>
                         <CardHeader>
                             <CardTitle>{t('Affectations (Planning)')}</CardTitle>
@@ -718,6 +754,7 @@ export default function DemandesAfficher({
                             )}
                         </CardContent>
                     </Card>
+                    */}
 
                     {/* Commentaires */}
                     <Card>

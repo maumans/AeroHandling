@@ -78,4 +78,9 @@ class CategorieAeronefController extends Controller
         return redirect()->route('categories-aeronef.index')
             ->with('success', 'Catégorie d\'aéronef supprimée avec succès.');
     }
+
+    private function authorizeAdmin(): void
+    {
+        abort_unless(auth()->user()?->hasRole('administrateur'), 403);
+    }
 }

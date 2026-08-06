@@ -1,4 +1,5 @@
 import { Link, usePage, router } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { Bell, Check, CheckCircle2 } from 'lucide-react';
 import { NotificationIcon } from '@/components/notification-icon';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ interface NotificationData {
     type: 'info' | 'success' | 'warning' | 'error' | string;
     title?: string;
     message: string;
+    messageParams?: Record<string, string>;
     actionUrl?: string;
 }
 
@@ -24,21 +26,22 @@ interface NotificationItem {
     created_at: string;
 }
 
-function tempsRelatif(dateStr: string): string {
+function tempsRelatif(dateStr: string, t: (key: string, replacements?: Record<string, any>) => string): string {
     const now = Date.now();
     const diff = now - new Date(dateStr).getTime();
     const seconds = Math.floor(diff / 1000);
-    if (seconds < 60) return "à l'instant";
+    if (seconds < 60) return t("à l'instant");
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `il y a ${minutes} min`;
+    if (minutes < 60) return t('il y a :count min', { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `il y a ${hours}h`;
+    if (hours < 24) return t('il y a :count h', { count: hours });
     const days = Math.floor(hours / 24);
-    if (days < 7) return `il y a ${days}j`;
+    if (days < 7) return t('il y a :count j', { count: days });
     return new Date(dateStr).toLocaleDateString('fr-FR');
 }
 
 export function NotificationsDropdown() {
+    const { t } = useLaravelReactI18n();
     const { notificationsNonLues, recentNotifications } = usePage<{
         notificationsNonLues: number,
         recentNotifications: NotificationItem[]
@@ -79,7 +82,7 @@ export function NotificationsDropdown() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
                 <DropdownMenuLabel className="flex items-center justify-between">
-                    <span>Notifications</span>
+                    <span>{t('Notifications')}</span>
                     {notificationsNonLues > 0 && (
                         <Button
                             variant="ghost"
@@ -93,7 +96,7 @@ export function NotificationsDropdown() {
                                 });
                             }}
                         >
-                            Tout marquer comme lu
+                            {t('Tout marquer comme lu')}
                         </Button>
                     )}
                 </DropdownMenuLabel>
@@ -124,7 +127,7 @@ export function NotificationsDropdown() {
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-start justify-between gap-2">
                                                 <p className={!notification.read_at ? 'font-medium' : 'text-muted-foreground'}>
-                                                    {notification.data.title ?? notification.data.message}
+                                                    {notification.data.title ? t(notification.data.title) : t(notification.data.message, notification.data.messageParams)}
                                                 </p>
                                                 {!notification.read_at && (
                                                     <Button
@@ -135,7 +138,7 @@ export function NotificationsDropdown() {
                                                             e.stopPropagation();
                                                             marquerCommeLu(notification.id);
                                                         }}
-                                                        title="Marquer comme lue"
+                                                        title={t('Marquer comme lue')}
                                                     >
                                                         <Check className="size-3" />
                                                     </Button>
@@ -143,11 +146,11 @@ export function NotificationsDropdown() {
                                             </div>
                                             {notification.data.title && (
                                                 <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                                                    {notification.data.message}
+                                                    {t(notification.data.message, notification.data.messageParams)}
                                                 </p>
                                             )}
                                             <span className="mt-1 block text-[10px] text-muted-foreground">
-                                                {tempsRelatif(notification.created_at)}
+                                                {tempsRelatif(notification.created_at, t)}
                                             </span>
                                         </div>
                                     </div>
@@ -157,7 +160,7 @@ export function NotificationsDropdown() {
                     ) : (
                         <div className="flex flex-col items-center justify-center p-4 text-center text-sm text-muted-foreground">
                             <CheckCircle2 className="mb-2 size-8 text-muted-foreground/50" />
-                            <p>Vous n'avez aucune notification.</p>
+                            <p>{t("Vous n'avez aucune notification.")}</p>
                         </div>
                     )}
                 </div>
@@ -166,7 +169,7 @@ export function NotificationsDropdown() {
                 <div className="p-1">
                     <Button variant="ghost" className="w-full justify-center text-sm" asChild>
                         <Link href="/notifications">
-                            Voir toutes les notifications
+                            {t('Voir toutes les notifications')}
                         </Link>
                     </Button>
                 </div>

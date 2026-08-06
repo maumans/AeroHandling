@@ -33,7 +33,11 @@ class NewUserRegistered extends RealtimeNotification
         return [
             'type' => 'info',
             'title' => 'Nouveau compte à valider',
-            'message' => $this->utilisateur->name.' ('.$this->utilisateur->email.') s\'est inscrit et attend une validation.',
+            'message' => ':name (:email) s\'est inscrit et attend une validation.',
+            'messageParams' => [
+                'name' => $this->utilisateur->name,
+                'email' => $this->utilisateur->email,
+            ],
             'actionUrl' => '/administration/utilisateurs?statut=en_attente',
         ];
     }

@@ -1,4 +1,5 @@
 import { Monitor, Moon, Sun } from 'lucide-react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,19 +11,20 @@ import {
 import type { Appearance } from '@/hooks/use-appearance';
 import { useAppearance } from '@/hooks/use-appearance';
 
-const options: { value: Appearance; label: string; icon: typeof Sun }[] = [
-    { value: 'light', label: 'Clair', icon: Sun },
-    { value: 'dark', label: 'Sombre', icon: Moon },
-    { value: 'system', label: 'Système', icon: Monitor },
-];
-
 export function ThemeToggle() {
     const { appearance, resolvedAppearance, updateAppearance } = useAppearance();
+    const { t } = useLaravelReactI18n();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    const options: { value: Appearance; label: string; icon: typeof Sun }[] = [
+        { value: 'light', label: t('Clair'), icon: Sun },
+        { value: 'dark', label: t('Sombre'), icon: Moon },
+        { value: 'system', label: t('Système'), icon: Monitor },
+    ];
 
     return (
         <DropdownMenu>
@@ -31,7 +33,7 @@ export function ThemeToggle() {
                     variant="ghost"
                     size="icon"
                     className="size-9"
-                    aria-label="Changer le thème"
+                    aria-label={t('Changer le thème')}
                 >
                     {mounted && resolvedAppearance === 'dark' ? (
                         <Moon className="size-5" />

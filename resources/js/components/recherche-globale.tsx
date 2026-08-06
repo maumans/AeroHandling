@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import {
 import { useRechercheGlobaleItems } from '@/hooks/use-recherche-globale-items';
 
 export function RechercheGlobale() {
+    const { t } = useLaravelReactI18n();
     const [ouvert, setOuvert] = useState(false);
     const items = useRechercheGlobaleItems();
 
@@ -45,7 +47,7 @@ export function RechercheGlobale() {
                 className="hidden items-center gap-2 text-muted-foreground sm:flex"
             >
                 <Search className="size-4" />
-                <span className="text-sm">Rechercher...</span>
+                <span className="text-sm">{t('Rechercher...')}</span>
                 <kbd className="ml-2 rounded border bg-muted px-1.5 py-0.5 text-xs">{estMac ? '⌘K' : 'Ctrl+K'}</kbd>
             </Button>
             <Button variant="ghost" size="icon" onClick={() => setOuvert(true)} className="sm:hidden">
@@ -53,9 +55,9 @@ export function RechercheGlobale() {
             </Button>
 
             <CommandDialog open={ouvert} onOpenChange={setOuvert}>
-                <CommandInput placeholder="Rechercher une page ou une action..." />
+                <CommandInput placeholder={t('Rechercher une page ou une action...')} />
                 <CommandList>
-                    <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
+                    <CommandEmpty>{t('Aucun résultat trouvé.')}</CommandEmpty>
                     {groupes.map((groupe) => (
                         <CommandGroup key={groupe} heading={groupe}>
                             {items

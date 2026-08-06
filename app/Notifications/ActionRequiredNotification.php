@@ -6,10 +6,12 @@ use App\Models\Demande;
 
 class ActionRequiredNotification extends RealtimeNotification
 {
+    /** @param array<string, string> $actionMessageParams */
     public function __construct(
         public Demande $demande,
         public string $actionTitle,
-        public string $actionMessage
+        public string $actionMessage,
+        public array $actionMessageParams = []
     ) {}
 
     protected function getPayload(): array
@@ -18,7 +20,8 @@ class ActionRequiredNotification extends RealtimeNotification
             'type' => 'warning',
             'title' => $this->actionTitle,
             'message' => $this->actionMessage,
-            'actionUrl' => '/demandes/' . $this->demande->id,
+            'messageParams' => $this->actionMessageParams,
+            'actionUrl' => '/demandes/'.$this->demande->id,
         ];
     }
 }

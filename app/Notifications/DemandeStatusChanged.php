@@ -2,19 +2,17 @@
 
 namespace App\Notifications;
 
-use App\Models\Demande;
 use App\Enums\StatutDemande;
+use App\Models\Demande;
 
 class DemandeStatusChanged extends RealtimeNotification
 {
-    public function __construct(public Demande $demande)
-    {
-    }
+    public function __construct(public Demande $demande) {}
 
     protected function getPayload(): array
     {
         $statusText = $this->demande->statut->libelle();
-        
+
         $type = 'info';
         if (in_array($this->demande->statut, [StatutDemande::ApprouveeHandling, StatutDemande::Autorisee])) {
             $type = 'success';
@@ -27,8 +25,12 @@ class DemandeStatusChanged extends RealtimeNotification
         return [
             'type' => $type,
             'title' => 'Mise à jour de votre demande',
-            'message' => "Le statut du vol {$this->demande->numero_vol} est maintenant : {$statusText}.",
-            'actionUrl' => '/demandes/' . $this->demande->id,
+            'message' => 'Le statut du vol :numero est maintenant : :statut.',
+            'messageParams' => [
+                'numero' => $this->demande->numero_vol,
+                'statut' => $statusText,
+            ],
+            'actionUrl' => '/demandes/'.$this->demande->id,
         ];
     }
 }

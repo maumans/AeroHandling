@@ -77,7 +77,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                     required
                                     tabIndex={2}
                                     autoComplete="current-password"
-                                    placeholder="Mot de passe"
+                                    placeholder={t('Mot de passe')}
                                 />
                                 <InputError message={errors.password} />
                             </div>

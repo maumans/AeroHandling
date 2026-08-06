@@ -25,6 +25,7 @@ class StoreNatureVolRequest extends FormRequest
         return [
             'code' => ['required', 'string', 'max:50', 'unique:natures_vol'],
             'nom' => ['required', 'string', 'max:255'],
+            'nom_en' => ['nullable', 'string', 'max:255'],
             'est_cargo' => ['boolean'],
             'est_vol_special' => ['boolean'],
             'actif' => ['boolean'],

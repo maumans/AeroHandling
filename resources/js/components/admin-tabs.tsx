@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useLaravelReactI18n } from 'laravel-react-i18n';
-import { Building2, Plane, Settings, Wrench, Users, CalendarDays, Briefcase, Tag } from 'lucide-react';
+import { Building2, Plane, PlaneTakeoff, Settings, Wrench, Users, CalendarDays, Briefcase, Tag, Layers, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function AdminTabs() {
@@ -8,6 +8,7 @@ export default function AdminTabs() {
     const { t } = useLaravelReactI18n();
 
     const tabs = [
+        // Acteurs du système
         {
             name: t('Utilisateurs'),
             href: '/administration/utilisateurs',
@@ -20,17 +21,32 @@ export default function AdminTabs() {
             icon: Building2,
             active: url.startsWith('/administration/compagnies'),
         },
+        // Aéronefs + leurs référentiels
         {
-            name: t('Aéronefs'),
-            href: '/administration/aeronefs',
-            icon: Plane,
-            active: url.startsWith('/administration/aeronefs') && !url.startsWith('/administration/categories-aeronef'),
+            name: t("Types d'aéronef"),
+            href: '/administration/types-aeronef',
+            icon: PlaneTakeoff,
+            active: url.startsWith('/administration/types-aeronef'),
+        },
+        // Équipements + leur référentiel
+        {
+            name: t('Équipements'),
+            href: '/administration/equipements',
+            icon: Wrench,
+            active: url.startsWith('/administration/equipements'),
         },
         {
-            name: t('Catégories'),
-            href: '/administration/categories-aeronef',
-            icon: Plane,
-            active: url.startsWith('/administration/categories-aeronef'),
+            name: t("Types d'équipement"),
+            href: '/administration/types-equipement',
+            icon: Layers,
+            active: url.startsWith('/administration/types-equipement'),
+        },
+        // Référentiels utilisés dans le formulaire de demande
+        {
+            name: t('Services'),
+            href: '/administration/services-assistance',
+            icon: Briefcase,
+            active: url.startsWith('/administration/services-assistance'),
         },
         {
             name: t('Natures Vol'),
@@ -39,17 +55,12 @@ export default function AdminTabs() {
             active: url.startsWith('/administration/natures-vol'),
         },
         {
-            name: t('Équipements'),
-            href: '/administration/equipements',
-            icon: Wrench,
-            active: url.startsWith('/administration/equipements'),
+            name: t('Types de marchandise'),
+            href: '/administration/types-marchandise',
+            icon: Package,
+            active: url.startsWith('/administration/types-marchandise'),
         },
-        {
-            name: t('Services'),
-            href: '/administration/services-assistance',
-            icon: Briefcase,
-            active: url.startsWith('/administration/services-assistance'),
-        },
+        // Configuration système
         {
             name: t('Jours Fériés'),
             href: '/administration/jours-feries',

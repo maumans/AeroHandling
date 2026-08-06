@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLaravelReactI18n } from 'laravel-react-i18n';
 
-interface Option { value: string; libelle: string; }
+interface Option { value: string | number; libelle: string; }
 
 interface Props {
     types: Option[];
@@ -19,7 +19,7 @@ export default function AdministrationEquipementsCreer({ types, statuts }: Props
     const { data, setData, post, processing, errors } = useForm({
         code: '',
         nom: '',
-        type: '',
+        type_equipement_id: '',
         statut: 'disponible',
         capacite_max: '',
         notes: '',
@@ -78,17 +78,17 @@ export default function AdministrationEquipementsCreer({ types, statuts }: Props
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
                                     <Label>{t('Type')} <span className="text-destructive">*</span></Label>
-                                    <Select value={data.type} onValueChange={(v) => setData('type', v)}>
+                                    <Select value={data.type_equipement_id} onValueChange={(v) => setData('type_equipement_id', v)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder={t("Sélectionner un type")} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {types.map((t) => (
-                                                <SelectItem key={t.value} value={t.value}>{t.libelle}</SelectItem>
+                                            {types.map((option) => (
+                                                <SelectItem key={option.value} value={option.value.toString()}>{option.libelle}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
+                                    {errors.type_equipement_id && <p className="text-sm text-destructive">{errors.type_equipement_id}</p>}
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     <Label>{t('Statut')} <span className="text-destructive">*</span></Label>
@@ -98,7 +98,7 @@ export default function AdministrationEquipementsCreer({ types, statuts }: Props
                                         </SelectTrigger>
                                         <SelectContent>
                                             {statuts.map((s) => (
-                                                <SelectItem key={s.value} value={s.value}>{s.libelle}</SelectItem>
+                                                <SelectItem key={s.value} value={s.value.toString()}>{s.libelle}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>

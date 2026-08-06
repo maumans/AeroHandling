@@ -153,7 +153,8 @@ class GestionnaireDemande
             $demande->utilisateur->notify(new ActionRequiredNotification(
                 $demande,
                 'Complément d\'information requis',
-                'Motif : '.($commentaire ?? 'Non spécifié')
+                $commentaire !== null ? 'Motif : :motif' : 'Motif : non spécifié',
+                $commentaire !== null ? ['motif' => $commentaire] : []
             ));
 
             return $demande->fresh();

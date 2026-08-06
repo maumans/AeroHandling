@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Demande extends Model
@@ -136,5 +137,10 @@ class Demande extends Model
     {
         return $this->belongsToMany(ServiceAssistance::class, 'demande_service_assistance')
             ->withTimestamps();
+    }
+
+    public function proforma(): HasOne
+    {
+        return $this->hasOne(Proforma::class);
     }
 }

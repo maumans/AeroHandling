@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLaravelReactI18n } from 'laravel-react-i18n';
 
-interface Option { value: string; libelle: string; }
+interface Option { value: string | number; libelle: string; }
 
 interface Aeronef {
     id: number;
@@ -93,8 +93,8 @@ export default function AdministrationAeronefsEditer({ aeronef, types, categorie
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {types.map((t) => (
-                                                <SelectItem key={t.value} value={t.value}>{t.libelle}</SelectItem>
+                                            {types.map((option) => (
+                                                <SelectItem key={option.value} value={option.value.toString()}>{option.libelle}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>

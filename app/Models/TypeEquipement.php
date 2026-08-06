@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasNomLocalise;
 use Database\Factories\TypeEquipementFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,11 +10,12 @@ use Illuminate\Database\Eloquent\Model;
 class TypeEquipement extends Model
 {
     /** @use HasFactory<TypeEquipementFactory> */
-    use HasFactory;
+    use HasFactory, HasNomLocalise;
 
     protected $fillable = [
         'code',
         'nom',
+        'nom_en',
         'description',
         'actif',
     ];

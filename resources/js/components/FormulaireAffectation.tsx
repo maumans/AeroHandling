@@ -1,4 +1,5 @@
 import { useForm } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { FormEventHandler } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export default function FormulaireAffectation({ demandeId, equipementsDisponibles, agentsDisponibles, onSuccess }: Props) {
+    const { t } = useLaravelReactI18n();
     const { data, setData, post, processing, errors, reset, transform } = useForm({
         equipement_id: '',
         utilisateur_affectation_id: '',
@@ -58,13 +60,13 @@ export default function FormulaireAffectation({ demandeId, equipementsDisponible
             )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                    <Label htmlFor="equipement_id">Équipement</Label>
+                    <Label htmlFor="equipement_id">{t('Équipement')}</Label>
                     <Combobox
                         value={data.equipement_id}
                         onChange={(v) => setData('equipement_id', v)}
-                        placeholder="Sélectionner un équipement"
+                        placeholder={t('Sélectionner un équipement')}
                         options={[
-                            { label: "Aucun équipement", value: "null" },
+                            { label: t('Aucun équipement'), value: "null" },
                             ...equipementsDisponibles.map((eq) => ({
                                 label: `${eq.code} - ${eq.nom}`,
                                 value: String(eq.id),
@@ -75,13 +77,13 @@ export default function FormulaireAffectation({ demandeId, equipementsDisponible
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="utilisateur_affectation_id">Agent assigné</Label>
+                    <Label htmlFor="utilisateur_affectation_id">{t('Agent assigné')}</Label>
                     <Combobox
                         value={data.utilisateur_affectation_id}
                         onChange={(v) => setData('utilisateur_affectation_id', v)}
-                        placeholder="Sélectionner un agent"
+                        placeholder={t('Sélectionner un agent')}
                         options={[
-                            { label: "Aucun agent", value: "null" },
+                            { label: t('Aucun agent'), value: "null" },
                             ...agentsDisponibles.map((agent) => ({
                                 label: agent.name,
                                 value: String(agent.id),
@@ -92,7 +94,7 @@ export default function FormulaireAffectation({ demandeId, equipementsDisponible
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="date_debut">Date de début</Label>
+                    <Label htmlFor="date_debut">{t('Date de début')}</Label>
                     <Input
                         id="date_debut"
                         type="datetime-local"
@@ -104,7 +106,7 @@ export default function FormulaireAffectation({ demandeId, equipementsDisponible
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="date_fin">Date de fin</Label>
+                    <Label htmlFor="date_fin">{t('Date de fin')}</Label>
                     <Input
                         id="date_fin"
                         type="datetime-local"
@@ -116,13 +118,13 @@ export default function FormulaireAffectation({ demandeId, equipementsDisponible
                 </div>
 
                 <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="notes">Notes (Optionnel)</Label>
+                    <Label htmlFor="notes">{t('Notes (Optionnel)')}</Label>
                     <Input
                         id="notes"
                         type="text"
                         value={data.notes}
                         onChange={(e) => setData('notes', e.target.value)}
-                        placeholder="Instructions particulières..."
+                        placeholder={t('Instructions particulières...')}
                     />
                     {errors.notes && <p className="text-sm text-destructive">{errors.notes}</p>}
                 </div>
@@ -130,7 +132,7 @@ export default function FormulaireAffectation({ demandeId, equipementsDisponible
 
             <div className="flex justify-end">
                 <Button type="submit" disabled={processing}>
-                    Ajouter l'affectation
+                    {t("Ajouter l'affectation")}
                 </Button>
             </div>
         </form>

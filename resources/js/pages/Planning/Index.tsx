@@ -102,11 +102,11 @@ export default function PlanningIndex({
                             className={jour.est_aujourdhui ? 'ring-2 ring-[#1B98E0]' : ''}
                         >
                             <CardContent className="flex h-full flex-col gap-2 p-3">
-                                <div className="flex items-baseline justify-between border-b pb-2">
-                                    <span className="text-sm font-semibold capitalize">
+                                <div className="flex flex-wrap items-baseline justify-between gap-x-2 border-b pb-2">
+                                    <span className="text-sm font-semibold capitalize whitespace-nowrap">
                                         {jour.libelle}
                                     </span>
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-xs text-muted-foreground whitespace-nowrap">
                                         {jour.jour_mois}
                                     </span>
                                 </div>
@@ -163,7 +163,7 @@ export default function PlanningIndex({
                     <DialogHeader>
                         <DialogTitle>{t('Affecter une ressource')}</DialogTitle>
                         <DialogDescription>
-                            {demandeObj ? `Vol ${demandeObj.numero_vol} - ${demandeObj.compagnie}` : ''}
+                            {demandeObj ? t('Vol :numero - :compagnie', { numero: demandeObj.numero_vol, compagnie: demandeObj.compagnie ?? '' }) : ''}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">

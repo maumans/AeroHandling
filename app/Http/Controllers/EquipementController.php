@@ -37,7 +37,7 @@ class EquipementController extends Controller
 
         $types = TypeEquipement::where('actif', true)->get()->map(fn (TypeEquipement $t) => [
             'value' => $t->id,
-            'libelle' => $t->nom,
+            'libelle' => $t->nomLocalise(),
         ])->values();
 
         $statuts = collect(StatutEquipement::cases())->map(fn (StatutEquipement $s) => [

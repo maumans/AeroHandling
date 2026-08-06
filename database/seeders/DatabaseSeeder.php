@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
             CompagnieSeeder::class,
             TypeMarchandiseSeeder::class,
             TypeEquipementSeeder::class,
+            TypeAeronefSeeder::class,
+            NatureVolSeeder::class,
             AeronefSeeder::class,
             EquipementSeeder::class,
             ServiceAssistanceSeeder::class,

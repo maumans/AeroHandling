@@ -14,6 +14,10 @@ class DemandePolicy
             return true;
         }
 
+        if ($user->hasRole('compagnie') && $user->compagnie_id && $user->compagnie_id === $demande->compagnie_id) {
+            return true;
+        }
+
         return $demande->utilisateur_id === $user->id;
     }
 
@@ -24,8 +28,10 @@ class DemandePolicy
 
     public function modifier(User $user, Demande $demande): bool
     {
-        // Seul le créateur de la demande (ou un admin) peut modifier
-        if ($demande->utilisateur_id !== $user->id && ! $user->hasRole('administrateur')) {
+        // Seul le créateur de la demande, un collègue de la même compagnie, ou un admin peut modifier
+        $estMemeCompagnie = $user->hasRole('compagnie') && $user->compagnie_id && $user->compagnie_id === $demande->compagnie_id;
+
+        if ($demande->utilisateur_id !== $user->id && ! $estMemeCompagnie && ! $user->hasRole('administrateur')) {
             return false;
         }
 
@@ -37,8 +43,10 @@ class DemandePolicy
 
     public function soumettre(User $user, Demande $demande): bool
     {
-        // Seul le créateur de la demande (ou un admin) peut soumettre
-        if ($demande->utilisateur_id !== $user->id && ! $user->hasRole('administrateur')) {
+        // Seul le créateur de la demande, un collègue de la même compagnie, ou un admin peut soumettre
+        $estMemeCompagnie = $user->hasRole('compagnie') && $user->compagnie_id && $user->compagnie_id === $demande->compagnie_id;
+
+        if ($demande->utilisateur_id !== $user->id && ! $estMemeCompagnie && ! $user->hasRole('administrateur')) {
             return false;
         }
 

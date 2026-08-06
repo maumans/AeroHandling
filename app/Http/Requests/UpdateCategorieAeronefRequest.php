@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateCategorieAeronefRequest extends FormRequest
 {
@@ -23,8 +24,9 @@ class UpdateCategorieAeronefRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:10', 'unique:categorie_aeronefs,code,'.$this->route('categorie_aeronef')->id],
+            'code' => ['required', 'string', 'max:10', Rule::unique('categorie_aeronefs', 'code')->ignore($this->route('categorie_aeronef'))],
             'nom' => ['required', 'string', 'max:100'],
+            'nom_en' => ['nullable', 'string', 'max:100'],
             'tonnage_min' => ['nullable', 'numeric', 'min:0'],
             'tonnage_max' => ['nullable', 'numeric', 'min:0', 'gte:tonnage_min'],
             'tarif_atterrissage_passager' => ['required', 'numeric', 'min:0'],

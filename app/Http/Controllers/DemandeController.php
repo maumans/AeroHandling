@@ -16,7 +16,6 @@ use App\Models\TypeEquipement;
 use App\Models\TypeMarchandise;
 use App\Models\User;
 use App\Services\GestionnaireDemande;
-use App\Services\ProformaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -30,17 +29,20 @@ class DemandeController extends Controller
 {
     public function __construct(
         private GestionnaireDemande $gestionnaire,
-        private ProformaService $proformaService,
     ) {}
 
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $query = Demande::with(['compagnie', 'aeronef', 'utilisateur']);
+        $query = Demande::with(['compagnie', 'aeronef', 'utilisateur', 'natureVol', 'proforma']);
 
         // Filtrer selon le rôle
         if ($user->hasRole('compagnie')) {
-            $query->where('utilisateur_id', $user->id);
+            if ($user->compagnie_id) {
+                $query->where('compagnie_id', $user->compagnie_id);
+            } else {
+                $query->where('utilisateur_id', $user->id);
+            }
         }
 
         if ($request->filled('statut')) {
@@ -96,9 +98,9 @@ class DemandeController extends Controller
         $user = $request->user();
         $user->load('compagnie');
 
-        $naturesVol = NatureVol::where('actif', true)->orderBy('nom')->get()->map(fn ($n) => ['value' => $n->id, 'libelle' => $n->nom]);
-        $typesMarchandise = TypeMarchandise::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]);
-        $typesEquipement = TypeEquipement::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]);
+        $naturesVol = NatureVol::where('actif', true)->orderBy('nom')->get()->map(fn ($n) => ['value' => $n->id, 'libelle' => $n->nomLocalise()]);
+        $typesMarchandise = TypeMarchandise::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]);
+        $typesEquipement = TypeEquipement::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]);
 
         return Inertia::render('Demandes/Creer', [
             'naturesVol' => $naturesVol,
@@ -136,9 +138,9 @@ class DemandeController extends Controller
 
         $demande->load(['equipements', 'servicesAssistance']); // Ensure pivot data is available for equipments
 
-        $naturesVol = NatureVol::where('actif', true)->orderBy('nom')->get()->map(fn ($n) => ['value' => $n->id, 'libelle' => $n->nom]);
-        $typesMarchandise = TypeMarchandise::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]);
-        $typesEquipement = TypeEquipement::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]);
+        $naturesVol = NatureVol::where('actif', true)->orderBy('nom')->get()->map(fn ($n) => ['value' => $n->id, 'libelle' => $n->nomLocalise()]);
+        $typesMarchandise = TypeMarchandise::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]);
+        $typesEquipement = TypeEquipement::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]);
 
         return Inertia::render('Demandes/Editer', [
             'demande' => $demande,
@@ -178,7 +180,7 @@ class DemandeController extends Controller
     {
         $this->authorize('voir', $demande);
 
-        $demande->load(['compagnie', 'aeronef', 'natureVol', 'typeMarchandise', 'utilisateur', 'validations.utilisateur', 'commentaires.utilisateur', 'piecesJointes', 'affectations.equipement', 'affectations.utilisateurAffectation', 'equipements', 'servicesAssistance']);
+        $demande->load(['compagnie', 'aeronef', 'natureVol', 'typeMarchandise', 'utilisateur', 'validations.utilisateur', 'commentaires.utilisateur', 'piecesJointes', 'affectations.equipement', 'affectations.utilisateurAffectation', 'equipements', 'servicesAssistance', 'proforma']);
 
         $peutModifierDemande = $request->user()->can('modifier', $demande);
         $estHandling = $request->user()->hasRole(['handling', 'administrateur']);
@@ -210,7 +212,7 @@ class DemandeController extends Controller
 
                 return [
                     'id' => $eq->id,
-                    'nom' => $type ? $type->nom : 'Type inconnu',
+                    'nom' => $type ? $type->nomLocalise() : (app()->getLocale() === 'en' ? 'Unknown type' : 'Type inconnu'),
                     'pivot' => [
                         'type_equipement_id' => $eq->type_equipement_id,
                         'quantite' => $eq->quantite,
@@ -220,13 +222,10 @@ class DemandeController extends Controller
 
         $demande->equipements_demandes = $equipementsDemandes;
 
-        $proforma = $this->proformaService->calculer($demande);
-
         return Inertia::render('Demandes/Afficher', [
             'demande' => $demande,
             'equipementsDisponibles' => $equipementsDisponibles,
             'agentsDisponibles' => $agentsDisponibles,
-            'proforma' => $proforma,
             'peutModifier' => $request->user()->can('modifier', $demande),
             'peutSoumettre' => $request->user()->can('soumettre', $demande),
             'peutApprouver' => $request->user()->can('approuver', $demande),
@@ -236,6 +235,7 @@ class DemandeController extends Controller
             'peutSupprimer' => $request->user()->can('supprimer', $demande),
             'peutAffecter' => $peutAffecter,
             'peutAjouterPieceJointe' => $peutModifierDemande || $estHandling,
+            'estHandling' => $estHandling,
         ]);
     }
 
@@ -394,21 +394,12 @@ class DemandeController extends Controller
         return Storage::response($demande->manifeste_passager, $nom);
     }
 
-    public function telechargerProforma(Demande $demande)
-    {
-        $this->authorize('voir', $demande);
-
-        $pdf = $this->proformaService->genererPdf($demande);
-
-        return $pdf->download("proforma_{$demande->reference}.pdf");
-    }
-
     /** @return Collection<int, array{id: int, code: string, nom: string, description: string|null}> */
     private function servicesAssistanceActifs(): Collection
     {
         return ServiceAssistance::where('actif', true)
             ->orderBy('ordre')
-            ->get(['id', 'code', 'nom', 'description'])
-            ->map(fn ($s) => ['id' => $s->id, 'code' => $s->code, 'nom' => $s->nom, 'description' => $s->description]);
+            ->get(['id', 'code', 'nom', 'nom_en', 'description'])
+            ->map(fn ($s) => ['id' => $s->id, 'code' => $s->code, 'nom' => $s->nomLocalise(), 'description' => $s->description]);
     }
 }

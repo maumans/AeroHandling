@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { Monitor, Moon, Sun } from 'lucide-react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import type { HTMLAttributes } from 'react';
 import type { Appearance } from '@/hooks/use-appearance';
 import { useAppearance } from '@/hooks/use-appearance';
@@ -10,11 +11,12 @@ export default function AppearanceToggleTab({
     ...props
 }: HTMLAttributes<HTMLDivElement>) {
     const { appearance, updateAppearance } = useAppearance();
+    const { t } = useLaravelReactI18n();
 
     const tabs: { value: Appearance; icon: LucideIcon; label: string }[] = [
-        { value: 'light', icon: Sun, label: 'Clair' },
-        { value: 'dark', icon: Moon, label: 'Sombre' },
-        { value: 'system', icon: Monitor, label: 'Système' },
+        { value: 'light', icon: Sun, label: t('Clair') },
+        { value: 'dark', icon: Moon, label: t('Sombre') },
+        { value: 'system', icon: Monitor, label: t('Système') },
     ];
 
     return (

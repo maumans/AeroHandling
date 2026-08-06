@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import FormulaireAffectation from '@/components/FormulaireAffectation';
 
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function ModalAffectation({ demandeId, equipementsDisponibles, agentsDisponibles, children }: Props) {
+    const { t } = useLaravelReactI18n();
     const [open, setOpen] = useState(false);
 
     return (
@@ -38,9 +40,9 @@ export default function ModalAffectation({ demandeId, equipementsDisponibles, ag
                 }}
             >
                 <DialogHeader>
-                    <DialogTitle>Planifier une affectation</DialogTitle>
+                    <DialogTitle>{t('Planifier une affectation')}</DialogTitle>
                     <DialogDescription>
-                        Affectez des ressources (agent et/ou équipement) pour cette demande.
+                        {t('Affectez des ressources (agent et/ou équipement) pour cette demande.')}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">

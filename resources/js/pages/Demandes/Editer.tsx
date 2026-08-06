@@ -528,7 +528,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                                     step="0.01"
                                                     value={data.tonnage_prevu}
                                                     onChange={(e) => setData('tonnage_prevu', e.target.value)}
-                                                    placeholder="Ex: 25.5"
+                                                    placeholder={t('Ex: 25.5')}
                                                 />
                                             </div>
 
@@ -540,7 +540,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                                     step="0.01"
                                                     value={data.volume_prevu}
                                                     onChange={(e) => setData('volume_prevu', e.target.value)}
-                                                    placeholder="Ex: 120"
+                                                    placeholder={t('Ex: 120')}
                                                 />
                                             </div>
 
@@ -575,7 +575,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                                     type="number"
                                                     value={data.nombre_uld}
                                                     onChange={(e) => setData('nombre_uld', e.target.value)}
-                                                    placeholder="Ex: 12"
+                                                    placeholder={t('Ex: 12')}
                                                 />
                                             </div>
                                         </div>

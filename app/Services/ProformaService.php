@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Demande;
+use App\Models\Proforma;
+use App\Models\ProformaLigne;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
 
@@ -68,7 +70,7 @@ class ProformaService
                 $totalLigne = $pu * $quantite;
 
                 $lignes[] = [
-                    'designation' => $service->nom.($service->unite_facturation ? " ({$service->unite_facturation})" : ''),
+                    'designation' => $service->nomLocalise().($service->unite_facturation ? " ({$service->unite_facturation})" : ''),
                     'quantite' => $quantite,
                     'prix_unitaire' => $pu,
                     'total' => $totalLigne,
@@ -154,18 +156,71 @@ class ProformaService
     }
 
     /**
+     * Crée (ou recrée) un brouillon de facture proforma en base de données pour une demande.
+     */
+    public function creerBrouillon(Demande $demande): Proforma
+    {
+        // Supprimer l'ancienne proforma si elle existe et n'est pas validée
+        if ($demande->proforma) {
+            if ($demande->proforma->statut === 'validee') {
+                return $demande->proforma;
+            }
+            $demande->proforma->delete();
+        }
+
+        $calculs = $this->calculer($demande);
+
+        $proforma = Proforma::create([
+            'demande_id' => $demande->id,
+            'statut' => 'brouillon',
+            'sous_total_ht' => $calculs['sous_total_ht'],
+            'total_majorations' => $calculs['total_majorations'],
+            'total_ht' => $calculs['total_ht'],
+            'tva' => $calculs['tva'],
+            'total_ttc' => $calculs['total_ttc'],
+            'categorie' => $calculs['categorie'],
+            'est_nuit' => $calculs['est_nuit'],
+            'est_ferie' => $calculs['est_ferie'],
+        ]);
+
+        foreach ($calculs['lignes'] as $ligne) {
+            ProformaLigne::create([
+                'proforma_id' => $proforma->id,
+                'designation' => $ligne['designation'],
+                'quantite' => $ligne['quantite'],
+                'prix_unitaire' => $ligne['prix_unitaire'],
+                'total' => $ligne['total'],
+                'type' => 'standard',
+            ]);
+        }
+
+        foreach ($calculs['majorations'] as $majoration) {
+            ProformaLigne::create([
+                'proforma_id' => $proforma->id,
+                'designation' => $majoration['designation'],
+                'quantite' => 1,
+                'prix_unitaire' => $majoration['montant'],
+                'total' => $majoration['montant'],
+                'type' => 'majoration',
+            ]);
+        }
+
+        return $proforma->load('lignes');
+    }
+
+    /**
      * Génère le document PDF de la facture proforma.
      */
     public function genererPdf(Demande $demande): \Barryvdh\DomPDF\PDF
     {
-        $calculs = $this->calculer($demande);
+        $proforma = $demande->proforma()->with('lignes')->firstOrFail();
 
         $data = [
             'demande' => $demande,
             'compagnie' => $demande->compagnie ?? null,
-            'calculs' => $calculs,
+            'proforma' => $proforma,
             'date_generation' => Carbon::now(),
-            'reference_facture' => 'PROF-'.$demande->reference,
+            'reference_facture' => $proforma->reference_facture ?? 'PROF-'.$demande->reference,
         ];
 
         return Pdf::loadView('pdf.proforma', $data)

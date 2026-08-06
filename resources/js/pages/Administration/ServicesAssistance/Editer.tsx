@@ -14,6 +14,7 @@ interface ServiceAssistance {
     code: string;
     categorie: string;
     nom: string;
+    nom_en: string | null;
     description: string | null;
     tarif_unitaire: string | null;
     unite_facturation: string | null;
@@ -31,6 +32,7 @@ export default function AdministrationServicesAssistanceEditer({ service }: Prop
         code: service.code,
         categorie: service.categorie,
         nom: service.nom,
+        nom_en: service.nom_en ?? '',
         description: service.description ?? '',
         tarif_unitaire: service.tarif_unitaire ?? '',
         unite_facturation: service.unite_facturation ?? '',
@@ -101,14 +103,25 @@ export default function AdministrationServicesAssistanceEditer({ service }: Prop
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="nom">{t('Nom')} <span className="text-destructive">*</span></Label>
-                                <Input
-                                    id="nom"
-                                    value={data.nom}
-                                    onChange={(e) => setData('nom', e.target.value)}
-                                />
-                                {errors.nom && <p className="text-sm text-destructive">{errors.nom}</p>}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="nom">{t('Nom')} <span className="text-destructive">*</span></Label>
+                                    <Input
+                                        id="nom"
+                                        value={data.nom}
+                                        onChange={(e) => setData('nom', e.target.value)}
+                                    />
+                                    {errors.nom && <p className="text-sm text-destructive">{errors.nom}</p>}
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="nom_en">{t('Nom (English)')}</Label>
+                                    <Input
+                                        id="nom_en"
+                                        value={data.nom_en}
+                                        onChange={(e) => setData('nom_en', e.target.value)}
+                                    />
+                                    {errors.nom_en && <p className="text-sm text-destructive">{errors.nom_en}</p>}
+                                </div>
                             </div>
 
                             <div className="flex flex-col gap-1.5">

@@ -13,7 +13,10 @@ class NouvelleAffectationNotification extends RealtimeNotification
         return [
             'type' => 'info',
             'title' => 'Nouvelle affectation',
-            'message' => "Vous avez été affecté à la demande {$this->affectation->demande->reference}.",
+            'message' => 'Vous avez été affecté à la demande :reference.',
+            'messageParams' => [
+                'reference' => $this->affectation->demande->reference,
+            ],
             'actionUrl' => '/demandes/'.$this->affectation->demande_id,
         ];
     }

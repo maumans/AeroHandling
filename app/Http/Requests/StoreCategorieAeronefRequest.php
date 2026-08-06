@@ -25,6 +25,7 @@ class StoreCategorieAeronefRequest extends FormRequest
         return [
             'code' => ['required', 'string', 'max:10', 'unique:categorie_aeronefs,code'],
             'nom' => ['required', 'string', 'max:100'],
+            'nom_en' => ['nullable', 'string', 'max:100'],
             'tonnage_min' => ['nullable', 'numeric', 'min:0'],
             'tonnage_max' => ['nullable', 'numeric', 'min:0', 'gte:tonnage_min'],
             'tarif_atterrissage_passager' => ['required', 'numeric', 'min:0'],

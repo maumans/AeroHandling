@@ -8,13 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLaravelReactI18n } from 'laravel-react-i18n';
 
-interface Option { value: string; libelle: string; }
+interface Option { value: string | number; libelle: string; }
 
 interface Equipement {
     id: number;
     code: string;
     nom: string;
-    type: string;
+    type_equipement_id: number | null;
     statut: string;
     capacite_max: string | null;
     notes: string | null;
@@ -30,7 +30,7 @@ export default function AdministrationEquipementsEditer({ equipement, types, sta
     const { data, setData, put, processing, errors } = useForm({
         code: equipement.code,
         nom: equipement.nom,
-        type: equipement.type,
+        type_equipement_id: equipement.type_equipement_id?.toString() ?? '',
         statut: equipement.statut,
         capacite_max: equipement.capacite_max ?? '',
         notes: equipement.notes ?? '',
@@ -86,15 +86,15 @@ export default function AdministrationEquipementsEditer({ equipement, types, sta
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5">
                                     <Label>{t('Type')} <span className="text-destructive">*</span></Label>
-                                    <Select value={data.type} onValueChange={(v) => setData('type', v)}>
+                                    <Select value={data.type_equipement_id} onValueChange={(v) => setData('type_equipement_id', v)}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            {types.map((t) => (
-                                                <SelectItem key={t.value} value={t.value}>{t.libelle}</SelectItem>
+                                            {types.map((option) => (
+                                                <SelectItem key={option.value} value={option.value.toString()}>{option.libelle}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
+                                    {errors.type_equipement_id && <p className="text-sm text-destructive">{errors.type_equipement_id}</p>}
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     <Label>{t('Statut')} <span className="text-destructive">*</span></Label>
@@ -102,7 +102,7 @@ export default function AdministrationEquipementsEditer({ equipement, types, sta
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             {statuts.map((s) => (
-                                                <SelectItem key={s.value} value={s.value}>{s.libelle}</SelectItem>
+                                                <SelectItem key={s.value} value={s.value.toString()}>{s.libelle}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>

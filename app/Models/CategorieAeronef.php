@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasNomLocalise;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,11 +10,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CategorieAeronef extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasNomLocalise, SoftDeletes;
 
     protected $fillable = [
         'code',
         'nom',
+        'nom_en',
         'tonnage_min',
         'tonnage_max',
         'tarif_atterrissage_passager',

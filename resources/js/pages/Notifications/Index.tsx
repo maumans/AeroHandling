@@ -11,6 +11,7 @@ interface NotificationData {
     type: 'info' | 'success' | 'warning' | 'error' | string;
     title?: string;
     message: string;
+    messageParams?: Record<string, string>;
     actionUrl?: string;
 }
 
@@ -34,7 +35,7 @@ interface Props {
     nonLues: number;
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, t: (key: string) => string): string {
     const date = new Date(dateStr);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -42,8 +43,8 @@ function formatDate(dateStr: string): string {
     yesterday.setDate(yesterday.getDate() - 1);
     const notifDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-    if (notifDate.getTime() === today.getTime()) return "Aujourd'hui";
-    if (notifDate.getTime() === yesterday.getTime()) return 'Hier';
+    if (notifDate.getTime() === today.getTime()) return t("Aujourd'hui");
+    if (notifDate.getTime() === yesterday.getTime()) return t('Hier');
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
@@ -51,9 +52,9 @@ function formatHeure(dateStr: string): string {
     return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function groupByDate(notifications: Notification[]): Record<string, Notification[]> {
+function groupByDate(notifications: Notification[], t: (key: string) => string): Record<string, Notification[]> {
     return notifications.reduce<Record<string, Notification[]>>((acc, notif) => {
-        const key = formatDate(notif.created_at);
+        const key = formatDate(notif.created_at, t);
         if (!acc[key]) acc[key] = [];
         acc[key].push(notif);
         return acc;
@@ -62,7 +63,7 @@ function groupByDate(notifications: Notification[]): Record<string, Notification
 
 export default function NotificationsIndex({ notifications, nonLues }: Props) {
     const { t } = useLaravelReactI18n();
-    const grouped = groupByDate(notifications.data);
+    const grouped = groupByDate(notifications.data, t);
 
     function marquerLue(id: string) {
         router.post(`/notifications/${id}/lire`, {}, { preserveScroll: true });
@@ -160,11 +161,11 @@ export default function NotificationsIndex({ notifications, nonLues }: Props) {
                                                     </div>
                                                     {notif.data.title && (
                                                         <p className={`mt-1 text-sm ${notif.read_at === null ? 'font-semibold text-foreground' : 'font-medium text-foreground'}`}>
-                                                            {notif.data.title}
+                                                            {t(notif.data.title)}
                                                         </p>
                                                     )}
                                                     <p className="mt-0.5 text-sm text-muted-foreground">
-                                                        {notif.data.message}
+                                                        {t(notif.data.message, notif.data.messageParams)}
                                                     </p>
                                                     <p className="mt-1 text-xs text-muted-foreground">
                                                         {formatHeure(notif.created_at)}

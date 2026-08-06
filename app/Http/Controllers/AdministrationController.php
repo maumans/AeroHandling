@@ -27,8 +27,10 @@ use App\Models\User;
 use App\Notifications\AccountActivated;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
@@ -355,7 +357,7 @@ class AdministrationController extends Controller
                 'code' => $a->code,
                 'modele' => $a->modele,
                 'type' => $a->type_aeronef_id,
-                'type_libelle' => $a->typeAeronef ? $a->typeAeronef->nom : 'N/A',
+                'type_libelle' => $a->typeAeronef ? $a->typeAeronef->nomLocalise() : 'N/A',
                 'capacite_passagers' => $a->capacite_passagers,
                 'capacite_cargo_tonnes' => $a->capacite_cargo_tonnes,
                 'demandes_count' => $a->demandes_count,
@@ -371,7 +373,7 @@ class AdministrationController extends Controller
         $this->authorizeAdmin($request);
 
         return Inertia::render('Administration/Aeronefs/Creer', [
-            'types' => TypeAeronef::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]),
+            'types' => TypeAeronef::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]),
             'categories' => CategorieAeronef::orderBy('code')->get(['id', 'code', 'nom']),
         ]);
     }
@@ -400,7 +402,7 @@ class AdministrationController extends Controller
                 'capacite_cargo_tonnes' => $a->capacite_cargo_tonnes,
                 'categorie_aeronef_id' => $a->categorie_aeronef_id,
             ],
-            'types' => TypeAeronef::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]),
+            'types' => TypeAeronef::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]),
             'categories' => CategorieAeronef::orderBy('code')->get(['id', 'code', 'nom']),
         ]);
     }
@@ -441,7 +443,7 @@ class AdministrationController extends Controller
                 'code' => $e->code,
                 'nom' => $e->nom,
                 'type' => $e->type_equipement_id,
-                'type_libelle' => $e->typeEquipement?->nom ?? '—',
+                'type_libelle' => $e->typeEquipement?->nomLocalise() ?? '—',
                 'statut' => $e->getRawOriginal('statut'),
                 'statut_libelle' => $e->statut->libelle(),
                 'capacite_max' => $e->capacite_max,
@@ -457,7 +459,7 @@ class AdministrationController extends Controller
         $this->authorizeAdmin($request);
 
         return Inertia::render('Administration/Equipements/Creer', [
-            'types' => TypeEquipement::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]),
+            'types' => TypeEquipement::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]),
             'statuts' => collect(StatutEquipement::cases())
                 ->map(fn ($s) => ['value' => $s->value, 'libelle' => $s->libelle()]),
         ]);
@@ -487,7 +489,7 @@ class AdministrationController extends Controller
                 'capacite_max' => $e->capacite_max,
                 'notes' => $e->notes,
             ],
-            'types' => TypeEquipement::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nom]),
+            'types' => TypeEquipement::where('actif', true)->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]),
             'statuts' => collect(StatutEquipement::cases())
                 ->map(fn ($s) => ['value' => $s->value, 'libelle' => $s->libelle()]),
         ]);
@@ -669,8 +671,8 @@ class AdministrationController extends Controller
         $this->authorizeAdmin($request);
 
         $donnees = $request->validate([
-            'couleur_primaire' => ['required', 'string', 'max:20'],
-            'couleur_secondaire' => ['required', 'string', 'max:20'],
+            'couleur_primaire' => ['required', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+            'couleur_secondaire' => ['required', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,svg', 'max:2048'],
             'remove_logo' => ['nullable', 'boolean'],
         ]);
@@ -679,13 +681,13 @@ class AdministrationController extends Controller
         $configDesign = $configDesignDb ? $configDesignDb->valeur : [];
 
         if (isset($donnees['remove_logo']) && $donnees['remove_logo']) {
-            if (isset($configDesign['logo_url']) && \Illuminate\Support\Facades\Storage::disk('public')->exists(str_replace('/storage/', '', $configDesign['logo_url']))) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete(str_replace('/storage/', '', $configDesign['logo_url']));
+            if (isset($configDesign['logo_url']) && Storage::disk('public')->exists(str_replace('/storage/', '', $configDesign['logo_url']))) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $configDesign['logo_url']));
             }
             $configDesign['logo_url'] = null;
         } elseif ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('logos', 'public');
-            $configDesign['logo_url'] = '/storage/' . $path;
+            $configDesign['logo_url'] = '/storage/'.$path;
         }
 
         $configDesign['couleur_primaire'] = $donnees['couleur_primaire'];
@@ -695,8 +697,8 @@ class AdministrationController extends Controller
             ['cle' => 'config_design'],
             ['valeur' => $configDesign]
         );
-        
-        \Illuminate\Support\Facades\Cache::forget('config_design');
+
+        Cache::forget('config_design');
 
         return redirect()->route('administration.parametres.index', ['onglet' => 'design'])
             ->with('success', 'Configuration de marque et design mise à jour.');

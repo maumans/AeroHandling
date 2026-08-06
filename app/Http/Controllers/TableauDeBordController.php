@@ -59,7 +59,7 @@ class TableauDeBordController extends Controller
 
         $repartitionNatures = NatureVol::where('actif', true)->get()->map(fn (NatureVol $nature) => [
             'nature' => $nature->id,
-            'libelle' => $nature->nom,
+            'libelle' => $nature->nomLocalise(),
             'total' => $baseQuery()->where('nature_vol_id', $nature->id)->count(),
         ])->values();
 

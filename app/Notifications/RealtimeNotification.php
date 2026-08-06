@@ -41,8 +41,15 @@ abstract class RealtimeNotification extends Notification implements ShouldBroadc
 
     /**
      * Define the data structure that will be saved to the database and broadcasted.
-     * Expected keys: type, title, message, actionUrl (optional)
-     * type must be one of: 'info', 'success', 'warning', 'error'
+     *
+     * Expected keys:
+     * - type: 'info' | 'success' | 'warning' | 'error'
+     * - title: a translation key (the exact French UI string used elsewhere as a t() key), no interpolation
+     * - message: a translation key, may contain `:placeholder` tokens (resolved by messageParams)
+     * - messageParams (optional): array<string, string> — values substituted into the `:placeholder` tokens
+     *   of `message` by the frontend's t(message, messageParams), so the message renders in the viewer's
+     *   current language instead of being frozen in French at creation time.
+     * - actionUrl (optional)
      *
      * @return array<string, mixed>
      */

@@ -12,6 +12,7 @@ interface CategorieAeronef {
     id: number;
     code: string;
     nom: string;
+    nom_en: string | null;
     tonnage_min: string | null;
     tonnage_max: string | null;
     tarif_atterrissage_passager: string;
@@ -29,6 +30,7 @@ export default function AdministrationCategoriesAeronefEditer({ categorie }: Pro
     const { data, setData, put, delete: destroy, processing, errors } = useForm({
         code: categorie.code,
         nom: categorie.nom,
+        nom_en: categorie.nom_en ?? '',
         tonnage_min: categorie.tonnage_min ?? '',
         tonnage_max: categorie.tonnage_max ?? '',
         tarif_atterrissage_passager: categorie.tarif_atterrissage_passager,
@@ -94,6 +96,15 @@ export default function AdministrationCategoriesAeronefEditer({ categorie }: Pro
                                         onChange={(e) => setData('nom', e.target.value)}
                                     />
                                     {errors.nom && <p className="text-sm text-destructive">{errors.nom}</p>}
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="nom_en">{t('Nom (English)')}</Label>
+                                    <Input
+                                        id="nom_en"
+                                        value={data.nom_en}
+                                        onChange={(e) => setData('nom_en', e.target.value)}
+                                    />
+                                    {errors.nom_en && <p className="text-sm text-destructive">{errors.nom_en}</p>}
                                 </div>
                             </div>
 

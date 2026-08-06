@@ -86,7 +86,7 @@ class RapportController extends Controller
             ->with('natureVol')
             ->get()
             ->map(fn ($ligne) => [
-                'libelle' => $ligne->natureVol ? $ligne->natureVol->nom : 'N/A',
+                'libelle' => $ligne->natureVol ? $ligne->natureVol->nomLocalise() : 'N/A',
                 'total' => $ligne->total,
             ]);
 
@@ -204,7 +204,7 @@ class RapportController extends Controller
                 ->with('natureVol')
                 ->get()
                 ->map(fn ($ligne) => [
-                    'libelle' => $ligne->natureVol ? $ligne->natureVol->nom : 'N/A',
+                    'libelle' => $ligne->natureVol ? $ligne->natureVol->nomLocalise() : 'N/A',
                     'total' => $ligne->total,
                 ]);
 

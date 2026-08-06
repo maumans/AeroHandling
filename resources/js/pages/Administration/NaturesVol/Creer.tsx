@@ -12,6 +12,7 @@ export default function AdministrationNaturesVolCreer() {
     const { data, setData, post, processing, errors } = useForm({
         code: '',
         nom: '',
+        nom_en: '',
         est_cargo: false,
         est_vol_special: false,
         actif: true,
@@ -64,6 +65,16 @@ export default function AdministrationNaturesVolCreer() {
                                         placeholder="Passager"
                                     />
                                     {errors.nom && <p className="text-sm text-destructive">{errors.nom}</p>}
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="nom_en">{t('Nom (English)')}</Label>
+                                    <Input
+                                        id="nom_en"
+                                        value={data.nom_en}
+                                        onChange={(e) => setData('nom_en', e.target.value)}
+                                        placeholder="Passenger"
+                                    />
+                                    {errors.nom_en && <p className="text-sm text-destructive">{errors.nom_en}</p>}
                                 </div>
                             </div>
 

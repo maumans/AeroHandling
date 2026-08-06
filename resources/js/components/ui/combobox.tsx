@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
+import { useLaravelReactI18n } from "laravel-react-i18n"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -31,12 +32,15 @@ export function Combobox({
   options,
   value,
   onChange,
-  placeholder = "Sélectionner...",
-  emptyText = "Aucun résultat trouvé.",
+  placeholder,
+  emptyText,
   className,
   disabled = false,
 }: ComboboxProps) {
+  const { t } = useLaravelReactI18n()
   const [open, setOpen] = React.useState(false)
+  const resolvedPlaceholder = placeholder ?? t("Sélectionner...")
+  const resolvedEmptyText = emptyText ?? t("Aucun résultat trouvé.")
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={true}>
@@ -51,7 +55,7 @@ export function Combobox({
           <span className="truncate">
           {value
             ? options.find((option) => option.value === value)?.label
-            : placeholder}
+            : resolvedPlaceholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -61,10 +65,10 @@ export function Combobox({
         align="start"
       >
         <Command>
-          <CommandInput placeholder="Rechercher..." />
+          <CommandInput placeholder={t("Rechercher...")} />
           {/* touch-action:pan-y enables two-finger trackpad scroll; overscroll-contain prevents page scroll bleed */}
           <CommandList style={{ touchAction: 'pan-y', overscrollBehavior: 'contain' }}>
-            <CommandEmpty>{emptyText}</CommandEmpty>
+            <CommandEmpty>{resolvedEmptyText}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
                 <CommandItem

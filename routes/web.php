@@ -3,6 +3,9 @@
 use App\Http\Controllers\Administration\CategorieAeronefController;
 use App\Http\Controllers\Administration\NatureVolController;
 use App\Http\Controllers\Administration\ServiceAssistanceController;
+use App\Http\Controllers\Administration\TypeAeronefController;
+use App\Http\Controllers\Administration\TypeEquipementController;
+use App\Http\Controllers\Administration\TypeMarchandiseController;
 use App\Http\Controllers\AdministrationController;
 use App\Http\Controllers\AffectationController;
 use App\Http\Controllers\CapaciteController;
@@ -12,6 +15,7 @@ use App\Http\Controllers\InscriptionController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlanningController;
+use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\RapportController;
 use App\Http\Controllers\TableauDeBordController;
 use Illuminate\Support\Facades\Route;
@@ -65,7 +69,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/demandes/{demande}/manifeste', [DemandeController::class, 'telechargerManifeste'])->name('demandes.manifeste.telecharger');
 
     // Facture Proforma
-    Route::get('/demandes/{demande}/proforma', [DemandeController::class, 'telechargerProforma'])->name('demandes.proforma.telecharger');
+    Route::post('/demandes/{demande}/proforma/demander', [ProformaController::class, 'demander'])->name('proformas.demander');
+    Route::get('/demandes/{demande}/proforma/{proforma}/editer', [ProformaController::class, 'editer'])->name('proformas.editer');
+    Route::put('/demandes/{demande}/proforma/{proforma}', [ProformaController::class, 'update'])->name('proformas.update');
+    Route::post('/demandes/{demande}/proforma/{proforma}/valider', [ProformaController::class, 'valider'])->name('proformas.valider');
+    Route::get('/demandes/{demande}/proforma/{proforma}/telecharger', [ProformaController::class, 'telecharger'])->name('proformas.telecharger');
 
     // Planning, Capacités & Rapports (Handling & Coordinateur)
     Route::middleware(['role:handling|coordinateur|administrateur'])->group(function () {
@@ -120,10 +128,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('administration/services-assistance', ServiceAssistanceController::class)->except(['show'])->names('administration.services-assistance');
 
         // Administration — Catégories Aéronefs
-        Route::resource('administration/categories-aeronef', CategorieAeronefController::class)->except(['show'])->names('categories-aeronef');
+        // ->parameters() force un nom de paramètre singulier ("categorie_aeronef") : Route::resource() nomme sinon
+        // le paramètre d'après le segment d'URI pluriel tel quel ("categories_aeronef"), ce qui ne correspond à
+        // aucune conversion (Str::snake) du nom de variable PHP camelCase du contrôleur ($categorieAeronef) et
+        // empêche silencieusement le binding implicite de modèle (cf. DEVBOOK §29).
+        Route::resource('administration/categories-aeronef', CategorieAeronefController::class)->except(['show'])->names('categories-aeronef')->parameters(['categories-aeronef' => 'categorie_aeronef']);
 
         // Administration — Natures Vol
-        Route::resource('administration/natures-vol', NatureVolController::class)->except(['show'])->names('administration.natures-vol');
+        Route::resource('administration/natures-vol', NatureVolController::class)->except(['show'])->names('administration.natures-vol')->parameters(['natures-vol' => 'nature_vol']);
+
+        // Administration — Types d'équipement
+        Route::resource('administration/types-equipement', TypeEquipementController::class)->except(['show'])->names('administration.types-equipement')->parameters(['types-equipement' => 'type_equipement']);
+
+        // Administration — Types d'aéronef
+        Route::resource('administration/types-aeronef', TypeAeronefController::class)->except(['show'])->names('administration.types-aeronef')->parameters(['types-aeronef' => 'type_aeronef']);
+
+        // Administration — Types de marchandise
+        Route::resource('administration/types-marchandise', TypeMarchandiseController::class)->except(['show'])->names('administration.types-marchandise')->parameters(['types-marchandise' => 'type_marchandise']);
 
         // Administration — Jours Fériés
         Route::get('/administration/jours-feries', [AdministrationController::class, 'joursFeries'])->name('administration.jours_feries.index');

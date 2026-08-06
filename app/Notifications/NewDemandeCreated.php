@@ -36,7 +36,11 @@ class NewDemandeCreated extends RealtimeNotification
         return [
             'type' => 'info',
             'title' => 'Nouvelle demande de handling',
-            'message' => 'Une nouvelle demande a été soumise par '.($this->demande->compagnie_libelle ?? $this->demande->compagnie->nom ?? 'une compagnie').' pour le vol '.$this->demande->numero_vol.'.',
+            'message' => 'Une nouvelle demande a été soumise par :compagnie pour le vol :numero.',
+            'messageParams' => [
+                'compagnie' => $this->demande->compagnie_libelle ?? $this->demande->compagnie->nom ?? 'une compagnie',
+                'numero' => $this->demande->numero_vol,
+            ],
             'actionUrl' => '/demandes/'.$this->demande->id,
         ];
     }

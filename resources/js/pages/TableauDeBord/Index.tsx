@@ -190,7 +190,7 @@ export default function TableauDeBordIndex({
                                 onValueChange={(val) => changerPeriode('compagnie_id', val === "all" ? '' : val)}
                             >
                                 <SelectTrigger className="w-[160px] h-9">
-                                    <SelectValue placeholder="Toutes" />
+                                    <SelectValue placeholder={t('Toutes')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">{t('Toutes')}</SelectItem>
@@ -207,7 +207,7 @@ export default function TableauDeBordIndex({
                                 onValueChange={(val) => changerPeriode('statut', val === "all" ? '' : val)}
                             >
                                 <SelectTrigger className="w-[160px] h-9">
-                                    <SelectValue placeholder="Tous" />
+                                    <SelectValue placeholder={t('Tous')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">{t('Tous')}</SelectItem>

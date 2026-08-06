@@ -1,5 +1,6 @@
 // Components
 import { Form, Head } from '@inertiajs/react';
+import { useLaravelReactI18n } from 'laravel-react-i18n';
 import { LoaderCircle } from 'lucide-react';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -10,9 +11,11 @@ import { login } from '@/routes';
 import { email } from '@/routes/password';
 
 export default function ForgotPassword({ status }: { status?: string }) {
+    const { t } = useLaravelReactI18n();
+
     return (
         <>
-            <Head title="Mot de passe oublié" />
+            <Head title={t('Mot de passe oublié')} />
 
             {status && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600">
@@ -25,7 +28,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Adresse email</Label>
+                                <Label htmlFor="email">{t('Adresse email')}</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -47,7 +50,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     {processing && (
                                         <LoaderCircle className="h-4 w-4 animate-spin" />
                                     )}
-                                    Envoyer le lien de réinitialisation
+                                    {t('Envoyer le lien de réinitialisation')}
                                 </Button>
                             </div>
                         </>
@@ -55,8 +58,8 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </Form>
 
                 <div className="space-x-1 text-center text-sm text-muted-foreground">
-                    <span>Ou retourner à la</span>
-                    <TextLink href={login()}>connexion</TextLink>
+                    <span>{t('Ou retourner à la')}</span>
+                    <TextLink href={login()}>{t('connexion')}</TextLink>
                 </div>
             </div>
         </>

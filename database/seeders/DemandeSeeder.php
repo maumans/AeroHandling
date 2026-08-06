@@ -7,6 +7,7 @@ use App\Models\Aeronef;
 use App\Models\Compagnie;
 use App\Models\Demande;
 use App\Models\NatureVol;
+use App\Models\TypeMarchandise;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -17,6 +18,7 @@ class DemandeSeeder extends Seeder
         $compagnies = Compagnie::all();
         $aeronefs = Aeronef::all();
         $operateur = User::role('compagnie')->first();
+        $typesMarchandise = TypeMarchandise::pluck('id')->all();
 
         if (! $operateur || $compagnies->isEmpty() || $aeronefs->isEmpty()) {
             return;
@@ -64,7 +66,7 @@ class DemandeSeeder extends Seeder
                 'date_depart' => $dateDepart,
                 'tonnage_prevu' => fake()->optional(0.7)->randomFloat(2, 5, 80),
                 'volume_prevu' => fake()->optional(0.5)->randomFloat(2, 20, 300),
-                'type_marchandise' => fake()->optional(0.6)->randomElement(['Général', 'Périssable', 'Dangereux', 'Valeur', 'Animaux vivants', 'Courrier']),
+                'type_marchandise_id' => fake()->optional(0.6)->randomElement($typesMarchandise),
                 'nombre_uld' => fake()->optional(0.5)->numberBetween(1, 25),
                 'exigences_particulieres' => fake()->optional(0.3)->sentence(),
                 'statut' => $statut,

@@ -12,6 +12,7 @@ interface NatureVol {
     id: number;
     code: string;
     nom: string;
+    nom_en: string | null;
     est_cargo: boolean;
     est_vol_special: boolean;
     actif: boolean;
@@ -25,6 +26,7 @@ export default function AdministrationNaturesVolEditer({ nature }: Props) {
     const { data, setData, put, delete: destroy, processing, errors } = useForm({
         code: nature.code,
         nom: nature.nom,
+        nom_en: nature.nom_en ?? '',
         est_cargo: nature.est_cargo,
         est_vol_special: nature.est_vol_special,
         actif: nature.actif,
@@ -86,6 +88,15 @@ export default function AdministrationNaturesVolEditer({ nature }: Props) {
                                         onChange={(e) => setData('nom', e.target.value)}
                                     />
                                     {errors.nom && <p className="text-sm text-destructive">{errors.nom}</p>}
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="nom_en">{t('Nom (English)')}</Label>
+                                    <Input
+                                        id="nom_en"
+                                        value={data.nom_en}
+                                        onChange={(e) => setData('nom_en', e.target.value)}
+                                    />
+                                    {errors.nom_en && <p className="text-sm text-destructive">{errors.nom_en}</p>}
                                 </div>
                             </div>
 
