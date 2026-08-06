@@ -27,7 +27,7 @@ class CompagnieSeeder extends Seeder
                 ['code_iata' => $compagnie['code_iata']],
                 array_merge($compagnie, [
                     'contact_email' => strtolower(str_replace(' ', '', $compagnie['nom'])).'@example.com',
-                    'contact_telephone' => '+'.fake()->numberBetween(1, 99).' '.fake()->numerify('## ### ## ##'),
+                    'contact_telephone' => '+'.rand(1, 99).' '.rand(100, 999).' '.rand(10, 99).' '.rand(10, 99),
                     'actif' => true,
                 ])
             );

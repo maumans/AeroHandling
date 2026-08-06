@@ -15,6 +15,11 @@ class DemandeSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $this->command->info('Skipping DemandeSeeder in production environment.');
+            return;
+        }
+
         $compagnies = Compagnie::all();
         $aeronefs = Aeronef::all();
         $operateur = User::role('compagnie')->first();
