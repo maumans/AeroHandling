@@ -11,7 +11,17 @@ class AeronefSeeder extends Seeder
 {
     public function run(): void
     {
-        $categorieId = CategorieAeronef::first()?->id ?? CategorieAeronef::factory()->create()->id;
+        $categorieId = CategorieAeronef::first()?->id ?? CategorieAeronef::create([
+            'code' => 'GEN',
+            'nom' => 'Générique',
+            'tonnage_min' => 0,
+            'tonnage_max' => 500,
+            'tarif_atterrissage_passager' => 500,
+            'tarif_atterrissage_cargo' => 500,
+            'tarif_balisage' => 100,
+            'tarif_passerelle' => 500,
+            'actif' => true,
+        ])->id;
 
         $typePassager = TypeAeronef::where('code', 'passager')->first()?->id;
         $typeCargo = TypeAeronef::where('code', 'cargo')->first()?->id;
@@ -31,7 +41,7 @@ class AeronefSeeder extends Seeder
         ];
 
         foreach ($aeronefs as $aeronef) {
-            Aeronef::create($aeronef);
+            Aeronef::updateOrCreate(['code' => $aeronef['code']], $aeronef);
         }
     }
 }
