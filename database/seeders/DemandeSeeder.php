@@ -15,8 +15,8 @@ class DemandeSeeder extends Seeder
 {
     public function run(): void
     {
-        if (app()->environment('production')) {
-            $this->command->info('Skipping DemandeSeeder in production environment.');
+        if (! class_exists(\Faker\Factory::class)) {
+            $this->command->info('Skipping DemandeSeeder because Faker is missing (likely production env).');
             return;
         }
 
