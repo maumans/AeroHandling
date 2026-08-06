@@ -23,11 +23,14 @@ class CompagnieSeeder extends Seeder
         ];
 
         foreach ($compagnies as $compagnie) {
-            Compagnie::create(array_merge($compagnie, [
-                'contact_email' => strtolower(str_replace(' ', '', $compagnie['nom'])).'@example.com',
-                'contact_telephone' => '+'.fake()->numberBetween(1, 99).' '.fake()->numerify('## ### ## ##'),
-                'actif' => true,
-            ]));
+            Compagnie::updateOrCreate(
+                ['code_iata' => $compagnie['code_iata']],
+                array_merge($compagnie, [
+                    'contact_email' => strtolower(str_replace(' ', '', $compagnie['nom'])).'@example.com',
+                    'contact_telephone' => '+'.fake()->numberBetween(1, 99).' '.fake()->numerify('## ### ## ##'),
+                    'actif' => true,
+                ])
+            );
         }
     }
 }
