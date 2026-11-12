@@ -98,7 +98,7 @@ class DemandeController extends Controller
         $user = $request->user();
         $user->load('compagnie');
 
-        $naturesVol = NatureVol::where('actif', true)->orderBy('nom')->get()->map(fn ($n) => ['value' => $n->id, 'libelle' => $n->nomLocalise()]);
+        $naturesVol = $this->naturesVolActives();
         $typesMarchandise = TypeMarchandise::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]);
         $typesEquipement = TypeEquipement::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]);
 
@@ -138,7 +138,7 @@ class DemandeController extends Controller
 
         $demande->load(['equipements', 'servicesAssistance']); // Ensure pivot data is available for equipments
 
-        $naturesVol = NatureVol::where('actif', true)->orderBy('nom')->get()->map(fn ($n) => ['value' => $n->id, 'libelle' => $n->nomLocalise()]);
+        $naturesVol = $this->naturesVolActives();
         $typesMarchandise = TypeMarchandise::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]);
         $typesEquipement = TypeEquipement::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]);
 
@@ -392,6 +392,20 @@ class DemandeController extends Controller
         $nom = 'manifeste-'.$demande->reference.'.'.pathinfo($demande->manifeste_passager, PATHINFO_EXTENSION);
 
         return Storage::response($demande->manifeste_passager, $nom);
+    }
+
+    /** @return Collection<int, array{value: int, libelle: string, est_cargo: bool, est_vol_special: bool}> */
+    private function naturesVolActives(): Collection
+    {
+        return NatureVol::where('actif', true)
+            ->orderBy('nom')
+            ->get()
+            ->map(fn (NatureVol $n) => [
+                'value' => $n->id,
+                'libelle' => $n->nomLocalise(),
+                'est_cargo' => $n->est_cargo,
+                'est_vol_special' => $n->est_vol_special,
+            ]);
     }
 
     /** @return Collection<int, array{id: int, code: string, nom: string, description: string|null}> */

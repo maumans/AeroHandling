@@ -10,6 +10,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class DemandeCreationTest extends TestCase
@@ -152,5 +153,57 @@ class DemandeCreationTest extends TestCase
             'nature_vol_id' => $natureHumanitaire->id,
             'tow_bar_a_bord' => true,
         ]);
+    }
+
+    public function test_la_page_de_creation_expose_les_natures_de_vol_avec_leurs_indicateurs(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $utilisateur = User::factory()->create();
+        $utilisateur->assignRole('compagnie');
+        $natureCargo = NatureVol::factory()->create([
+            'nom' => 'Cargo',
+            'code' => 'freighter',
+            'est_cargo' => true,
+            'est_vol_special' => false,
+            'actif' => true,
+        ]);
+
+        $this->actingAs($utilisateur)
+            ->get(route('demandes.creer'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Demandes/Creer')
+                ->where('naturesVol.0.value', $natureCargo->id)
+                ->where('naturesVol.0.est_cargo', true)
+                ->where('naturesVol.0.est_vol_special', false)
+            );
+    }
+
+    public function test_la_nature_du_vol_est_obligatoire_a_la_creation(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $utilisateur = User::factory()->create();
+        $utilisateur->assignRole('compagnie');
+
+        $this->actingAs($utilisateur)
+            ->post(route('demandes.enregistrer'), [
+                'action' => 'brouillon',
+                'compagnie_libelle' => 'Air Test',
+                'type_aeronef' => 'B737',
+                'immatriculation' => 'CN-TEST',
+                'numero_vol' => 'AT5555',
+                'aeroport_provenance' => 'Paris CDG',
+                'aeroport_destination' => 'Casablanca',
+                'demandeur' => 'Jean Dupont',
+                'contact_demandeur' => 'jean.dupont@airtest.com',
+                'mtow' => 80,
+                'date_arrivee' => now()->addDays(2)->format('Y-m-d H:i:s'),
+                'date_depart' => now()->addDays(2)->addHours(4)->format('Y-m-d H:i:s'),
+            ])
+            ->assertSessionHasErrors('nature_vol_id');
+
+        $this->assertDatabaseMissing('demandes', ['numero_vol' => 'AT5555']);
     }
 }

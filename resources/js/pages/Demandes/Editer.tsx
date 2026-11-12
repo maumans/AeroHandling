@@ -24,17 +24,22 @@ interface ServiceAssistance {
     description: string | null;
 }
 
+interface NatureVolOption {
+    value: number;
+    libelle: string;
+    est_cargo: boolean;
+    est_vol_special: boolean;
+}
+
 interface Props {
     demande: any;
-    naturesVol: Option[];
+    naturesVol: NatureVolOption[];
     typesMarchandise: Option[];
     typesEquipement: Option[];
     servicesAssistance: ServiceAssistance[];
 }
 
 
-
-const NATURES_VOL_SPECIALES = ['charter', 'vol_supplementaire', 'vol_evacuation_medicale', 'vol_rapatriement_humanitaire'];
 
 export default function DemandesEditer({ demande, naturesVol, typesMarchandise, typesEquipement, servicesAssistance }: Props) {
     const { t } = useLaravelReactI18n();
@@ -74,7 +79,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
         aeroport_destination: demande.aeroport_destination || '',
         reference_autorisation: demande.reference_autorisation || '',
         payeur: demande.payeur || '',
-        nature_vol: demande.nature_vol || '',
+        nature_vol_id: demande.nature_vol_id?.toString() || '',
         mtow: demande.mtow || '',
         tow_bar_a_bord: demande.tow_bar_a_bord || false,
         demandeur: demande.demandeur || '',
@@ -94,8 +99,9 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
         _method: 'put',
     });
 
-    const estCargo = data.nature_vol === 'freighter';
-    const estVolSpecial = NATURES_VOL_SPECIALES.includes(data.nature_vol);
+    const natureVolSelectionnee = naturesVol.find((n) => n.value.toString() === data.nature_vol_id);
+    const estCargo = natureVolSelectionnee?.est_cargo ?? false;
+    const estVolSpecial = natureVolSelectionnee?.est_vol_special ?? false;
 
     const handleEquipementToggle = (typeId: number, checked: boolean) => {
         const current = [...data.equipements_demandes];
@@ -138,11 +144,11 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
             } else {
                 clearErrors('numero_vol');
             }
-            if (!data.nature_vol) {
-                setError('nature_vol', t('Veuillez sélectionner la nature du vol.'));
+            if (!data.nature_vol_id) {
+                setError('nature_vol_id', t('Veuillez sélectionner la nature du vol.'));
                 isValid = false;
             } else {
-                clearErrors('nature_vol');
+                clearErrors('nature_vol_id');
             }
             if (!data.mtow) {
                 setError('mtow', t('Le champ :field est obligatoire.', { field: 'MTOW' }));
@@ -342,14 +348,14 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="nature_vol">{t('Nature du vol')} <span className="text-destructive">*</span></Label>
+                                        <Label htmlFor="nature_vol_id">{t('Nature du vol')} <span className="text-destructive">*</span></Label>
                                         <Combobox
-                                            value={data.nature_vol}
-                                            onChange={(v) => setData('nature_vol', v)}
+                                            value={data.nature_vol_id}
+                                            onChange={(v) => setData('nature_vol_id', v)}
                                             placeholder={t('Sélectionner la nature du vol')}
-                                            options={naturesVol.map((n) => ({ label: n.libelle, value: n.value }))}
+                                            options={naturesVol.map((n) => ({ label: n.libelle, value: n.value.toString() }))}
                                         />
-                                        {errors.nature_vol && <p className="text-sm text-destructive">{errors.nature_vol}</p>}
+                                        {errors.nature_vol_id && <p className="text-sm text-destructive">{errors.nature_vol_id}</p>}
                                     </div>
 
                                     <div className="space-y-2">
@@ -728,7 +734,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                             <dt className="text-muted-foreground">{t('Destination :')}</dt>
                                             <dd>{data.aeroport_destination || '—'}</dd>
                                             <dt className="text-muted-foreground">{t('Nature :')}</dt>
-                                            <dd>{naturesVol.find((n) => n.value === data.nature_vol)?.libelle || '—'}</dd>
+                                            <dd>{natureVolSelectionnee?.libelle || '—'}</dd>
                                             <dt className="text-muted-foreground">{t('MTOW :')}</dt>
                                             <dd>{data.mtow ? `${data.mtow} t` : '—'}</dd>
                                             {estVolSpecial && (

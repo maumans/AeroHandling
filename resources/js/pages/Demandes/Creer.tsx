@@ -24,8 +24,15 @@ interface ServiceAssistance {
     description: string | null;
 }
 
+interface NatureVolOption {
+    value: number;
+    libelle: string;
+    est_cargo: boolean;
+    est_vol_special: boolean;
+}
+
 interface Props {
-    naturesVol: Option[];
+    naturesVol: NatureVolOption[];
     typesMarchandise: Option[];
     typesEquipement: Option[];
     servicesAssistance: ServiceAssistance[];
@@ -33,8 +40,6 @@ interface Props {
 }
 
 
-
-const NATURES_VOL_SPECIALES = ['charter', 'vol_supplementaire', 'vol_evacuation_medicale', 'vol_rapatriement_humanitaire'];
 
 export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquipement, servicesAssistance, compagniePredefinie }: Props) {
     const { t } = useLaravelReactI18n();
@@ -60,7 +65,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
         aeroport_destination: '',
         reference_autorisation: '',
         payeur: '',
-        nature_vol: '',
+        nature_vol_id: '',
         mtow: '',
         tow_bar_a_bord: false,
         demandeur: '',
@@ -79,8 +84,9 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
         services_assistance: [] as number[],
     });
 
-    const estCargo = data.nature_vol === 'freighter';
-    const estVolSpecial = NATURES_VOL_SPECIALES.includes(data.nature_vol);
+    const natureVolSelectionnee = naturesVol.find((n) => n.value.toString() === data.nature_vol_id);
+    const estCargo = natureVolSelectionnee?.est_cargo ?? false;
+    const estVolSpecial = natureVolSelectionnee?.est_vol_special ?? false;
 
     const handleEquipementToggle = (typeId: number, checked: boolean) => {
         const current = [...data.equipements_demandes];
@@ -123,11 +129,11 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
             } else {
                 clearErrors('numero_vol');
             }
-            if (!data.nature_vol) {
-                setError('nature_vol', t('La nature du vol est obligatoire.'));
+            if (!data.nature_vol_id) {
+                setError('nature_vol_id', t('La nature du vol est obligatoire.'));
                 isValid = false;
             } else {
-                clearErrors('nature_vol');
+                clearErrors('nature_vol_id');
             }
             if (!data.mtow) {
                 setError('mtow', t('Le MTOW est obligatoire.'));
@@ -344,14 +350,14 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="nature_vol">{t('Nature du vol')} <span className="text-destructive">*</span></Label>
+                                        <Label htmlFor="nature_vol_id">{t('Nature du vol')} <span className="text-destructive">*</span></Label>
                                         <Combobox
-                                            value={data.nature_vol}
-                                            onChange={(v) => setData('nature_vol', v)}
+                                            value={data.nature_vol_id}
+                                            onChange={(v) => setData('nature_vol_id', v)}
                                             placeholder={t("Sélectionner la nature")}
-                                            options={naturesVol.map((n) => ({ label: n.libelle, value: n.value }))}
+                                            options={naturesVol.map((n) => ({ label: n.libelle, value: n.value.toString() }))}
                                         />
-                                        {errors.nature_vol && <p className="text-sm text-destructive">{errors.nature_vol}</p>}
+                                        {errors.nature_vol_id && <p className="text-sm text-destructive">{errors.nature_vol_id}</p>}
                                     </div>
 
                                     <div className="space-y-2">
@@ -727,7 +733,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                             <dt className="text-muted-foreground">{t('Destination :')}</dt>
                                             <dd>{data.aeroport_destination || '—'}</dd>
                                             <dt className="text-muted-foreground">{t('Nature :')}</dt>
-                                            <dd>{naturesVol.find((n) => n.value === data.nature_vol)?.libelle || '—'}</dd>
+                                            <dd>{natureVolSelectionnee?.libelle || '—'}</dd>
                                             <dt className="text-muted-foreground">{t('MTOW :')}</dt>
                                             <dd>{data.mtow ? `${data.mtow} t` : '—'}</dd>
                                             {estVolSpecial && (
