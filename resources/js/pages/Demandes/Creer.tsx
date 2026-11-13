@@ -31,10 +31,15 @@ interface NatureVolOption {
     est_vol_special: boolean;
 }
 
+interface OptionNumerique {
+    value: number;
+    libelle: string;
+}
+
 interface Props {
     naturesVol: NatureVolOption[];
     typesMarchandise: Option[];
-    typesEquipement: Option[];
+    typesEquipement: OptionNumerique[];
     servicesAssistance: ServiceAssistance[];
     compagniePredefinie?: string;
 }
@@ -200,6 +205,11 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                 isValid = false;
             } else {
                 clearErrors('date_depart');
+            }
+
+            if (data.date_arrivee && data.date_depart && new Date(data.date_depart).getTime() <= new Date(data.date_arrivee).getTime()) {
+                setError('date_depart', t("La date de départ doit être après la date d'arrivée."));
+                isValid = false;
             }
         }
         
@@ -515,6 +525,7 @@ export default function DemandesCreer({ naturesVol, typesMarchandise, typesEquip
                                         <Input
                                             id="date_depart"
                                             type="datetime-local"
+                                            min={data.date_arrivee || undefined}
                                             value={data.date_depart}
                                             onChange={(e) => setData('date_depart', e.target.value)}
                                         />

@@ -57,6 +57,7 @@ class UpdateDemandeRequest extends FormRequest
     {
         return [
             'tow_bar_a_bord.accepted_if' => 'Une barre de tractage (tow bar) doit obligatoirement être à bord pour les vols spéciaux.',
+            'date_depart.after' => "La date et l'heure de départ doivent être postérieures à la date et l'heure d'arrivée.",
         ];
     }
 

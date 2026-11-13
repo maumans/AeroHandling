@@ -28,7 +28,7 @@ class GestionnaireDemande
                     return [
                         'demande_id' => $demande->id,
                         'equipement_id' => null,
-                        'type_equipement' => $eq['type'],
+                        'type_equipement_id' => $eq['type_equipement_id'],
                         'quantite' => $eq['quantite'],
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -59,7 +59,7 @@ class GestionnaireDemande
                         return [
                             'demande_id' => $demande->id,
                             'equipement_id' => null,
-                            'type_equipement' => $eq['type'],
+                            'type_equipement_id' => $eq['type_equipement_id'],
                             'quantite' => $eq['quantite'],
                             'created_at' => now(),
                             'updated_at' => now(),

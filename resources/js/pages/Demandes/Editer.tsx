@@ -31,11 +31,16 @@ interface NatureVolOption {
     est_vol_special: boolean;
 }
 
+interface OptionNumerique {
+    value: number;
+    libelle: string;
+}
+
 interface Props {
     demande: any;
     naturesVol: NatureVolOption[];
     typesMarchandise: Option[];
-    typesEquipement: Option[];
+    typesEquipement: OptionNumerique[];
     servicesAssistance: ServiceAssistance[];
 }
 
@@ -63,10 +68,10 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
         return d.toISOString().slice(0, 16);
     };
 
-    const initialEquipements = demande.equipements ? demande.equipements.map((eq: any) => ({
-        type: eq.pivot.type_equipement,
-        quantite: eq.pivot.quantite
-    })) : [];
+    const initialEquipements = (demande.equipements_demandes ?? []).map((eq: { type_equipement_id: number; quantite: number }) => ({
+        type_equipement_id: eq.type_equipement_id,
+        quantite: eq.quantite,
+    }));
 
     const initialServices = demande.services_assistance ? demande.services_assistance.map((s: any) => s.id) : [];
 
@@ -215,6 +220,11 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                 isValid = false;
             } else {
                 clearErrors('date_depart');
+            }
+
+            if (data.date_arrivee && data.date_depart && new Date(data.date_depart).getTime() <= new Date(data.date_arrivee).getTime()) {
+                setError('date_depart', t("La date de départ doit être après la date d'arrivée."));
+                isValid = false;
             }
         }
         
@@ -513,6 +523,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                         <Input
                                             id="date_depart"
                                             type="datetime-local"
+                                            min={data.date_arrivee || undefined}
                                             value={data.date_depart}
                                             onChange={(e) => setData('date_depart', e.target.value)}
                                         />

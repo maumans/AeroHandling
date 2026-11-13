@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\StatutDemande;
 use App\Models\Demande;
 use App\Models\NatureVol;
+use App\Models\TypeEquipement;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -205,5 +206,97 @@ class DemandeCreationTest extends TestCase
             ->assertSessionHasErrors('nature_vol_id');
 
         $this->assertDatabaseMissing('demandes', ['numero_vol' => 'AT5555']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function donneesDemandeValides(array $surcharges = []): array
+    {
+        $jour = now()->addDays(3)->format('Y-m-d');
+
+        return [
+            'action' => 'brouillon',
+            'compagnie_libelle' => 'Air Test',
+            'type_aeronef' => 'B737',
+            'immatriculation' => 'CN-TEST',
+            'numero_vol' => 'AT4242',
+            'aeroport_provenance' => 'Paris CDG',
+            'aeroport_destination' => 'Conakry',
+            'demandeur' => 'Jean Dupont',
+            'contact_demandeur' => 'jean.dupont@airtest.com',
+            'nature_vol_id' => NatureVol::factory()->create(['est_cargo' => false, 'est_vol_special' => false])->id,
+            'mtow' => 80,
+            'date_arrivee' => $jour.'T10:00',
+            'date_depart' => $jour.'T14:30',
+            ...$surcharges,
+        ];
+    }
+
+    public function test_une_demande_avec_equipements_est_enregistree_avec_leur_type(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $utilisateur = User::factory()->create();
+        $utilisateur->assignRole('compagnie');
+        $typeEquipement = TypeEquipement::factory()->create();
+
+        $this->actingAs($utilisateur)
+            ->post(route('demandes.enregistrer'), $this->donneesDemandeValides([
+                'equipements_demandes' => [
+                    ['type_equipement_id' => $typeEquipement->id, 'quantite' => 2],
+                ],
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $demande = Demande::where('numero_vol', 'AT4242')->firstOrFail();
+
+        $this->assertDatabaseHas('demande_equipement', [
+            'demande_id' => $demande->id,
+            'type_equipement_id' => $typeEquipement->id,
+            'quantite' => 2,
+        ]);
+
+        $this->actingAs($utilisateur)
+            ->get(route('demandes.editer', $demande))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('demande.equipements_demandes.0.type_equipement_id', $typeEquipement->id)
+                ->where('demande.equipements_demandes.0.quantite', 2)
+            );
+    }
+
+    public function test_le_depart_le_meme_jour_a_une_heure_posterieure_est_accepte(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $utilisateur = User::factory()->create();
+        $utilisateur->assignRole('compagnie');
+
+        $this->actingAs($utilisateur)
+            ->post(route('demandes.enregistrer'), $this->donneesDemandeValides())
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('demandes', ['numero_vol' => 'AT4242']);
+    }
+
+    public function test_le_depart_le_meme_jour_a_une_heure_anterieure_est_refuse(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $utilisateur = User::factory()->create();
+        $utilisateur->assignRole('compagnie');
+        $jour = now()->addDays(3)->format('Y-m-d');
+
+        $this->actingAs($utilisateur)
+            ->post(route('demandes.enregistrer'), $this->donneesDemandeValides([
+                'date_arrivee' => $jour.'T14:30',
+                'date_depart' => $jour.'T10:00',
+            ]))
+            ->assertSessionHasErrors('date_depart');
+
+        $this->assertDatabaseMissing('demandes', ['numero_vol' => 'AT4242']);
     }
 }

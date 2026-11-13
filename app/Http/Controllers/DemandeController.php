@@ -136,7 +136,10 @@ class DemandeController extends Controller
     {
         $this->authorize('modifier', $demande);
 
-        $demande->load(['equipements', 'servicesAssistance']); // Ensure pivot data is available for equipments
+        $demande->load('servicesAssistance');
+        $demande->setAttribute('equipements_demandes', DB::table('demande_equipement')
+            ->where('demande_id', $demande->id)
+            ->get(['type_equipement_id', 'quantite']));
 
         $naturesVol = $this->naturesVolActives();
         $typesMarchandise = TypeMarchandise::where('actif', true)->orderBy('nom')->get()->map(fn ($t) => ['value' => $t->id, 'libelle' => $t->nomLocalise()]);
