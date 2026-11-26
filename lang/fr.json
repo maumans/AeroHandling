@@ -1051,5 +1051,7 @@
     "Modifier le type de marchandise": "Modifier le type de marchandise",
     "Stockage spécial": "Stockage spécial",
     "Aucun type de marchandise enregistré.": "Aucun type de marchandise enregistré.",
-    "Gestion des types de marchandise": "Gestion des types de marchandise"
+    "Gestion des types de marchandise": "Gestion des types de marchandise",
+    "La date et l'heure d'arrivée doivent être postérieures à la date et l'heure actuelles.": "La date et l'heure d'arrivée doivent être postérieures à la date et l'heure actuelles.",
+    "La date et l'heure de départ doivent être postérieures à la date et l'heure actuelles.": "La date et l'heure de départ doivent être postérieures à la date et l'heure actuelles."
 }

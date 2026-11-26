@@ -31,7 +31,7 @@ class TableauDeBordController extends Controller
         $statut = $request->input('statut');
 
         $query = Demande::query()
-            ->when($user->hasRole('compagnie'), fn ($q) => $q->where('utilisateur_id', $user->id))
+            ->visiblesPour($user)
             ->whereBetween('created_at', [$debut, $fin]);
 
         if ($compagnieId) {

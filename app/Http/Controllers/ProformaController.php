@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Demande;
 use App\Models\Proforma;
 use App\Models\User;
+use App\Notifications\ConfirmationProformaDemandee;
 use App\Notifications\ProformaDemandee;
 use App\Notifications\ProformaValidee;
 use App\Services\ProformaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -38,7 +40,7 @@ class ProformaController extends Controller
         }
 
         // Confirmer à l'utilisateur qui a fait la demande
-        $request->user()->notify(new \App\Notifications\ConfirmationProformaDemandee($demande));
+        $request->user()->notify(new ConfirmationProformaDemandee($demande));
 
         return back()->with('success', 'La demande de facture proforma a été envoyée au service Handling.');
     }
@@ -136,14 +138,21 @@ class ProformaController extends Controller
     /**
      * Télécharge le PDF de la proforma.
      */
-    public function telecharger(Demande $demande, Proforma $proforma, ProformaService $proformaService): Response|StreamedResponse|RedirectResponse
+    public function telecharger(Demande $demande, Proforma $proforma, ProformaService $proformaService): HttpResponse
     {
         Gate::authorize('voir', $demande);
+
+        abort_unless($proforma->demande_id === $demande->id, 404);
 
         $pdf = $proformaService->genererPdf($demande);
 
         $reference = $proforma->reference_facture ?? 'Brouillon';
+        $nomFichier = "Proforma_{$reference}.pdf";
 
-        return $pdf->download("Proforma_{$reference}.pdf");
+        if ($proforma->statut === 'validee') {
+            return $pdf->download($nomFichier);
+        }
+
+        return $pdf->stream($nomFichier);
     }
 }

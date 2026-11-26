@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\StatutDemande;
 use Database\Factories\DemandeFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -71,6 +72,27 @@ class Demande extends Model
     }
 
     /** @return BelongsTo<Compagnie, $this> */
+    /**
+     * Limite les demandes à celles qu'un utilisateur « compagnie » peut voir :
+     * les demandes de sa compagnie et celles qu'il a créées lui-même.
+     *
+     * @param  Builder<Demande>  $query
+     */
+    public function scopeVisiblesPour(Builder $query, User $user): void
+    {
+        if (! $user->hasRole('compagnie')) {
+            return;
+        }
+
+        $query->where(function (Builder $q) use ($user) {
+            $q->where('utilisateur_id', $user->id);
+
+            if ($user->compagnie_id) {
+                $q->orWhere('compagnie_id', $user->compagnie_id);
+            }
+        });
+    }
+
     public function compagnie(): BelongsTo
     {
         return $this->belongsTo(Compagnie::class);

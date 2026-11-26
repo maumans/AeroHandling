@@ -35,7 +35,7 @@ class CreerDemandeRequest extends FormRequest
             'demandeur' => ['required', 'string', 'max:255'],
             'contact_demandeur' => ['required', 'string', 'max:255'],
             'date_arrivee' => ['required', 'date', 'after:now'],
-            'date_depart' => ['required', 'date', 'after:date_arrivee'],
+            'date_depart' => ['required', 'date', 'after:now', 'after:date_arrivee'],
             'tonnage_prevu' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'volume_prevu' => ['nullable', 'numeric', 'min:0', 'max:9999999.99'],
             'type_marchandise_id' => ['nullable', Rule::exists('types_marchandise', 'id')->where('actif', true)],
@@ -58,7 +58,8 @@ class CreerDemandeRequest extends FormRequest
     {
         return [
             'tow_bar_a_bord.accepted_if' => 'Une barre de tractage (tow bar) doit obligatoirement être à bord pour les vols spéciaux.',
-            'date_depart.after' => "La date et l'heure de départ doivent être postérieures à la date et l'heure d'arrivée.",
+            'date_arrivee.after' => "La date et l'heure d'arrivée doivent être postérieures à la date et l'heure actuelles.",
+            'date_depart.after' => "La date et l'heure de départ doivent être postérieures à la date et l'heure actuelles ainsi qu'à celles de l'arrivée.",
         ];
     }
 

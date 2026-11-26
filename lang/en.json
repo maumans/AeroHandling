@@ -785,5 +785,7 @@
     "Modifier le type de marchandise": "Edit Cargo Type",
     "Stockage spécial": "Special storage",
     "Aucun type de marchandise enregistré.": "No cargo type registered.",
-    "Gestion des types de marchandise": "Cargo Types Management"
+    "Gestion des types de marchandise": "Cargo Types Management",
+    "La date et l'heure d'arrivée doivent être postérieures à la date et l'heure actuelles.": "The arrival date and time must be later than the current date and time.",
+    "La date et l'heure de départ doivent être postérieures à la date et l'heure actuelles.": "The departure date and time must be later than the current date and time."
 }

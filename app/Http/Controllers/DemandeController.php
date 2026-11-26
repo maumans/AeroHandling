@@ -34,16 +34,8 @@ class DemandeController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $query = Demande::with(['compagnie', 'aeronef', 'utilisateur', 'natureVol', 'proforma']);
-
-        // Filtrer selon le rôle
-        if ($user->hasRole('compagnie')) {
-            if ($user->compagnie_id) {
-                $query->where('compagnie_id', $user->compagnie_id);
-            } else {
-                $query->where('utilisateur_id', $user->id);
-            }
-        }
+        $query = Demande::with(['compagnie', 'aeronef', 'utilisateur', 'natureVol', 'proforma'])
+            ->visiblesPour($user);
 
         if ($request->filled('statut')) {
             $query->where('statut', $request->input('statut'));

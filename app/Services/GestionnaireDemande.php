@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\ActionValidation;
 use App\Enums\StatutDemande;
+use App\Models\Compagnie;
 use App\Models\Demande;
 use App\Models\User;
 use App\Models\Validation;
@@ -17,6 +18,7 @@ class GestionnaireDemande
     public function creer(array $donnees, User $utilisateur): Demande
     {
         $donnees['utilisateur_id'] = $utilisateur->id;
+        $donnees['compagnie_id'] = $this->resoudreCompagnieId($donnees, $utilisateur);
         $donnees['reference'] = $this->genererReference();
         $donnees['statut'] = StatutDemande::Brouillon;
 
@@ -44,6 +46,29 @@ class GestionnaireDemande
 
             return $demande;
         });
+    }
+
+    /**
+     * Rattache la demande à une compagnie : celle choisie explicitement, sinon celle
+     * de l'utilisateur, sinon la compagnie dont le nom correspond au libellé saisi.
+     *
+     * @param  array<string, mixed>  $donnees
+     */
+    private function resoudreCompagnieId(array $donnees, User $utilisateur): ?int
+    {
+        if (! empty($donnees['compagnie_id'])) {
+            return (int) $donnees['compagnie_id'];
+        }
+
+        if ($utilisateur->compagnie_id) {
+            return $utilisateur->compagnie_id;
+        }
+
+        if (empty($donnees['compagnie_libelle'])) {
+            return null;
+        }
+
+        return Compagnie::where('nom', trim($donnees['compagnie_libelle']))->value('id');
     }
 
     public function modifier(Demande $demande, array $donnees, User $utilisateur): Demande

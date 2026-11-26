@@ -282,6 +282,55 @@ class DemandeCreationTest extends TestCase
         $this->assertDatabaseHas('demandes', ['numero_vol' => 'AT4242']);
     }
 
+    public function test_une_arrivee_dans_le_passe_est_refusee(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $utilisateur = User::factory()->create();
+        $utilisateur->assignRole('compagnie');
+
+        $this->actingAs($utilisateur)
+            ->post(route('demandes.enregistrer'), $this->donneesDemandeValides([
+                'date_arrivee' => now()->subHour()->format('Y-m-d\TH:i'),
+                'date_depart' => now()->addDays(1)->format('Y-m-d\TH:i'),
+            ]))
+            ->assertSessionHasErrors('date_arrivee');
+
+        $this->assertDatabaseMissing('demandes', ['numero_vol' => 'AT4242']);
+    }
+
+    public function test_un_depart_dans_le_passe_est_refuse(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $utilisateur = User::factory()->create();
+        $utilisateur->assignRole('compagnie');
+
+        $this->actingAs($utilisateur)
+            ->post(route('demandes.enregistrer'), $this->donneesDemandeValides([
+                'date_depart' => now()->subHour()->format('Y-m-d\TH:i'),
+            ]))
+            ->assertSessionHasErrors('date_depart');
+    }
+
+    public function test_la_modification_refuse_une_arrivee_dans_le_passe(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $utilisateur = User::factory()->create();
+        $utilisateur->assignRole('compagnie');
+        $demande = Demande::factory()->create([
+            'utilisateur_id' => $utilisateur->id,
+            'statut' => StatutDemande::Brouillon,
+        ]);
+
+        $this->actingAs($utilisateur)
+            ->put(route('demandes.mettre-a-jour', $demande), $this->donneesDemandeValides([
+                'date_arrivee' => now()->subHour()->format('Y-m-d\TH:i'),
+            ]))
+            ->assertSessionHasErrors('date_arrivee');
+    }
+
     public function test_le_depart_le_meme_jour_a_une_heure_anterieure_est_refuse(): void
     {
         $this->seed(RoleSeeder::class);

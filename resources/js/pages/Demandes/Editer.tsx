@@ -46,6 +46,14 @@ interface Props {
 
 
 
+/** Date et heure locales actuelles au format attendu par un champ datetime-local. */
+function maintenantPourInput(): string {
+    const date = new Date();
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+
+    return date.toISOString().slice(0, 16);
+}
+
 export default function DemandesEditer({ demande, naturesVol, typesMarchandise, typesEquipement, servicesAssistance }: Props) {
     const { t } = useLaravelReactI18n();
     
@@ -222,7 +230,17 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                 clearErrors('date_depart');
             }
 
-            if (data.date_arrivee && data.date_depart && new Date(data.date_depart).getTime() <= new Date(data.date_arrivee).getTime()) {
+            const maintenant = new Date(maintenantPourInput()).getTime();
+
+            if (data.date_arrivee && new Date(data.date_arrivee).getTime() <= maintenant) {
+                setError('date_arrivee', t("La date et l'heure d'arrivée doivent être postérieures à la date et l'heure actuelles."));
+                isValid = false;
+            }
+
+            if (data.date_depart && new Date(data.date_depart).getTime() <= maintenant) {
+                setError('date_depart', t("La date et l'heure de départ doivent être postérieures à la date et l'heure actuelles."));
+                isValid = false;
+            } else if (data.date_arrivee && data.date_depart && new Date(data.date_depart).getTime() <= new Date(data.date_arrivee).getTime()) {
                 setError('date_depart', t("La date de départ doit être après la date d'arrivée."));
                 isValid = false;
             }
@@ -512,6 +530,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                         <Input
                                             id="date_arrivee"
                                             type="datetime-local"
+                                            min={maintenantPourInput()}
                                             value={data.date_arrivee}
                                             onChange={(e) => setData('date_arrivee', e.target.value)}
                                         />
@@ -523,7 +542,7 @@ export default function DemandesEditer({ demande, naturesVol, typesMarchandise, 
                                         <Input
                                             id="date_depart"
                                             type="datetime-local"
-                                            min={data.date_arrivee || undefined}
+                                            min={data.date_arrivee || maintenantPourInput()}
                                             value={data.date_depart}
                                             onChange={(e) => setData('date_depart', e.target.value)}
                                         />
